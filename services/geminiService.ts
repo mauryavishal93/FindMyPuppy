@@ -1,8 +1,8 @@
-import { GoogleGenAI, Type } from "@google/genai";
+
+import { GoogleGenAI } from "@google/genai";
 import { Difficulty } from "../types";
 
 // Initialize the API client
-// Note: In a real production app, you might proxy this through a backend to protect the key.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const THEMES = [
@@ -18,61 +18,51 @@ const THEMES = [
   "A sunlit treehouse with wooden toys and leaves dappled in sunshine",
 ];
 
-export const generateLevelTheme = async (levelId: number, difficulty: Difficulty): Promise<string> => {
-  // If API key is missing, return a deterministic fallback to allow UI testing
-  if (!process.env.API_KEY) {
-    return THEMES[(levelId + (difficulty.length)) % THEMES.length];
-  }
-
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Generate a short, vivid description (1 sentence) for a hidden object game background scene. 
-      Theme ID: ${levelId}. Difficulty: ${difficulty}. 
-      The theme MUST be a bright, 'sunlit' environment (e.g. sunlit study, sunlit garden, sunlit hut, sunlit explorer's room). 
-      Make it cluttered and detailed, suitable for hiding small objects.`,
-    });
-    return response.text?.trim() || THEMES[0];
-  } catch (error) {
-    console.error("Gemini Theme Generation Error:", error);
-    return THEMES[levelId % THEMES.length];
-  }
+/**
+ * Strictly returns one of the 10 predefined themes based on levelId.
+ */
+export const generateLevelTheme = async (levelId: number, _difficulty: Difficulty): Promise<string> => {
+  // Use modulo to cycle through the 10 themes for 25 levels
+  // levelId is 1-indexed, so we subtract 1 for the array index
+  const themeIndex = (levelId - 1) % THEMES.length;
+  return THEMES[themeIndex];
 };
 
+/**
+ * Generates a unique image using Gemini based on the selected theme.
+ */
 export const generateLevelImage = async (theme: string): Promise<string> => {
   // Fallback for missing key
   if (!process.env.API_KEY) {
-    // Return a random picsum image that is consistent for the theme string length
-    // Added Date.now() to fallback to ensure uniqueness even in mock mode if called repeatedly
     return `https://picsum.photos/seed/${theme.replace(/\s/g, '')}${Date.now()}/1024/1024`;
   }
 
   try {
-    // Random noise prevents caching and ensures uniqueness
     const randomness = Math.floor(Math.random() * 1000000);
+    const aiInstance = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    // Using gemini-2.5-flash-image for standard image generation
-    const response = await ai.models.generateContent({
+    const response = await aiInstance.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
           { text: `Create a whimsical, highly detailed, cartoon-style digital illustration for a hidden object game background. 
           
           Visual Style Requirements:
-          - Art Style: Warm, cozy, storybook illustration. Hand-drawn 2D aesthetic with soft outlines. Similar to Studio Ghibli or detailed European comic backgrounds.
-          - Lighting: HEAVILY SUNLIT. Golden hour or bright morning sunlight streaming in through windows or leaves. Warm color palette (golds, oranges, warm greens).
-          - Atmosphere: Adventurous, nostalgic, and cheerful.
+          - Art Style: Warm, cozy, storybook illustration. Hand-drawn 2D aesthetic with soft outlines. Similar to Studio Ghibli.
+          - Lighting: HEAVILY SUNLIT. Golden hour or bright morning sunlight streaming in. Warm color palette.
           - Complexity: Highly cluttered with many small objects, patterns, and details (essential for a hidden object game).
           - Perspective: Wide shot, capturing a full room or landscape.
-          - RESTRICTIONS: NO photorealism. NO 3D rendering style. NO dark or gloomy scenes. 
+          - RESTRICTIONS: NO photorealism. NO 3D rendering style. NO dark or gloomy scenes. NO text in image.
 
           Specific Scene: ${theme}.
           
-          Ensure the image is unique and creative. Random Seed: ${randomness}. No text in image.` }
+          Random Seed: ${randomness}.` }
         ]
       },
       config: {
-         // No specific aspect ratio needed as we'll cover, but 1:1 is standard safe bet for 2.5 flash image
+        imageConfig: {
+          aspectRatio: "1:1"
+        }
       }
     });
 
@@ -84,7 +74,6 @@ export const generateLevelImage = async (theme: string): Promise<string> => {
     throw new Error("No image data found in response");
   } catch (error) {
     console.error("Gemini Image Generation Error:", error);
-     // Fallback to picsum on error
     return `https://picsum.photos/seed/${theme.replace(/\s/g, '')}/1024/1024`;
   }
 };

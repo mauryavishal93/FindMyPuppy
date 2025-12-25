@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Puppy } from '../types';
+import { Puppy, Difficulty } from '../types';
 
 interface GameCanvasProps {
   backgroundImage: string | null;
   puppies: Puppy[];
   onPuppyFound: (id: string) => void;
   isLoading: boolean;
+  difficulty: Difficulty;
 }
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({ 
   backgroundImage, 
   puppies, 
   onPuppyFound,
-  isLoading
+  isLoading,
+  difficulty
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [zoom, setZoom] = useState(1);
@@ -88,8 +90,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
         if (touchState.current.initialDistance > 0) {
           const scale = distance / touchState.current.initialDistance;
-          // Calculate new zoom with limits (0.5x to 3.0x)
-          const newZoom = Math.min(Math.max(touchState.current.initialZoom * scale, 0.5), 3.0);
+          // Calculate new zoom with limits (0.5x to 4.0x)
+          const newZoom = Math.min(Math.max(touchState.current.initialZoom * scale, 0.5), 4.0);
           setZoom(newZoom);
         }
       }
@@ -128,20 +130,50 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Base map size
   const MAP_SIZE = 1600;
 
+  // Camouflage logic helper
+  const getPuppyStyles = (puppy: Puppy) => {
+    if (puppy.isFound) {
+      return {
+        mixBlendMode: 'normal' as const,
+        opacity: 1,
+        filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.4)) brightness(1.2) saturate(1.3)',
+      };
+    }
+
+    let mixBlendMode: any = 'luminosity';
+    let filter = '';
+    let opacity = puppy.opacity;
+
+    switch (difficulty) {
+      case Difficulty.EASY:
+        filter = `grayscale(20%) contrast(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.3))`;
+        opacity = Math.max(0.6, puppy.opacity + 0.2);
+        break;
+      case Difficulty.MEDIUM:
+        mixBlendMode = 'luminosity';
+        filter = `grayscale(60%) contrast(1.0) brightness(1.0) hue-rotate(${puppy.hueRotate}deg)`;
+        opacity = Math.max(0.45, puppy.opacity + 0.1);
+        break;
+      case Difficulty.HARD:
+        mixBlendMode = 'luminosity'; 
+        filter = `grayscale(100%) contrast(1.2) brightness(0.9) hue-rotate(${puppy.hueRotate}deg)`;
+        opacity = Math.max(0.35, puppy.opacity);
+        break;
+    }
+
+    return { mixBlendMode, filter, opacity };
+  };
+
   return (
     <div className="w-full h-full relative">
        {/* Scrollable Area */}
       <div 
         ref={scrollContainerRef}
-        className="w-full h-full overflow-auto bg-slate-900 shadow-inner"
+        className="w-full h-full overflow-auto bg-slate-900 shadow-inner hide-scrollbar"
         style={{
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* 
-          Zoom Container wrapper.
-          We explicitly set dimensions to force the scroll container to recognize the size.
-        */}
         <div 
            style={{ 
              width: `${MAP_SIZE * zoom}px`, 
@@ -149,11 +181,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
              position: 'relative'
            }}
         >
-          {/* 
-            Game World Scaled 
-            We use CSS transform to scale the inner content (bg + puppies) while keeping the wrapper sizing correct for scrolling.
-            transform-origin top-left ensures it scales from the corner matching the wrapper.
-          */}
           <div 
             style={{ 
               width: `${MAP_SIZE}px`,
@@ -167,11 +194,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           >
             {/* Puppy Layer */}
             {puppies.map((puppy) => {
-              // Pose Logic
               const baseSize = Math.max(30, puppy.scale * 120);
-              const width = baseSize * (puppy.aspectFactor); // Squash/Stretch Width
-              const height = baseSize * (1 / puppy.aspectFactor); // Inverse for Height
-              const mirror = puppy.facingLeft ? 'scaleX(-1)' : 'scaleX(1)';
+              const { mixBlendMode, filter, opacity } = getPuppyStyles(puppy);
               
               return (
                 <div
@@ -186,25 +210,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   style={{
                     left: `${puppy.x}%`,
                     top: `${puppy.y}%`,
-                    width: `${width}px`, 
-                    height: `${height}px`,
-                    // Transform: Combine all transforms. Rotation + Mirror + Popup on Find
+                    width: `${baseSize}px`, 
+                    height: `${baseSize}px`,
                     transform: `
                       translate(-50%, -50%) 
                       rotate(${puppy.rotation}deg) 
-                      ${mirror}
                       ${puppy.isFound ? 'scale(2.5)' : 'scale(1)'}
                     `,
-                    
-                    // GLASS / CAMO THEME Implementation:
-                    mixBlendMode: puppy.isFound ? 'normal' : 'luminosity', 
-                    // Use individual puppy opacity when hidden
-                    opacity: puppy.isFound ? 1 : puppy.opacity, 
-                    
-                    // Filter Logic:
-                    filter: puppy.isFound 
-                      ? 'drop-shadow(0 10px 20px rgba(0,0,0,0.3)) brightness(1.05)' 
-                      : `grayscale(100%) contrast(1.2) drop-shadow(0 0 1px rgba(255,255,255,0.4))`, 
+                    mixBlendMode,
+                    opacity,
+                    filter,
                   }}
                 >
                   <img 

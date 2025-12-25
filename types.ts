@@ -22,9 +22,6 @@ export interface Puppy {
   opacity: number;
   hueRotate: number;
   imageUrl: string;
-  // New pose properties
-  facingLeft: boolean; 
-  aspectFactor: number; // < 1 means taller/standing, > 1 means wider/lying down
 }
 
 export interface UserProgress {

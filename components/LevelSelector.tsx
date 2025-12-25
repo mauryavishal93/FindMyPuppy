@@ -6,13 +6,17 @@ interface LevelSelectorProps {
   clearedLevels: { [key: string]: boolean };
   onSelectLevel: (levelId: number) => void;
   onBack: () => void;
+  isMuted: boolean;
+  onToggleMute: () => void;
 }
 
 export const LevelSelector: React.FC<LevelSelectorProps> = ({ 
   difficulty, 
   clearedLevels, 
   onSelectLevel,
-  onBack
+  onBack,
+  isMuted,
+  onToggleMute
 }) => {
   const levels = Array.from({ length: 25 }, (_, i) => i + 1);
 
@@ -32,7 +36,12 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
           <i className="fas fa-arrow-left"></i>
         </button>
         <h2 className="text-xl font-bold text-slate-800">{difficulty} Levels</h2>
-        <div className="w-10"></div>
+        <button 
+          onClick={onToggleMute}
+          className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"
+        >
+          <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-transparent z-10 relative">
@@ -40,9 +49,6 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
           {levels.map((level) => {
             const levelKey = `${difficulty}_${level}`;
             const isCleared = clearedLevels[levelKey];
-            
-            // In a real game, we might lock levels. Here we unlock all for demo, or lock based on previous.
-            // Simple logic: level 1 is open, others need previous cleared.
             const previousKey = `${difficulty}_${level - 1}`;
             const isLocked = level > 1 && !clearedLevels[previousKey];
 

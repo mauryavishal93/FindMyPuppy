@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Difficulty, UserProgress, Puppy } from './types';
 import { generateLevelTheme, generateLevelImage } from './services/geminiService';
 import { GameCanvas } from './components/GameCanvas';
@@ -6,23 +6,19 @@ import { LevelSelector } from './components/LevelSelector';
 import { GameLogo } from './components/GameLogo';
 
 // --- Assets ---
-// Cartoon-style Puppy Faces matching the reference image.
 const PUPPY_IMAGES = [
-  // 1. Corgi / Shiba (Orange, Pointy Ears, Happy)
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTUsMjAgTDMwLDQ1IEwxMCw1MCBaIiBmaWxsPSIjRTg3QTI5Ii8+PHBhdGggZD0iTTg1LDIwIEw3MCw0NSBMOTAsNTAgWiIgZmlsbD0iI0U4N0EyOSIvPjxwYXRoIGQ9Ik0xNSw1MCBRMTAsODUgNTAsOTAgUTkwLDg1IDg1LDUwIFE4NSwzMCA1MCwzMCBRMTUsMzAgMTUsNTAiIGZpbGw9IiNFODdBMjkiLz48cGF0aCBkPSJNMzAsNTAgUTUwLDQwIDcwLDUwIFE4MCw3MCA1MCw4NSBRMjAsNzAgMzAsNTAiIGZpbGw9IndoaXRlIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSIzNSIgY3k9IjU1IiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2NSIgY3k9IjU1IiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjUiIHJ5PSIzIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTQ1LDcyIFE1MCw3NSA1NSw3MiIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9nPjwvc3ZnPg==`,
-  
-  // 2. Husky / Malamute (Grey & White, Mask)
-  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMTUgTDM1LDQwIEwxNSw0NSBaIiBmaWxsPSIjNUQ2RDdFIi8+PHBhdGggZD0iTTgwLDE1IEw2NSw0MCBMODUsNDUgWiIgZmlsbD0iIzVENkQ3RSIvPjxwYXRoIGQ9Ik0yMCw0NSBRMTUsODUgNTAsOTAgUTg1LDg1IDgwLDQ1IFE4MCwyNSA1MCwyNSBRMjAsMjUgMjAsNDUiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIwLDQ1IFE1MCwyNSA4MCw0NSBRODAsNTUgNzAsNTUgUTYwLDU1IDUwLDQ1IFE0MCw1NSAzMCw1NSBRMjAsNTUgMjAsNDUiIGZpbGw9IiM1RDZDN0UiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjQiIGZpbGw9IiM4NUMxRTkiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGNpcmNsZSBjeD0iNjUiIGN5PSI1MCIgcj0iNCIgZmlsbD0iIzg1QzFFOSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjUiIHJ5PSIzIiBmaWxsPSIjMzMzIi8+PC9nPjwvc3ZnPg==`,
-
-  // 3. Pug (Tan, Wrinkly, Folded Ears)
+  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMTUgTDM1LDQwIEwxNSw0NSBaIiBmaWxsPSIjNUQ2RDdFIi8+PHBhdGggZD0iTTgwLDE1IEw2NSw0MCBMODUsNDUgWiIgZmlsbD0iIzVENkQ3RSIvPjxwYXRoIGQ9Ik0yMCw0NSBRMTAsODUgNTAsOTAgUTg1LDg1IDgwLDQ1IFE4MCwyNSA1MCwyNSBRMjAsMjUgMjAsNDUiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIwLDQ1IFE1MCwyNSA4MCw0NSBRODAsNTUgNzAsNTUgUTYwLDU1IDUwLDQ1IFE0MCw1NSAzMCw1NSBRMjAsNTUgMjAsNDUiIGZpbGw9IiM1RDZDN0UiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjQiIGZpbGw9IiM4NUMxRTkiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGNpcmNsZSBjeD0iNjUiIGN5PSI1MCIgcj0iMCIgZmlsbD0iIzg1QzFFOSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjUiIHJ5PSIzIiBmaWxsPSIjMzMzIi8+PC9nPjwvc3ZnPg==`,
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTUsMzUgTDMwLDMwIEwyNSw1MCBaIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTg1LDM1IEw3MCwzMCBMNzUsNTAgWiIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjIwIiB5PSIzMCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjU1IiByeD0iMjUiIGZpbGw9IiVGNUNCQTciLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2MCIgcng9IjIwIiByeT0iMTUiIGZpbGw9IiMzMzMiIG9wYWNpdHk9IjAuOSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjYiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjMiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNTAiIHI9IjYiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNTAiIHI9IjMiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjYyIiByeD0iNiIgcnk9IjMiIGZpbGw9ImJsYWNrIi8+PC9nPjwvc3ZnPg==`,
-
-  // 4. Spaniel / Golden (Floppy Ears, Brown)
-  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiM0RTM0MkUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMzAsMzAgQTQwLDQwIDAgMCAxIDcwLDMwIEE1MCw1MCAwIDAgMSA3NSw3MCBBNTAsMzAgMCAwIDEgMjUsNzAgQTQwLDQwIDAgMCAxIDMwLDMwIiBmaWxsPSIjRDM1NDAwIi8+PHBhdGggZD0iTTMwLDM1IFE1MCw5MCA2MCwzNSIgZmlsbD0iI0Y1Q0JBNyIgc3Ryb2tlPSJub25lIi8+PGVsbGlwc2UgY3g9IjUwIiBjeT0iNjAiIHJ4PSIxMiIgcnk9IjEwIiBmaWxsPSIjRjVDQkE3IiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48cGF0aCBkPSJNNDYsNTggTDU0LDU4IEw1MCw2NCBaIiBmaWxsPSIjMzMzIi8+PC9nPjwvc3ZnPg==`,
-
-  // 5. Dalmatian / Beagle (White, Spots)
-  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzAgUTEwLDQwIDIwLDYwIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTc1LDMwIFE5MCw0MCA4MCw2MCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0yNSwzMCBRNTAsMjAgNzUsMzAgUTg1LDUwIDc1LDc1IFE1MCw4NSAyNSw3NSBRMTUsNTAgMjUsMzAiIGZpbGw9IiNGRkYiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjYiIHJ5PSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI3MCIgcj0iMyIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PC9nPjwvc3ZnPg==`,
+  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiM0RTM0MkUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMzAsMzAgQTQwLDQwIDAgMCAxIDcwLDMwIEE1MCw1MCAwIDAgMSA3NSw3MCBBNTAsMzAgMCAwIDEgMjUsNzAgQTQwLDQwIDAgMCAxIDMwLDMwIiBmaWxsPSIjRDM1NDAwIi8+PHBhdGggZD0iTTMwLDM1IFE1MCw5MCA2MCwzNSIgZmlsbD0iI0Y1Q0JBNyIgc3Ryb2tlPSJub25lIi8+PGVsbGlwc2UgY3g9IjUwIiBjeT0iNjAiIHJ4PSIxMiIgcnk9IjEwIiBmaWxsPSIjRjVDQkE3IiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQ4IiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjQ4IiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiLz48cGF0aCBkPSJNNDYsNTggTDU0LDU4IEw1MCw2NCBaIiBmaWxsPSIjMzMzIi8+PC9nPjwvc3ZnPg==`,
+  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzAgUTEwLDQwIDIwLDYwIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTc1LDMwIFE5MCw0MCA4MCw2MCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0yNSwzMCBRNTAsMjAgNzUsMzAgUTg1LDUwIDc1LDc1IFE1MCw4NSAyNSw3NSBRMTUsNTAgMjUsMzAiIGZpbGw9IiNGRkYiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjYiIHJ5PSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI3MCIgcj0iMyIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PC9nPjwvc3ZnPg==`,
 ];
+
+const SOUNDS = {
+  ambient: 'https://assets.mixkit.co/music/preview/mixkit-kids-adventure-609.mp3',
+  found: 'https://assets.mixkit.co/sfx/preview/mixkit-happy-puppy-bark-2792.mp3',
+  clear: 'https://assets.mixkit.co/sfx/preview/mixkit-magic-marimba-notif-2487.mp3',
+};
 
 // --- Helper Components ---
 
@@ -69,13 +65,14 @@ const DifficultyCard: React.FC<{
 // --- Main App ---
 
 export default function App() {
-  // State
   const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN'>('LOGIN');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
   
-  // Persisted Progress
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('findMyPuppy_progress');
     return saved ? JSON.parse(saved) : {
@@ -86,14 +83,40 @@ export default function App() {
     };
   });
 
-  // Check login status on mount
+  // Handle Background Audio
+  useEffect(() => {
+    if (!ambientAudioRef.current) {
+      ambientAudioRef.current = new Audio(SOUNDS.ambient);
+      ambientAudioRef.current.loop = true;
+      ambientAudioRef.current.volume = 0.3;
+    }
+    
+    if (view !== 'LOGIN' && !isMuted) {
+      ambientAudioRef.current.play().catch(e => console.log("Autoplay blocked, waiting for interaction"));
+    } else {
+      ambientAudioRef.current.pause();
+    }
+
+    return () => {
+      ambientAudioRef.current?.pause();
+    };
+  }, [view, isMuted]);
+
+  const toggleMute = () => setIsMuted(prev => !prev);
+
+  const playSfx = (type: 'found' | 'clear') => {
+    if (isMuted) return;
+    const sfx = new Audio(SOUNDS[type]);
+    sfx.volume = type === 'clear' ? 0.5 : 0.2;
+    sfx.play().catch(() => {});
+  };
+
   useEffect(() => {
     if (progress.playerName) {
       setView('HOME');
     }
   }, []);
 
-  // Game Session State
   const [gameState, setGameState] = useState<{
     puppies: Puppy[];
     bgImage: string | null;
@@ -106,78 +129,49 @@ export default function App() {
     levelTheme: '',
   });
 
-  // Persist progress
   useEffect(() => {
     localStorage.setItem('findMyPuppy_progress', JSON.stringify(progress));
   }, [progress]);
-
-  // --- Game Logic ---
 
   const handleLogin = () => {
     if (!loginName.trim()) return;
     setProgress(prev => ({ ...prev, playerName: loginName.trim() }));
     setView('HOME');
+    ambientAudioRef.current?.play().catch(() => {});
   };
 
   const initLevel = useCallback(async (level: number, diff: Difficulty) => {
     setGameState(prev => ({ ...prev, loading: true, bgImage: null, puppies: [], levelTheme: '' }));
     
-    // 1. Determine constraints based on difficulty
     const puppyCount = 25;
-    
-    // Logic for Scrollable Map (1600x1600)
     let baseOpacity = 0.5; 
     let minScale = 0.3; 
     let maxScale = 0.5; 
     
     if (diff === Difficulty.MEDIUM) {
-      baseOpacity = 0.45;
+      baseOpacity = 0.4;
       minScale = 0.25;
       maxScale = 0.4;
     } else if (diff === Difficulty.HARD) {
-      baseOpacity = 0.4; 
-      minScale = 0.15; 
-      maxScale = 0.3;
+      baseOpacity = 0.3; 
+      minScale = 0.2; 
+      maxScale = 0.35;
     }
 
-    // 2. Generate Content
     const theme = await generateLevelTheme(level, diff);
     const bgImage = await generateLevelImage(theme);
 
-    // 3. Create Puppies with Collision Detection
     const newPuppies: Puppy[] = [];
-    const MAP_SIZE = 1600; // Reference map size for calculation
-    
-    let safetyCounter = 0; 
-    while (newPuppies.length < puppyCount && safetyCounter < 1000) {
-      safetyCounter++;
-      
+    while (newPuppies.length < puppyCount) {
       const scale = minScale + (Math.random() * (maxScale - minScale));
-      const aspectFactor = 0.8 + (Math.random() * 0.5);
-      const facingLeft = Math.random() > 0.5;
-      
-      const baseSize = Math.max(30, scale * 120);
-      const pxWidth = baseSize * aspectFactor;
-      const pxHeight = baseSize * (1 / aspectFactor);
-      
-      const wPct = (pxWidth / MAP_SIZE) * 100;
-      const hPct = (pxHeight / MAP_SIZE) * 100;
-      
-      const x = (wPct / 2) + Math.random() * (100 - wPct);
-      const y = (hPct / 2) + Math.random() * (100 - hPct);
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
       
       let overlaps = false;
       for (const p of newPuppies) {
-        const pBaseSize = Math.max(30, p.scale * 120);
-        const pW = ((pBaseSize * p.aspectFactor) / MAP_SIZE) * 100;
-        const pH = ((pBaseSize * (1 / p.aspectFactor)) / MAP_SIZE) * 100;
-        
-        if (
-          x - wPct/2 < p.x + pW/2 + 0.5 &&
-          x + wPct/2 > p.x - pW/2 - 0.5 &&
-          y - hPct/2 < p.y + pH/2 + 0.5 &&
-          y + hPct/2 > p.y - pH/2 - 0.5
-        ) {
+        const dx = x - p.x;
+        const dy = y - p.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 6) {
           overlaps = true;
           break;
         }
@@ -191,11 +185,9 @@ export default function App() {
           rotation: Math.random() * 360,
           scale,
           isFound: false,
-          opacity: Math.max(0.2, baseOpacity - (Math.random() * 0.15)), 
+          opacity: Math.max(0.3, baseOpacity - (Math.random() * 0.1)), 
           hueRotate: Math.random() * 360, 
           imageUrl: PUPPY_IMAGES[Math.floor(Math.random() * PUPPY_IMAGES.length)],
-          facingLeft,
-          aspectFactor
         });
       }
     }
@@ -215,9 +207,7 @@ export default function App() {
   };
 
   const handlePuppyFound = (id: string) => {
-    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-happy-puppy-bark-2792.mp3'); 
-    audio.volume = 0.2;
-    audio.play().catch(() => {});
+    playSfx('found');
 
     setGameState(prev => {
       const updatedPuppies = prev.puppies.map(p => 
@@ -225,18 +215,16 @@ export default function App() {
       );
       
       const allFound = updatedPuppies.every(p => p.isFound);
-      
       if (allFound) {
-        setTimeout(() => handleLevelClear(), 500);
+        setTimeout(() => handleLevelClear(), 800);
       }
-      
       return { ...prev, puppies: updatedPuppies };
     });
   };
 
   const handleLevelClear = () => {
+    playSfx('clear');
     const levelKey = `${selectedDifficulty}_${currentLevelId}`;
-    
     const isFirstClear = !progress.clearedLevels[levelKey];
     let pointsAwarded = 0;
     
@@ -263,38 +251,24 @@ export default function App() {
     }
   };
 
-  // --- Views ---
-
   const renderLogin = () => (
     <div className="flex flex-col h-full items-center justify-center p-8 bg-brand-light/30 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <i className="fas fa-paw absolute top-10 left-10 text-6xl text-brand rotate-12"></i>
-        <i className="fas fa-paw absolute bottom-20 right-10 text-8xl text-brand -rotate-12"></i>
-        <i className="fas fa-bone absolute top-1/2 left-1/4 text-5xl text-brand rotate-45"></i>
-      </div>
-
       <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm z-10 text-center">
         <div className="mx-auto mb-6 flex justify-center">
           <GameLogo className="w-28 h-28" />
         </div>
         <h1 className="text-3xl font-black text-slate-800 mb-2">FindMyPuppy</h1>
         <p className="text-slate-500 mb-6">Join the hide & seek adventure!</p>
-
         <div className="flex flex-col gap-4">
           <input 
             type="text" 
             placeholder="What's your name?"
             value={loginName}
             onChange={(e) => setLoginName(e.target.value)}
-            className="w-full px-5 py-4 rounded-xl border-2 border-slate-200 focus:border-brand focus:outline-none text-lg text-center font-bold text-slate-700 bg-slate-50"
+            className="w-full px-5 py-4 rounded-xl border-2 border-slate-200 focus:border-brand text-lg text-center font-bold text-slate-700 bg-slate-50"
             maxLength={12}
           />
-          <Button 
-            onClick={handleLogin} 
-            disabled={!loginName.trim()}
-            className="w-full bg-brand text-white hover:bg-brand-dark disabled:bg-slate-300"
-          >
+          <Button onClick={handleLogin} disabled={!loginName.trim()} className="w-full bg-brand text-white">
             Start Playing
           </Button>
         </div>
@@ -304,25 +278,7 @@ export default function App() {
 
   const renderHome = () => (
     <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
-         {/* Top Left Cluster */}
-         <i className="fas fa-paw absolute -top-4 -left-4 text-8xl text-brand-light/20 rotate-12"></i>
-         <i className="fas fa-bone absolute top-20 left-10 text-4xl text-slate-200 rotate-45"></i>
-         
-         {/* Top Right Cluster */}
-         <i className="fas fa-dog absolute top-10 -right-8 text-9xl text-brand-light/10 -rotate-12"></i>
-         
-         {/* Bottom Left */}
-         <i className="fas fa-paw absolute bottom-32 -left-6 text-7xl text-brand-light/15 -rotate-45"></i>
-         
-         {/* Bottom Right */}
-         <i className="fas fa-bone absolute bottom-10 right-10 text-6xl text-slate-200 rotate-90"></i>
-         <i className="fas fa-paw absolute -bottom-10 -right-4 text-9xl text-brand-light/20 -rotate-12"></i>
-      </div>
-
-      {/* Header */}
-      <header className="bg-white/90 backdrop-blur-sm px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b border-slate-100">
+      <header className="bg-white/90 backdrop-blur-sm px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-100 text-indigo-600 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg border-2 border-indigo-200">
              {progress.playerName.charAt(0).toUpperCase()}
@@ -332,48 +288,37 @@ export default function App() {
             <span className="text-lg font-black text-slate-800 leading-none">{progress.playerName}</span>
           </div>
         </div>
-        <div className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-full font-bold flex items-center gap-2 border border-yellow-200">
-          <i className="fas fa-trophy text-yellow-500"></i>
-          <span>{progress.totalScore}</span>
+        <div className="flex items-center gap-3">
+          <button onClick={toggleMute} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
+            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+          </button>
+          <div className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-full font-bold flex items-center gap-2 border border-yellow-200">
+            <i className="fas fa-trophy text-yellow-500"></i>
+            <span>{progress.totalScore}</span>
+          </div>
         </div>
       </header>
       
-      {/* Main Content */}
-      <main className="flex-1 px-6 py-6 overflow-y-auto flex flex-col items-center z-10 relative">
+      <main className="flex-1 px-6 py-6 overflow-y-auto flex flex-col items-center z-10">
         <div className="w-full max-w-sm space-y-6">
-          
           <div className="flex flex-col items-center mb-6">
              <GameLogo className="w-24 h-24 mb-4" />
-             <div className="text-center">
-                <h2 className="text-2xl font-bold text-slate-800">Select Difficulty</h2>
-                <p className="text-slate-500 text-sm font-medium">Choose your challenge level</p>
-             </div>
+             <h2 className="text-2xl font-bold text-slate-800">Select Difficulty</h2>
           </div>
-
           <div className="space-y-3">
             <DifficultyCard 
-              difficulty={Difficulty.EASY}
-              points={10}
-              color="bg-gradient-to-r from-green-400 to-green-500"
-              description="25 Puppies • Simple"
-              onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
+              difficulty={Difficulty.EASY} points={10} color="bg-gradient-to-r from-green-400 to-green-500" 
+              description="25 Puppies • Simple" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
             />
             <DifficultyCard 
-              difficulty={Difficulty.MEDIUM}
-              points={20}
-              color="bg-gradient-to-r from-blue-400 to-blue-500"
-              description="25 Puppies • Tricky"
-              onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
+              difficulty={Difficulty.MEDIUM} points={20} color="bg-gradient-to-r from-blue-400 to-blue-500" 
+              description="25 Puppies • Tricky" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
             />
             <DifficultyCard 
-              difficulty={Difficulty.HARD}
-              points={50}
-              color="bg-gradient-to-r from-rose-500 to-rose-600"
-              description="25 Puppies • Extreme"
-              onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
+              difficulty={Difficulty.HARD} points={50} color="bg-gradient-to-r from-rose-500 to-rose-600" 
+              description="25 Puppies • Extreme" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
             />
           </div>
-          
         </div>
       </main>
     </div>
@@ -387,7 +332,6 @@ export default function App() {
         </div>
         <h2 className="text-3xl font-black text-slate-800 mb-2">Level Cleared!</h2>
         <p className="text-slate-500 mb-8 font-medium">Amazing job, {progress.playerName}!</p>
-        
         <div className="space-y-3">
           {currentLevelId < 25 ? (
              <Button onClick={nextLevel} className="w-full bg-brand text-white hover:bg-brand-dark">
@@ -398,7 +342,6 @@ export default function App() {
               🎉 Difficulty Completed!
             </div>
           )}
-          
           <Button onClick={() => setView('LEVEL_SELECT')} className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200">
             Back to Levels
           </Button>
@@ -409,7 +352,6 @@ export default function App() {
 
   const renderGame = () => (
     <div className="flex flex-col h-full bg-slate-900">
-      {/* Game Header */}
       <div className="bg-slate-900 text-white p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800">
         <button onClick={() => setView('LEVEL_SELECT')} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
            <i className="fas fa-times text-xl"></i>
@@ -418,21 +360,26 @@ export default function App() {
            <span className="font-bold text-brand-light uppercase text-xs tracking-wider">{selectedDifficulty} • Level {currentLevelId}</span>
            <span className="text-xs text-slate-400 max-w-[150px] truncate text-center">{gameState.levelTheme || "Loading..."}</span>
         </div>
-        <div className="bg-slate-800 px-3 py-1.5 rounded-full text-sm font-mono text-green-400 border border-slate-700 flex items-center gap-2">
-          <i className="fas fa-paw text-xs"></i>
-          <span>{gameState.puppies.filter(p => p.isFound).length}/{gameState.puppies.length}</span>
-        </div>
+        <button 
+          onClick={toggleMute}
+          className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+        >
+          <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+        </button>
       </div>
 
-      {/* Game Area */}
       <div className="flex-1 relative overflow-hidden">
         <GameCanvas 
           backgroundImage={gameState.bgImage}
           puppies={gameState.puppies}
           onPuppyFound={handlePuppyFound}
           isLoading={gameState.loading}
+          difficulty={selectedDifficulty}
         />
-        
+        <div className="absolute top-4 right-4 bg-slate-800/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-mono text-green-400 border border-slate-700 flex items-center gap-2 pointer-events-none">
+          <i className="fas fa-paw text-xs"></i>
+          <span>{gameState.puppies.filter(p => p.isFound).length}/{gameState.puppies.length}</span>
+        </div>
       </div>
     </div>
   );
@@ -447,6 +394,8 @@ export default function App() {
           clearedLevels={progress.clearedLevels}
           onSelectLevel={handleLevelSelect}
           onBack={() => setView('HOME')}
+          isMuted={isMuted}
+          onToggleMute={toggleMute}
         />
       )}
       {view === 'GAME' && renderGame()}
