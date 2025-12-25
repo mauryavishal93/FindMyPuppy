@@ -56,7 +56,19 @@ export const generateLevelImage = async (theme: string): Promise<string> => {
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
-          { text: `Create a highly detailed, cartoon-style 2D illustration for a hidden object game. The scene is: ${theme}. It must be bright, sunlit, and cheerful. View is wide-angle. The image should be colorful, full of objects, patterns, and clutter to make finding hidden items challenging. Ensure this image is unique variation. Random Seed: ${randomness}. No text in image.` }
+          { text: `Create a whimsical, highly detailed, cartoon-style digital illustration for a hidden object game background. 
+          
+          Visual Style Requirements:
+          - Art Style: Warm, cozy, storybook illustration. Hand-drawn 2D aesthetic with soft outlines. Similar to Studio Ghibli or detailed European comic backgrounds.
+          - Lighting: HEAVILY SUNLIT. Golden hour or bright morning sunlight streaming in through windows or leaves. Warm color palette (golds, oranges, warm greens).
+          - Atmosphere: Adventurous, nostalgic, and cheerful.
+          - Complexity: Highly cluttered with many small objects, patterns, and details (essential for a hidden object game).
+          - Perspective: Wide shot, capturing a full room or landscape.
+          - RESTRICTIONS: NO photorealism. NO 3D rendering style. NO dark or gloomy scenes. 
+
+          Specific Scene: ${theme}.
+          
+          Ensure the image is unique and creative. Random Seed: ${randomness}. No text in image.` }
         ]
       },
       config: {
