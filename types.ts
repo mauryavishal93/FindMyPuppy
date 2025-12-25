@@ -28,6 +28,7 @@ export interface Puppy {
 }
 
 export interface UserProgress {
+  playerName: string;
   clearedLevels: { [key: string]: boolean }; // key format: "DIFFICULTY_ID" e.g., "EASY_1"
   totalScore: number;
   unlockedDifficulties: Difficulty[];

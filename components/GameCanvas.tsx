@@ -17,6 +17,20 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const [loaded, setLoaded] = useState(false);
   const [zoom, setZoom] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Refs for pinch zoom state
+  const touchState = useRef<{
+    initialDistance: number;
+    initialZoom: number;
+    isPinching: boolean;
+  }>({ initialDistance: 0, initialZoom: 1, isPinching: false });
+  
+  const zoomRef = useRef(zoom);
+
+  // Sync zoom ref
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   // Reset zoom when level changes
   useEffect(() => {
@@ -45,12 +59,61 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [loaded]);
 
-  const handleZoom = (delta: number) => {
-    setZoom(prev => {
-      const newZoom = prev + delta;
-      return Math.min(Math.max(newZoom, 0.5), 2.5); // Min 0.5x, Max 2.5x
-    });
-  };
+  // Add touch event listeners for pinch zoom
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+        
+        touchState.current = {
+          initialDistance: distance,
+          initialZoom: zoomRef.current,
+          isPinching: true
+        };
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && touchState.current.isPinching) {
+        e.preventDefault(); // Prevent default browser actions during pinch
+        
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+
+        if (touchState.current.initialDistance > 0) {
+          const scale = distance / touchState.current.initialDistance;
+          // Calculate new zoom with limits (0.5x to 3.0x)
+          const newZoom = Math.min(Math.max(touchState.current.initialZoom * scale, 0.5), 3.0);
+          setZoom(newZoom);
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+       if (e.touches.length < 2) {
+         touchState.current.isPinching = false;
+       }
+    };
+
+    // Use { passive: false } to allow preventDefault inside touchmove
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, []); // Bind once
 
   if (isLoading || !backgroundImage || !loaded) {
     return (
@@ -156,31 +219,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             })}
           </div>
         </div>
-      </div>
-
-      {/* Zoom Controls Overlay */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-3 z-30">
-        <button 
-          onClick={() => handleZoom(0.25)}
-          className="bg-white/90 text-slate-800 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-white active:scale-95 transition-all backdrop-blur-sm"
-          title="Zoom In"
-        >
-          <i className="fas fa-plus"></i>
-        </button>
-        <button 
-          onClick={() => setZoom(1)}
-          className="bg-white/90 text-slate-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-sm font-bold hover:bg-white active:scale-95 transition-all backdrop-blur-sm"
-          title="Reset Zoom"
-        >
-          1x
-        </button>
-        <button 
-          onClick={() => handleZoom(-0.25)}
-          className="bg-white/90 text-slate-800 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-xl font-bold hover:bg-white active:scale-95 transition-all backdrop-blur-sm"
-          title="Zoom Out"
-        >
-          <i className="fas fa-minus"></i>
-        </button>
       </div>
     </div>
   );

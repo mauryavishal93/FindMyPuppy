@@ -6,16 +6,16 @@ import { Difficulty } from "../types";
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 const THEMES = [
-  "A cozy living room filled with colorful toys and blankets",
-  "A messy kitchen after a baking session with flour everywhere",
-  "A vibrant sunny park with bushes, flowers, and picnic baskets",
-  "A magical candy forest with giant lollipops and gummy bears",
-  "A futuristic robot workshop with scattered parts and neon lights",
-  "An ancient library with stacks of books and scrolls",
-  "A crowded beach day with umbrellas and sandcastles",
-  "A snowy village square with market stalls",
-  "A dense jungle with exotic plants and ruins",
-  "A space station cafeteria with alien food",
+  "A sunlit explorer's study room cluttered with ancient maps, compasses, and artifacts",
+  "A cozy sunlit cottage kitchen with golden light streaming onto breakfast dishes",
+  "A vibrant sunlit garden filled with blooming flowers, butterflies, and gardening tools",
+  "A sunlit wooden hut in a forest clearing with hiking gear scattered around",
+  "A bright sunlit beach cabana with seashells, nets, and summer toys",
+  "A sunlit greenhouse packed with exotic plants, clay pots, and watering cans",
+  "A sunlit attic with dust motes dancing in light beams among old trunks and treasures",
+  "A sunlit village market stall overflowing with fresh fruits and colorful baskets",
+  "A sunlit park picnic area with checkered blankets and picnic baskets",
+  "A sunlit treehouse with wooden toys and leaves dappled in sunshine",
 ];
 
 export const generateLevelTheme = async (levelId: number, difficulty: Difficulty): Promise<string> => {
@@ -29,6 +29,7 @@ export const generateLevelTheme = async (levelId: number, difficulty: Difficulty
       model: 'gemini-3-flash-preview',
       contents: `Generate a short, vivid description (1 sentence) for a hidden object game background scene. 
       Theme ID: ${levelId}. Difficulty: ${difficulty}. 
+      The theme MUST be a bright, 'sunlit' environment (e.g. sunlit study, sunlit garden, sunlit hut, sunlit explorer's room). 
       Make it cluttered and detailed, suitable for hiding small objects.`,
     });
     return response.text?.trim() || THEMES[0];
@@ -55,7 +56,7 @@ export const generateLevelImage = async (theme: string): Promise<string> => {
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
-          { text: `Create a highly detailed, cartoon-style 2D illustration for a hidden object game. The scene is: ${theme}. View is wide-angle. The image should be colorful, full of objects, patterns, and clutter to make finding hidden items challenging. Ensure this image is unique variation. Random Seed: ${randomness}. No text in image.` }
+          { text: `Create a highly detailed, cartoon-style 2D illustration for a hidden object game. The scene is: ${theme}. It must be bright, sunlit, and cheerful. View is wide-angle. The image should be colorful, full of objects, patterns, and clutter to make finding hidden items challenging. Ensure this image is unique variation. Random Seed: ${randomness}. No text in image.` }
         ]
       },
       config: {
