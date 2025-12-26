@@ -308,7 +308,7 @@ export default function App() {
             maxLength={12}
           />
           <Button onClick={handleLogin} disabled={!loginName.trim()} className="w-full bg-gradient-to-r from-brand to-brand-dark text-white shadow-brand/30 hover:shadow-brand/50 hover:scale-[1.02]">
-            Start Playing <i className="fas fa-play ml-2 text-sm"></i>
+            Start<i className="fas fa-play ml-2 text-sm"></i>
           </Button>
         </div>
       </div>

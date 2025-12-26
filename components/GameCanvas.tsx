@@ -129,7 +129,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     };
   }, []); // Bind once
 
-  if (isLoading || !backgroundImage || !loaded) {
+  if (isLoading || !backgroundImage) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 animate-pulse">
         <i className="fas fa-paw text-6xl mb-4 text-brand-light animate-bounce"></i>
@@ -199,17 +199,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               transform: `scale(${zoom})`,
               transformOrigin: '0 0',
               // Use background color as ultimate fallback if image fails
-              backgroundColor: '#1e293b', 
+              backgroundColor: '#334155', // Lighter slate for better contrast if image is missing 
               backgroundImage: loadError ? 'none' : `url(${backgroundImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
           >
             {loadError && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none">
-                 <i className="fas fa-image text-9xl text-slate-700 mb-4"></i>
-                 <p className="text-slate-500 text-2xl font-bold">Image Failed to Load</p>
-                 <p className="text-slate-600">You can still find the puppies!</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center opacity-70 pointer-events-none text-white">
+                 <div className="bg-white/10 p-8 rounded-3xl backdrop-blur-md border border-white/20 text-center">
+                   <i className="fas fa-image text-6xl mb-4 text-white/50"></i>
+                   <p className="text-xl font-bold mb-2">Background Image Missing</p>
+                   <p className="text-sm opacity-80 max-w-xs">We couldn't load the scene, but you can still find the puppies!</p>
+                 </div>
               </div>
             )}
             
