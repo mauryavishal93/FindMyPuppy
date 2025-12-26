@@ -69,7 +69,7 @@ const DifficultyCard: React.FC<{
   </div>
 );
 
-type PaymentStatus = 'idle' | 'processing' | 'confirming' | 'verifying';
+type PaymentStatus = 'idle' | 'processing' | 'verifying';
 
 const PaymentModal: React.FC<{ 
   onClose: () => void; 
@@ -77,24 +77,24 @@ const PaymentModal: React.FC<{
   onPayWithPoints: () => void;
   currentPoints: number;
   paymentStatus: PaymentStatus;
-  onConfirmPayment: (confirmed: boolean) => void;
-}> = ({ onClose, onPay, onPayWithPoints, currentPoints, paymentStatus, onConfirmPayment }) => {
+  onCancelPayment: () => void;
+}> = ({ onClose, onPay, onPayWithPoints, currentPoints, paymentStatus, onCancelPayment }) => {
   
   if (paymentStatus === 'processing' || paymentStatus === 'verifying') {
     return (
       <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-        <div className="bg-white rounded-3xl p-8 w-full max-w-xs text-center shadow-2xl animate-fade-in">
+        <div className="bg-white rounded-3xl p-8 w-full max-w-xs text-center shadow-2xl animate-fade-in mx-4">
            <div className="animate-spin text-4xl text-brand mb-4 mx-auto w-min"><i className="fas fa-circle-notch"></i></div>
            <h3 className="text-xl font-bold text-slate-800 mb-2">
-             {paymentStatus === 'verifying' ? 'Verifying...' : 'Processing Payment...'}
+             {paymentStatus === 'verifying' ? 'Verifying...' : 'Processing...'}
            </h3>
            <p className="text-sm text-slate-500 mb-6">
              {paymentStatus === 'verifying' 
-               ? 'Checking transaction status.' 
-               : 'Please complete the transaction in your UPI app.'}
+               ? 'Confirming payment status.' 
+               : 'Redirecting to UPI app...'}
            </p>
            {paymentStatus === 'processing' && (
-             <button onClick={() => onConfirmPayment(false)} className="text-slate-400 font-bold text-xs uppercase tracking-wider hover:text-slate-600">
+             <button onClick={onCancelPayment} className="text-slate-400 font-bold text-xs uppercase tracking-wider hover:text-slate-600">
                Cancel
              </button>
            )}
@@ -103,40 +103,11 @@ const PaymentModal: React.FC<{
     );
   }
 
-  if (paymentStatus === 'confirming') {
-    return (
-       <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-        <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl animate-fade-in">
-           <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-500 text-2xl animate-bounce-short">
-             <i className="fas fa-question"></i>
-           </div>
-           <h3 className="text-xl font-bold text-slate-800 mb-2">Payment Status</h3>
-           <p className="text-sm text-slate-500 mb-6">Did you complete the payment of ₹9?</p>
-           
-           <div className="flex flex-col gap-3">
-             <button 
-               onClick={() => onConfirmPayment(true)}
-               className="w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-green-600 transition-all active:scale-95"
-             >
-               Yes, Payment Successful
-             </button>
-             <button 
-               onClick={() => onConfirmPayment(false)}
-               className="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all active:scale-95"
-             >
-               No, Retry Payment
-             </button>
-           </div>
-        </div>
-      </div>
-    );
-  }
-
   // Idle State
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl relative">
-        <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4 shrink-0">
            <i className="fas fa-lightbulb text-3xl text-brand-dark animate-bounce-short"></i>
         </div>
         <h3 className="text-2xl font-black text-slate-800 mb-1">Need a Hint?</h3>
@@ -454,6 +425,8 @@ export default function App() {
     }
   };
   
+  // Payment Automation Logic
+  
   const handlePayment = () => {
     setPaymentStatus('processing');
 
@@ -471,42 +444,36 @@ export default function App() {
     // Attempt to open UPI app
     setTimeout(() => {
         window.location.href = upiUrl;
-    }, 500);
-
-    // Watch for the user returning to the app
+    }, 1000);
+  };
+  
+  // Listen for app return to trigger simulated verification
+  useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-         // When user returns, assume they *might* have paid. Ask for confirmation.
-         setPaymentStatus('confirming');
-         document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (document.visibilityState === 'visible' && paymentStatus === 'processing') {
+         setPaymentStatus('verifying');
+         
+         // Simulate network verification (Auto-Success)
+         setTimeout(() => {
+             playSfx('pay');
+             setProgress(prev => ({...prev, premiumHints: (prev.premiumHints || 0) + 100}));
+             setPaymentStatus('idle');
+             setShowPaymentModal(false);
+         }, 3000);
       }
     };
 
-    // Add listener
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Safety: If they don't return via visibility change or stay on page
-    // we allow manual cancellation via the modal UI.
-  };
-
-  const handleConfirmPayment = (confirmed: boolean) => {
-    if (confirmed) {
-      setPaymentStatus('verifying');
-      
-      // Simulate verification delay
-      setTimeout(() => {
-        playSfx('pay');
-        setProgress(prev => ({...prev, premiumHints: (prev.premiumHints || 0) + 100}));
-        
-        // Reset and close
-        setPaymentStatus('idle');
-        setShowPaymentModal(false);
-      }, 1500);
-    } else {
-      // User cancelled or failed payment
-      // Return to 'idle' state so they can try again
-      setPaymentStatus('idle');
+    if (paymentStatus === 'processing') {
+        document.addEventListener('visibilitychange', handleVisibilityChange);
     }
+
+    return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [paymentStatus]);
+
+  const handleCancelPayment = () => {
+    setPaymentStatus('idle');
   };
 
   const handlePayWithPoints = () => {
@@ -542,7 +509,7 @@ export default function App() {
          <i className="fas fa-cloud absolute top-16 right-1/4 text-8xl text-white/60"></i>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm z-10 text-center border-4 border-white/50 relative">
+      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm z-10 text-center border-4 border-white/50 relative overflow-y-auto overflow-x-hidden max-h-[90vh]">
         <div className="mx-auto mb-6 flex justify-center relative">
           <div className="absolute inset-0 bg-brand-light/30 blur-2xl rounded-full scale-150"></div>
           <GameLogo className="w-32 h-32 relative z-10 drop-shadow-lg" />
@@ -610,7 +577,7 @@ export default function App() {
         </div>
       </header>
       
-      <main className="flex-1 px-6 py-8 overflow-y-auto flex flex-col items-center z-10 w-full">
+      <main className="flex-1 px-6 py-8 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full">
         <div className="w-full max-w-sm space-y-8">
           <div className="flex flex-col items-center text-center bg-white/60 p-6 rounded-3xl backdrop-blur-sm shadow-sm border border-white/60 relative overflow-hidden">
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent opacity-50"></div>
@@ -675,17 +642,17 @@ export default function App() {
     
     return (
       <div className="flex flex-col h-full bg-slate-900">
-        <div className="bg-slate-900/90 backdrop-blur text-white p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800">
-          <button onClick={() => setView('LEVEL_SELECT')} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
-             <i className="fas fa-times text-xl"></i>
+        <div className="bg-slate-900/90 backdrop-blur text-white p-2 sm:p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800 shrink-0">
+          <button onClick={() => setView('LEVEL_SELECT')} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
+             <i className="fas fa-times text-lg sm:text-xl"></i>
           </button>
           <div className="flex flex-col items-center">
-             <span className="font-bold text-brand-light uppercase text-[10px] tracking-widest">{selectedDifficulty} • Level {currentLevelId}</span>
-             <span className="text-xs text-slate-400 max-w-[150px] truncate text-center opacity-80">{gameState.levelTheme || "Loading..."}</span>
+             <span className="font-bold text-brand-light uppercase text-[9px] sm:text-[10px] tracking-widest">{selectedDifficulty} • Level {currentLevelId}</span>
+             <span className="text-[10px] sm:text-xs text-slate-400 max-w-[120px] sm:max-w-[150px] truncate text-center opacity-80">{gameState.levelTheme || "Loading..."}</span>
           </div>
           <button 
             onClick={toggleMute}
-            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
           >
             <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
           </button>
@@ -702,24 +669,24 @@ export default function App() {
           />
           
           {/* HUD Elements */}
-          <div className="absolute top-4 right-4 flex flex-col gap-2 items-end pointer-events-none">
-            <div className="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 shadow-lg">
-              <i className="fas fa-paw text-xs"></i>
+          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col gap-2 items-end pointer-events-none">
+            <div className="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 shadow-lg">
+              <i className="fas fa-paw text-[10px] sm:text-xs"></i>
               <span className="font-bold">{gameState.puppies.filter(p => p.isFound).length} / {gameState.puppies.length}</span>
             </div>
           </div>
           
           {/* Hint Button (Pointer Events Enabled) */}
-          <div className="absolute bottom-6 right-6 z-20">
+          <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-6 z-20 pb-[env(safe-area-inset-bottom)]">
              <button 
                onClick={handleUseHint}
                disabled={gameState.loading || showHints}
                className={`
-                 w-14 h-14 rounded-full shadow-2xl border-2 flex items-center justify-center transition-all duration-300 active:scale-95
+                 w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-2xl border-2 flex items-center justify-center transition-all duration-300 active:scale-95
                  ${showHints ? 'bg-yellow-400 border-yellow-200 scale-110' : 'bg-slate-800/90 border-slate-600 hover:bg-slate-700'}
                `}
              >
-               <i className={`fas fa-lightbulb text-2xl ${showHints ? 'text-white animate-pulse' : 'text-yellow-400'}`}></i>
+               <i className={`fas fa-lightbulb text-xl sm:text-2xl ${showHints ? 'text-white animate-pulse' : 'text-yellow-400'}`}></i>
                
                {/* Badge for remaining hints */}
                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center border border-white">
@@ -733,7 +700,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen max-w-lg mx-auto bg-white shadow-2xl overflow-hidden relative font-sans">
+    <div className="h-[100dvh] w-full max-w-lg mx-auto bg-white shadow-2xl overflow-hidden relative font-sans">
       {view === 'LOGIN' && renderLogin()}
       {view === 'HOME' && renderHome()}
       {view === 'LEVEL_SELECT' && (
@@ -756,7 +723,7 @@ export default function App() {
           onPayWithPoints={handlePayWithPoints}
           currentPoints={progress.totalScore}
           paymentStatus={paymentStatus}
-          onConfirmPayment={handleConfirmPayment}
+          onCancelPayment={handleCancelPayment}
         />
       )}
     </div>
