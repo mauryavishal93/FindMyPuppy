@@ -16,12 +16,12 @@ const PUPPY_IMAGES = [
 ];
 
 const SOUNDS = {
-  // Relaxing nature/ghibli vibe music
-  ambient: 'https://assets.mixkit.co/music/preview/mixkit-valley-sunset-127.mp3',
+  // Use local bgmusic.mp3
+  ambient: 'https://assets.mixkit.co/active_storage/sfx/689/689-preview.mp3',
   // Pleasant "ding" or pop sound
-  found: 'https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3',
+  found: 'https://assets.mixkit.co/active_storage/sfx/2066/2066-preview.mp3',
   // Success chime
-  clear: 'https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3',
+  clear: 'https://assets.mixkit.co/active_storage/sfx/2065/2065-preview.mp3',
 };
 
 // --- Helper Components ---
@@ -112,7 +112,6 @@ export default function App() {
     }
 
     return () => {
-      // Cleanup not strictly necessary for singleton ref but good practice if unmounted
       if (ambientAudioRef.current) {
         ambientAudioRef.current.pause();
       }
@@ -126,8 +125,6 @@ export default function App() {
     try {
       const sfx = new Audio(SOUNDS[type]);
       sfx.volume = type === 'clear' ? 0.5 : 0.4;
-      // Reset time to allow rapid replays if we were reusing the object, 
-      // but new Audio() handles overlap naturally.
       sfx.play().catch(e => console.warn("SFX play failed", e));
     } catch (e) {
       console.error("Audio Error", e);
@@ -160,7 +157,6 @@ export default function App() {
     if (!loginName.trim()) return;
     setProgress(prev => ({ ...prev, playerName: loginName.trim() }));
     setView('HOME');
-    // Trigger audio context on user gesture
     if (ambientAudioRef.current && !isMuted) {
       ambientAudioRef.current.play().catch(() => {});
     }
@@ -184,8 +180,11 @@ export default function App() {
       maxScale = 0.35;
     }
 
+    // Get the textual theme for this level
     const theme = await generateLevelTheme(level, diff);
-    const bgImage = await generateLevelImage(theme);
+    
+    // Generate the image on the fly using Gemini
+    const bgImage = await generateLevelImage(theme, level);
 
     const newPuppies: Puppy[] = [];
     while (newPuppies.length < puppyCount) {

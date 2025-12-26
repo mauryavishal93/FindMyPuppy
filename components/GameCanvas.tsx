@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Puppy, Difficulty } from '../types';
 
@@ -45,6 +46,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const img = new Image();
       img.src = backgroundImage;
       img.onload = () => setLoaded(true);
+      // If image fails to load (e.g., file missing), just proceed so we don't hang
+      img.onerror = () => {
+        console.error(`Failed to load background: ${backgroundImage}`);
+        setLoaded(true); 
+      };
       setLoaded(false);
     }
   }, [backgroundImage]);
@@ -122,7 +128,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 animate-pulse">
         <i className="fas fa-paw text-6xl mb-4 text-brand-light animate-bounce"></i>
         <p className="text-lg font-medium text-brand-dark">Sniffing out a location...</p>
-        <p className="text-xs mt-2 text-slate-400">Powered by Gemini AI</p>
       </div>
     );
   }
