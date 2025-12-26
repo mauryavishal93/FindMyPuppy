@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { Difficulty } from "../types";
 
 // Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: 'AIzaSyCiZ3GoQx2S3QYkrCmtiN4SXBp5cKn7rUY'});
 
 // --- THEMES ---
 const THEMES = [
