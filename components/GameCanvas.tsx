@@ -8,19 +8,27 @@ interface GameCanvasProps {
   onPuppyFound: (id: string) => void;
   isLoading: boolean;
   difficulty: Difficulty;
+  showHints: boolean;
 }
+
+// Base map size
+const MAP_SIZE = 1600;
 
 export const GameCanvas: React.FC<GameCanvasProps> = ({ 
   backgroundImage, 
   puppies, 
   onPuppyFound,
   isLoading,
-  difficulty
+  difficulty,
+  showHints
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [zoom, setZoom] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Start with a very low min zoom to ensure we don't block zooming out before calculation
+  const minZoomRef = useRef(0.1); 
+  const prevShowHintsRef = useRef(showHints);
   
   // Refs for pinch zoom state
   const touchState = useRef<{
@@ -42,6 +50,36 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     setLoadError(false);
     setLoaded(false);
   }, [backgroundImage]);
+
+  // Calculate minimum zoom to fit screen using ResizeObserver for robustness
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+
+    const updateMinZoom = () => {
+      if (scrollContainerRef.current) {
+        const { clientWidth, clientHeight } = scrollContainerRef.current;
+        const widthRatio = clientWidth / MAP_SIZE;
+        const heightRatio = clientHeight / MAP_SIZE;
+        // Allow zooming out until the whole image fits strictly
+        // We use Math.min to ensure it fits completely within the viewport
+        minZoomRef.current = Math.min(widthRatio, heightRatio);
+        
+        // Optional: If current zoom is significantly invalid (smaller than min), we could clamp it,
+        // but usually we want to respect user's state. 
+        // If the user resizes the window and the map becomes smaller than allowed, we could auto-zoom,
+        // but for now, we just update the limit for the next interaction.
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+        updateMinZoom();
+    });
+    
+    observer.observe(scrollContainerRef.current);
+    updateMinZoom(); // Initial check
+
+    return () => observer.disconnect();
+  }, [loaded]);
 
   // Preload image
   useEffect(() => {
@@ -73,6 +111,46 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [loaded]);
 
+  // Auto-scroll to hidden puppies when hint is activated
+  useEffect(() => {
+    // Check if hint was just activated (transition from false -> true)
+    if (showHints && !prevShowHintsRef.current && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const { scrollTop, scrollLeft, clientWidth, clientHeight } = container;
+      
+      const hiddenPuppies = puppies.filter(p => !p.isFound);
+      
+      if (hiddenPuppies.length > 0) {
+        // Check if any are visible in the current viewport
+        const isAnyVisible = hiddenPuppies.some(p => {
+          const px = (p.x / 100) * MAP_SIZE * zoom;
+          const py = (p.y / 100) * MAP_SIZE * zoom;
+          // Add margin to consider the element visible
+          return (
+            px >= scrollLeft &&
+            px <= scrollLeft + clientWidth &&
+            py >= scrollTop &&
+            py <= scrollTop + clientHeight
+          );
+        });
+
+        // If no hidden puppies are visible, scroll to the first one found
+        if (!isAnyVisible) {
+          const target = hiddenPuppies[0];
+          const targetX = (target.x / 100) * MAP_SIZE * zoom;
+          const targetY = (target.y / 100) * MAP_SIZE * zoom;
+
+          container.scrollTo({
+            left: targetX - clientWidth / 2,
+            top: targetY - clientHeight / 2,
+            behavior: 'smooth'
+          });
+        }
+      }
+    }
+    prevShowHintsRef.current = showHints;
+  }, [showHints, puppies, zoom]);
+
   // Add wheel event listener for trackpad pinch zoom
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -84,7 +162,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         e.preventDefault();
         const delta = -e.deltaY;
         const sensitivity = 0.005;
-        setZoom(prev => Math.min(Math.max(prev + (delta * sensitivity), 0.5), 4.0));
+        // Use mutable ref for minZoom to ensure fresh value inside event listener
+        setZoom(prev => Math.min(Math.max(prev + (delta * sensitivity), minZoomRef.current), 4.0));
       }
     };
 
@@ -121,8 +200,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
         if (touchState.current.initialDistance > 0) {
           const scale = distance / touchState.current.initialDistance;
-          // Calculate new zoom with limits (0.5x to 4.0x)
-          const newZoom = Math.min(Math.max(touchState.current.initialZoom * scale, 0.5), 4.0);
+          // Calculate new zoom with limits
+          const newZoom = Math.min(Math.max(touchState.current.initialZoom * scale, minZoomRef.current), 4.0);
           setZoom(newZoom);
         }
       }
@@ -157,16 +236,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     );
   }
 
-  // Base map size
-  const MAP_SIZE = 1600;
-
   // Camouflage logic helper
   const getPuppyStyles = (puppy: Puppy) => {
+    // If hints are active and puppy isn't found, make it very visible
+    if (showHints && !puppy.isFound) {
+      return {
+        mixBlendMode: 'normal' as const,
+        opacity: 1,
+        filter: 'drop-shadow(0 0 15px rgba(255, 215, 0, 0.9)) brightness(1.2)',
+        extraClass: 'animate-pulse ring-4 ring-yellow-400 rounded-full'
+      };
+    }
+
     if (puppy.isFound) {
       return {
         mixBlendMode: 'normal' as const,
         opacity: 1,
         filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.4)) brightness(1.2) saturate(1.3)',
+        extraClass: ''
       };
     }
 
@@ -191,24 +278,30 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         break;
     }
 
-    return { mixBlendMode, filter, opacity };
+    return { mixBlendMode, filter, opacity, extraClass: '' };
   };
+
+  // Determine if content is smaller than viewport for centering
+  const isContentSmaller = scrollContainerRef.current && 
+    (MAP_SIZE * zoom < scrollContainerRef.current.clientWidth || MAP_SIZE * zoom < scrollContainerRef.current.clientHeight);
 
   return (
     <div className="w-full h-full relative">
        {/* Scrollable Area */}
       <div 
         ref={scrollContainerRef}
-        className="w-full h-full overflow-auto bg-slate-900 shadow-inner hide-scrollbar"
+        className={`w-full h-full overflow-auto bg-slate-900 shadow-inner hide-scrollbar ${isContentSmaller ? 'flex items-center justify-center' : ''}`}
         style={{
           WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-x pan-y' // Allow browser panning but let us handle pinch via events
         }}
       >
         <div 
            style={{ 
              width: `${MAP_SIZE * zoom}px`, 
              height: `${MAP_SIZE * zoom}px`,
-             position: 'relative'
+             position: 'relative',
+             flexShrink: 0, // Prevent shrinking in flex container
            }}
         >
           <div 
@@ -237,7 +330,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
             {/* Puppy Layer */}
             {puppies.map((puppy) => {
               const baseSize = Math.max(30, puppy.scale * 120);
-              const { mixBlendMode, filter, opacity } = getPuppyStyles(puppy);
+              const { mixBlendMode, filter, opacity, extraClass } = getPuppyStyles(puppy);
               
               return (
                 <div
@@ -246,7 +339,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                     e.stopPropagation();
                     if (!puppy.isFound) onPuppyFound(puppy.id);
                   }}
-                  className={`absolute transition-all duration-500 cursor-pointer flex items-center justify-center
+                  className={`absolute transition-all duration-500 cursor-pointer flex items-center justify-center ${extraClass}
                     ${puppy.isFound ? 'z-50 pointer-events-none' : 'hover:scale-110 z-10'}
                   `}
                   style={{
@@ -267,9 +360,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   <img 
                     src={puppy.imageUrl} 
                     alt="puppy"
-                    className="w-full h-full object-contain"
+                    className={`w-full h-full object-contain ${puppy.isFound ? 'found-celebration' : ''}`}
                     draggable={false}
-                    style={{ filter: 'none' }}
+                    style={!puppy.isFound && !showHints ? { filter: 'none' } : undefined}
                   />
                 </div>
               );

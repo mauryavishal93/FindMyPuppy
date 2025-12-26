@@ -1,3 +1,4 @@
+
 export enum Difficulty {
   EASY = 'Easy',
   MEDIUM = 'Medium',
@@ -29,6 +30,7 @@ export interface UserProgress {
   clearedLevels: { [key: string]: boolean }; // key format: "DIFFICULTY_ID" e.g., "EASY_1"
   totalScore: number;
   unlockedDifficulties: Difficulty[];
+  premiumHints: number;
 }
 
 export interface GameSession {

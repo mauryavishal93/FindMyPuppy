@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Difficulty, UserProgress, Puppy } from './types';
 import { generateLevelTheme, generateLevelImage } from './services/geminiService';
@@ -22,6 +21,10 @@ const SOUNDS = {
   found: 'https://assets.mixkit.co/active_storage/sfx/2066/2066-preview.mp3',
   // Success chime
   clear: 'https://assets.mixkit.co/active_storage/sfx/2065/2065-preview.mp3',
+  // Hint sound
+  hint: 'https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3',
+  // Cash register/Success
+  pay: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'
 };
 
 // --- Helper Components ---
@@ -66,6 +69,149 @@ const DifficultyCard: React.FC<{
   </div>
 );
 
+type PaymentStatus = 'idle' | 'processing' | 'confirming' | 'verifying';
+
+const PaymentModal: React.FC<{ 
+  onClose: () => void; 
+  onPay: () => void; 
+  onPayWithPoints: () => void;
+  currentPoints: number;
+  paymentStatus: PaymentStatus;
+  onConfirmPayment: (confirmed: boolean) => void;
+}> = ({ onClose, onPay, onPayWithPoints, currentPoints, paymentStatus, onConfirmPayment }) => {
+  
+  if (paymentStatus === 'processing' || paymentStatus === 'verifying') {
+    return (
+      <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className="bg-white rounded-3xl p-8 w-full max-w-xs text-center shadow-2xl animate-fade-in">
+           <div className="animate-spin text-4xl text-brand mb-4 mx-auto w-min"><i className="fas fa-circle-notch"></i></div>
+           <h3 className="text-xl font-bold text-slate-800 mb-2">
+             {paymentStatus === 'verifying' ? 'Verifying...' : 'Processing Payment...'}
+           </h3>
+           <p className="text-sm text-slate-500 mb-6">
+             {paymentStatus === 'verifying' 
+               ? 'Checking transaction status.' 
+               : 'Please complete the transaction in your UPI app.'}
+           </p>
+           {paymentStatus === 'processing' && (
+             <button onClick={() => onConfirmPayment(false)} className="text-slate-400 font-bold text-xs uppercase tracking-wider hover:text-slate-600">
+               Cancel
+             </button>
+           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (paymentStatus === 'confirming') {
+    return (
+       <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+        <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl animate-fade-in">
+           <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-500 text-2xl animate-bounce-short">
+             <i className="fas fa-question"></i>
+           </div>
+           <h3 className="text-xl font-bold text-slate-800 mb-2">Payment Status</h3>
+           <p className="text-sm text-slate-500 mb-6">Did you complete the payment of ₹9?</p>
+           
+           <div className="flex flex-col gap-3">
+             <button 
+               onClick={() => onConfirmPayment(true)}
+               className="w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-green-600 transition-all active:scale-95"
+             >
+               Yes, Payment Successful
+             </button>
+             <button 
+               onClick={() => onConfirmPayment(false)}
+               className="w-full bg-slate-100 text-slate-600 font-bold py-3 rounded-xl hover:bg-slate-200 transition-all active:scale-95"
+             >
+               No, Retry Payment
+             </button>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Idle State
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl relative">
+        <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4">
+           <i className="fas fa-lightbulb text-3xl text-brand-dark animate-bounce-short"></i>
+        </div>
+        <h3 className="text-2xl font-black text-slate-800 mb-1">Need a Hint?</h3>
+        <p className="text-slate-500 text-sm mb-6 font-medium">
+          You're out of free hints for this level.
+        </p>
+
+        {/* Pay with Points */}
+        <div className="bg-indigo-50 rounded-2xl p-4 mb-4 border border-indigo-100 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-3">
+             <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Use Points</span>
+             <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-lg shadow-sm">
+               <i className="fas fa-trophy text-yellow-500 text-xs"></i>
+               <span className="text-indigo-900 font-black text-xs">{currentPoints}</span>
+             </div>
+          </div>
+          
+          <button 
+            onClick={onPayWithPoints}
+            disabled={currentPoints < 10}
+            className="w-full bg-indigo-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-600 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 group"
+          >
+            <div className="flex flex-col items-start leading-none">
+               <span className="text-[10px] opacity-80 font-medium">Pay 10 Points</span>
+               <span className="text-sm">Get 2 Hints</span>
+            </div>
+            <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+          </button>
+          {currentPoints < 10 && (
+             <p className="text-[10px] text-red-500 mt-2 font-bold flex items-center justify-center gap-1">
+               <i className="fas fa-lock"></i> Not enough points
+             </p>
+          )}
+        </div>
+
+        <div className="relative flex py-2 items-center mb-4">
+          <div className="flex-grow border-t border-slate-200"></div>
+          <span className="flex-shrink mx-4 text-slate-300 text-[10px] font-bold uppercase tracking-widest">OR</span>
+          <div className="flex-grow border-t border-slate-200"></div>
+        </div>
+        
+        {/* Pay Money */}
+        <button 
+          onClick={onPay}
+          className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-yellow-200 hover:scale-105 transition-transform mb-3 flex items-center justify-between px-4 relative overflow-hidden"
+        >
+          {/* Tag */}
+          <div className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-bl-lg">
+             91% OFF
+          </div>
+
+          <div className="flex flex-col items-start leading-none">
+             <span className="text-[10px] opacity-90 font-bold text-yellow-50 mb-0.5 uppercase tracking-wide">Special Offer</span>
+             <div className="flex items-center gap-2">
+               <span className="text-xs text-yellow-200/80 line-through decoration-red-500/80 decoration-2 font-medium">₹99</span>
+               <span className="text-2xl font-black drop-shadow-sm">₹9</span>
+             </div>
+          </div>
+          <div className="text-right">
+             <div className="text-[10px] opacity-90">Get</div>
+             <div className="font-black text-lg leading-none">+100 Hints</div>
+          </div>
+        </button>
+        
+        <button 
+          onClick={onClose}
+          className="text-slate-400 text-xs font-bold hover:text-slate-600 uppercase tracking-wide py-2"
+        >
+          No thanks
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- Main App ---
 
 export default function App() {
@@ -75,6 +221,14 @@ export default function App() {
   const [loginName, setLoginName] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   
+  // Payment States
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('idle');
+  
+  // Hint State
+  const [hintsUsedInLevel, setHintsUsedInLevel] = useState(0);
+  const [showHints, setShowHints] = useState(false);
+  
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
@@ -83,7 +237,8 @@ export default function App() {
       playerName: '',
       clearedLevels: {},
       totalScore: 0,
-      unlockedDifficulties: [Difficulty.EASY]
+      unlockedDifficulties: [Difficulty.EASY],
+      premiumHints: 0
     };
   });
 
@@ -120,7 +275,7 @@ export default function App() {
 
   const toggleMute = () => setIsMuted(prev => !prev);
 
-  const playSfx = (type: 'found' | 'clear') => {
+  const playSfx = (type: 'found' | 'clear' | 'hint' | 'pay') => {
     if (isMuted) return;
     try {
       const sfx = new Audio(SOUNDS[type]);
@@ -164,7 +319,9 @@ export default function App() {
 
   const initLevel = useCallback(async (level: number, diff: Difficulty) => {
     setGameState(prev => ({ ...prev, loading: true, bgImage: null, puppies: [], levelTheme: '' }));
-    
+    setHintsUsedInLevel(0); // Reset hints for new level
+    setShowHints(false);
+
     const puppyCount = 25;
     let baseOpacity = 0.5; 
     let minScale = 0.3; 
@@ -268,6 +425,100 @@ export default function App() {
     }));
 
     setView('WIN');
+  };
+  
+  const activateHint = () => {
+     playSfx('hint');
+     setShowHints(true);
+     // Hide hints after 3 seconds
+     setTimeout(() => setShowHints(false), 3000);
+  };
+
+  const handleUseHint = () => {
+    if (showHints) return; // Already showing
+    
+    // Check Free Hints first (0 and 1 are valid for < 2)
+    if (hintsUsedInLevel < 2) {
+      setHintsUsedInLevel(prev => prev + 1);
+      activateHint();
+    } 
+    // Check Premium Hints
+    else if (progress.premiumHints && progress.premiumHints > 0) {
+      setProgress(prev => ({...prev, premiumHints: prev.premiumHints - 1}));
+      activateHint();
+    } 
+    // Out of hints
+    else {
+      setPaymentStatus('idle'); // Ensure status is idle when opening
+      setShowPaymentModal(true);
+    }
+  };
+  
+  const handlePayment = () => {
+    setPaymentStatus('processing');
+
+    // UPI Configuration
+    const upiId = 'mauryavishal93-1@okaxis';
+    const payeeName = 'Vishal Maurya';
+    const aid = 'uGICAgIDA3qHVVA';
+    const transactionNote = '100 Hints Pack';
+    const amount = '9.00';
+    const currency = 'INR';
+
+    // Construct UPI Deep Link
+    const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&aid=${aid}&tn=${encodeURIComponent(transactionNote)}&am=${amount}&cu=${currency}`;
+
+    // Attempt to open UPI app
+    setTimeout(() => {
+        window.location.href = upiUrl;
+    }, 500);
+
+    // Watch for the user returning to the app
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+         // When user returns, assume they *might* have paid. Ask for confirmation.
+         setPaymentStatus('confirming');
+         document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+    };
+
+    // Add listener
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Safety: If they don't return via visibility change or stay on page
+    // we allow manual cancellation via the modal UI.
+  };
+
+  const handleConfirmPayment = (confirmed: boolean) => {
+    if (confirmed) {
+      setPaymentStatus('verifying');
+      
+      // Simulate verification delay
+      setTimeout(() => {
+        playSfx('pay');
+        setProgress(prev => ({...prev, premiumHints: (prev.premiumHints || 0) + 100}));
+        
+        // Reset and close
+        setPaymentStatus('idle');
+        setShowPaymentModal(false);
+      }, 1500);
+    } else {
+      // User cancelled or failed payment
+      // Return to 'idle' state so they can try again
+      setPaymentStatus('idle');
+    }
+  };
+
+  const handlePayWithPoints = () => {
+    if (progress.totalScore >= 10) {
+      playSfx('pay');
+      setProgress(prev => ({
+        ...prev,
+        totalScore: prev.totalScore - 10,
+        premiumHints: prev.premiumHints + 2
+      }));
+      setShowPaymentModal(false);
+    }
   };
 
   const nextLevel = () => {
@@ -417,39 +668,69 @@ export default function App() {
     </div>
   );
 
-  const renderGame = () => (
-    <div className="flex flex-col h-full bg-slate-900">
-      <div className="bg-slate-900/90 backdrop-blur text-white p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800">
-        <button onClick={() => setView('LEVEL_SELECT')} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
-           <i className="fas fa-times text-xl"></i>
-        </button>
-        <div className="flex flex-col items-center">
-           <span className="font-bold text-brand-light uppercase text-[10px] tracking-widest">{selectedDifficulty} • Level {currentLevelId}</span>
-           <span className="text-xs text-slate-400 max-w-[150px] truncate text-center opacity-80">{gameState.levelTheme || "Loading..."}</span>
+  const renderGame = () => {
+    // Determine hint button visual state
+    const freeHintsRemaining = Math.max(0, 2 - hintsUsedInLevel);
+    const hasPremiumHints = progress.premiumHints > 0;
+    
+    return (
+      <div className="flex flex-col h-full bg-slate-900">
+        <div className="bg-slate-900/90 backdrop-blur text-white p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800">
+          <button onClick={() => setView('LEVEL_SELECT')} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
+             <i className="fas fa-times text-xl"></i>
+          </button>
+          <div className="flex flex-col items-center">
+             <span className="font-bold text-brand-light uppercase text-[10px] tracking-widest">{selectedDifficulty} • Level {currentLevelId}</span>
+             <span className="text-xs text-slate-400 max-w-[150px] truncate text-center opacity-80">{gameState.levelTheme || "Loading..."}</span>
+          </div>
+          <button 
+            onClick={toggleMute}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+          >
+            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+          </button>
         </div>
-        <button 
-          onClick={toggleMute}
-          className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-        >
-          <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
-        </button>
-      </div>
-
-      <div className="flex-1 relative overflow-hidden">
-        <GameCanvas 
-          backgroundImage={gameState.bgImage}
-          puppies={gameState.puppies}
-          onPuppyFound={handlePuppyFound}
-          isLoading={gameState.loading}
-          difficulty={selectedDifficulty}
-        />
-        <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 pointer-events-none shadow-lg">
-          <i className="fas fa-paw text-xs"></i>
-          <span className="font-bold">{gameState.puppies.filter(p => p.isFound).length} / {gameState.puppies.length}</span>
+  
+        <div className="flex-1 relative overflow-hidden">
+          <GameCanvas 
+            backgroundImage={gameState.bgImage}
+            puppies={gameState.puppies}
+            onPuppyFound={handlePuppyFound}
+            isLoading={gameState.loading}
+            difficulty={selectedDifficulty}
+            showHints={showHints}
+          />
+          
+          {/* HUD Elements */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2 items-end pointer-events-none">
+            <div className="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 shadow-lg">
+              <i className="fas fa-paw text-xs"></i>
+              <span className="font-bold">{gameState.puppies.filter(p => p.isFound).length} / {gameState.puppies.length}</span>
+            </div>
+          </div>
+          
+          {/* Hint Button (Pointer Events Enabled) */}
+          <div className="absolute bottom-6 right-6 z-20">
+             <button 
+               onClick={handleUseHint}
+               disabled={gameState.loading || showHints}
+               className={`
+                 w-14 h-14 rounded-full shadow-2xl border-2 flex items-center justify-center transition-all duration-300 active:scale-95
+                 ${showHints ? 'bg-yellow-400 border-yellow-200 scale-110' : 'bg-slate-800/90 border-slate-600 hover:bg-slate-700'}
+               `}
+             >
+               <i className={`fas fa-lightbulb text-2xl ${showHints ? 'text-white animate-pulse' : 'text-yellow-400'}`}></i>
+               
+               {/* Badge for remaining hints */}
+               <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center border border-white">
+                  {freeHintsRemaining > 0 ? freeHintsRemaining : (hasPremiumHints ? progress.premiumHints : '+')}
+               </div>
+             </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="h-screen w-screen max-w-lg mx-auto bg-white shadow-2xl overflow-hidden relative font-sans">
@@ -467,6 +748,17 @@ export default function App() {
       )}
       {view === 'GAME' && renderGame()}
       {view === 'WIN' && renderWin()}
+      
+      {showPaymentModal && (
+        <PaymentModal 
+          onClose={() => setShowPaymentModal(false)} 
+          onPay={handlePayment} 
+          onPayWithPoints={handlePayWithPoints}
+          currentPoints={progress.totalScore}
+          paymentStatus={paymentStatus}
+          onConfirmPayment={handleConfirmPayment}
+        />
+      )}
     </div>
   );
 }
