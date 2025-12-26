@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Difficulty, UserProgress, Puppy } from './types';
 import { generateLevelTheme, generateLevelImage } from './services/geminiService';
@@ -15,9 +16,12 @@ const PUPPY_IMAGES = [
 ];
 
 const SOUNDS = {
-  ambient: 'https://assets.mixkit.co/music/preview/mixkit-kids-adventure-609.mp3',
-  found: 'https://assets.mixkit.co/sfx/preview/mixkit-happy-puppy-bark-2792.mp3',
-  clear: 'https://assets.mixkit.co/sfx/preview/mixkit-magic-marimba-notif-2487.mp3',
+  // Relaxing nature/ghibli vibe music
+  ambient: 'https://assets.mixkit.co/music/preview/mixkit-valley-sunset-127.mp3',
+  // Pleasant "ding" or pop sound
+  found: 'https://assets.mixkit.co/sfx/preview/mixkit-bonus-earned-in-video-game-2058.mp3',
+  // Success chime
+  clear: 'https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3',
 };
 
 // --- Helper Components ---
@@ -85,20 +89,33 @@ export default function App() {
 
   // Handle Background Audio
   useEffect(() => {
+    // Initialize audio object once
     if (!ambientAudioRef.current) {
       ambientAudioRef.current = new Audio(SOUNDS.ambient);
       ambientAudioRef.current.loop = true;
-      ambientAudioRef.current.volume = 0.3;
+      ambientAudioRef.current.volume = 0.2; // Softer background
     }
     
-    if (view !== 'LOGIN' && !isMuted) {
-      ambientAudioRef.current.play().catch(e => console.log("Autoplay blocked, waiting for interaction"));
+    // Play logic: Only play if logged in (interacted) and not muted
+    const shouldPlay = view !== 'LOGIN' && !isMuted;
+
+    if (shouldPlay) {
+      const playPromise = ambientAudioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log("Autoplay prevented:", error);
+          // Auto-resume might happen on next interaction
+        });
+      }
     } else {
       ambientAudioRef.current.pause();
     }
 
     return () => {
-      ambientAudioRef.current?.pause();
+      // Cleanup not strictly necessary for singleton ref but good practice if unmounted
+      if (ambientAudioRef.current) {
+        ambientAudioRef.current.pause();
+      }
     };
   }, [view, isMuted]);
 
@@ -106,9 +123,15 @@ export default function App() {
 
   const playSfx = (type: 'found' | 'clear') => {
     if (isMuted) return;
-    const sfx = new Audio(SOUNDS[type]);
-    sfx.volume = type === 'clear' ? 0.5 : 0.2;
-    sfx.play().catch(() => {});
+    try {
+      const sfx = new Audio(SOUNDS[type]);
+      sfx.volume = type === 'clear' ? 0.5 : 0.4;
+      // Reset time to allow rapid replays if we were reusing the object, 
+      // but new Audio() handles overlap naturally.
+      sfx.play().catch(e => console.warn("SFX play failed", e));
+    } catch (e) {
+      console.error("Audio Error", e);
+    }
   };
 
   useEffect(() => {
@@ -137,7 +160,10 @@ export default function App() {
     if (!loginName.trim()) return;
     setProgress(prev => ({ ...prev, playerName: loginName.trim() }));
     setView('HOME');
-    ambientAudioRef.current?.play().catch(() => {});
+    // Trigger audio context on user gesture
+    if (ambientAudioRef.current && !isMuted) {
+      ambientAudioRef.current.play().catch(() => {});
+    }
   };
 
   const initLevel = useCallback(async (level: number, diff: Difficulty) => {
