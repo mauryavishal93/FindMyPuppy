@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     define: {
       // This is crucial: it exposes the system env variable API_KEY to your client-side code
       // as process.env.API_KEY to match your existing code structure.
-      'process.env.API_KEY': JSON.stringify('AIzaSyCiZ3GoQx2S3QYkrCmtiN4SXBp5cKn7rUY'),
+      'process.env.API_KEY': JSON.stringify(env.API_KEY),
     },
     server: {
       host: true, // Listen on all network interfaces (0.0.0.0)
