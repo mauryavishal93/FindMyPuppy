@@ -50,7 +50,14 @@ const FALLBACK_BG_IMAGES = [
   "https://i.pinimg.com/1200x/0a/2f/fb/0a2ffbe057f5f5b5e7def0366f20d25e.jpg",
   "https://i.pinimg.com/1200x/1e/90/ac/1e90acddbf954fdd3ddbaa8142a9e2fe.jpg",
   "https://i.pinimg.com/1200x/f4/b7/9c/f4b79ca82021062bb448cbf75d087e49.jpg",
-  "https://i.pinimg.com/1200x/b5/8d/1e/b58d1e36a15f1dcb95f182620357ad16.jpg"
+  "https://i.pinimg.com/1200x/b5/8d/1e/b58d1e36a15f1dcb95f182620357ad16.jpg",
+  "https://i.pinimg.com/736x/f6/ce/d3/f6ced38951c83fa6d4200c1a60f1d700.jpg",
+  "https://i.pinimg.com/736x/d7/d4/9f/d7d49fa3f3f28448455c3fddf6858f7f.jpg",
+  "https://i.pinimg.com/1200x/0a/42/22/0a42228911f2b349aa509bcb5bcddc8d.jpg",
+  "https://i.pinimg.com/736x/c8/d9/20/c8d920bf98f717e5e966346e12051042.jpg",
+  "https://i.pinimg.com/736x/6c/35/21/6c352191bce9b60ff99870be5aa35e82.jpg",
+  "https://i.pinimg.com/736x/6c/95/08/6c9508299670b488055d94c93ba52952.jpg",
+  "https://i.pinimg.com/1200x/60/5d/0a/605d0acbd691a5d005f9664519b89404.jpg"
 ];
 
 export const generateLevelTheme = async (levelId: number, difficulty: Difficulty): Promise<string> => {

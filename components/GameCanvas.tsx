@@ -73,6 +73,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [loaded]);
 
+  // Add wheel event listener for trackpad pinch zoom
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Allow pinch-to-zoom on trackpads (Ctrl + Wheel)
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const delta = -e.deltaY;
+        const sensitivity = 0.005;
+        setZoom(prev => Math.min(Math.max(prev + (delta * sensitivity), 0.5), 4.0));
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, []);
+
   // Add touch event listeners for pinch zoom
   useEffect(() => {
     const container = scrollContainerRef.current;
