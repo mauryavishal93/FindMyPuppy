@@ -18,6 +18,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   difficulty
 }) => {
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [zoom, setZoom] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
@@ -38,6 +39,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Reset zoom when level changes
   useEffect(() => {
     setZoom(1);
+    setLoadError(false);
+    setLoaded(false);
   }, [backgroundImage]);
 
   // Preload image
@@ -45,13 +48,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     if (backgroundImage) {
       const img = new Image();
       img.src = backgroundImage;
-      img.onload = () => setLoaded(true);
+      img.onload = () => {
+        setLoaded(true);
+        setLoadError(false);
+      };
       // If image fails to load (e.g., file missing), just proceed so we don't hang
       img.onerror = () => {
         console.error(`Failed to load background: ${backgroundImage}`);
+        setLoadError(true);
         setLoaded(true); 
       };
-      setLoaded(false);
     }
   }, [backgroundImage]);
 
@@ -192,11 +198,21 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               height: `${MAP_SIZE}px`,
               transform: `scale(${zoom})`,
               transformOrigin: '0 0',
-              backgroundImage: `url(${backgroundImage})`,
+              // Use background color as ultimate fallback if image fails
+              backgroundColor: '#1e293b', 
+              backgroundImage: loadError ? 'none' : `url(${backgroundImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
           >
+            {loadError && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center opacity-50 pointer-events-none">
+                 <i className="fas fa-image text-9xl text-slate-700 mb-4"></i>
+                 <p className="text-slate-500 text-2xl font-bold">Image Failed to Load</p>
+                 <p className="text-slate-600">You can still find the puppies!</p>
+              </div>
+            )}
+            
             {/* Puppy Layer */}
             {puppies.map((puppy) => {
               const baseSize = Math.max(30, puppy.scale * 120);
@@ -222,9 +238,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                       rotate(${puppy.rotation}deg) 
                       ${puppy.isFound ? 'scale(2.5)' : 'scale(1)'}
                     `,
-                    mixBlendMode,
-                    opacity,
-                    filter,
+                    mixBlendMode: loadError ? 'normal' : mixBlendMode,
+                    opacity: loadError ? 1 : opacity,
+                    filter: loadError ? 'none' : filter,
                   }}
                 >
                   <img 

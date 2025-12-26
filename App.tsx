@@ -45,23 +45,23 @@ const DifficultyCard: React.FC<{
 }> = ({ difficulty, points, color, onClick, description }) => (
   <div 
     onClick={onClick}
-    className={`${color} text-white p-4 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-20 w-full`}
+    className={`${color} text-white p-4 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-20 w-full hover:shadow-xl hover:-translate-y-1`}
   >
     <div className="absolute -left-4 -bottom-4 opacity-20 text-6xl group-hover:scale-110 transition-transform rotate-12">
       <i className="fas fa-paw"></i>
     </div>
     
     <div className="z-10 flex flex-col pl-2">
-      <h3 className="text-2xl font-black leading-none">{difficulty}</h3>
-      <p className="text-white/90 text-xs font-medium mt-1 opacity-90">{description}</p>
+      <h3 className="text-2xl font-black leading-none drop-shadow-sm">{difficulty}</h3>
+      <p className="text-white/90 text-xs font-medium mt-1 opacity-90 shadow-sm">{description}</p>
     </div>
 
     <div className="z-10 flex flex-col items-end pr-1">
-      <div className="flex items-center gap-1 bg-white/20 px-2 py-1 rounded-lg backdrop-blur-sm">
-        <i className="fas fa-star text-yellow-300 text-xs"></i>
+      <div className="flex items-center gap-1 bg-white/25 px-2 py-1 rounded-lg backdrop-blur-md shadow-sm">
+        <i className="fas fa-star text-yellow-300 text-xs filter drop-shadow"></i>
         <span className="font-bold text-sm">{points}</span>
       </div>
-      <span className="text-[10px] mt-1 opacity-80 uppercase font-bold tracking-wider">Points</span>
+      <span className="text-[10px] mt-1 opacity-90 uppercase font-bold tracking-wider drop-shadow-sm">Points</span>
     </div>
   </div>
 );
@@ -189,8 +189,10 @@ export default function App() {
     const newPuppies: Puppy[] = [];
     while (newPuppies.length < puppyCount) {
       const scale = minScale + (Math.random() * (maxScale - minScale));
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
+      // Added 5% margin to ensure puppies are fully inside the image boundaries
+      const margin = 5;
+      const x = margin + Math.random() * (100 - (margin * 2));
+      const y = margin + Math.random() * (100 - (margin * 2));
       
       let overlaps = false;
       for (const p of newPuppies) {
@@ -277,24 +279,36 @@ export default function App() {
   };
 
   const renderLogin = () => (
-    <div className="flex flex-col h-full items-center justify-center p-8 bg-brand-light/30 relative overflow-hidden">
-      <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm z-10 text-center">
-        <div className="mx-auto mb-6 flex justify-center">
-          <GameLogo className="w-28 h-28" />
+    <div className="flex flex-col h-full items-center justify-center p-8 bg-gradient-to-br from-pink-100 via-white to-blue-100 relative overflow-hidden">
+      {/* Creative Background Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[30%] bg-pink-200/40 blur-[80px] rounded-full animate-pulse"></div>
+         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[40%] bg-blue-200/40 blur-[80px] rounded-full animate-pulse delay-700"></div>
+         
+         <i className="fas fa-paw absolute top-20 left-10 text-6xl text-brand/10 -rotate-12 animate-bounce-short"></i>
+         <i className="fas fa-paw absolute bottom-32 right-12 text-7xl text-blue-400/10 rotate-12"></i>
+         <i className="fas fa-bone absolute top-1/2 right-8 text-5xl text-yellow-400/20 rotate-45"></i>
+         <i className="fas fa-cloud absolute top-16 right-1/4 text-8xl text-white/60"></i>
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm z-10 text-center border-4 border-white/50 relative">
+        <div className="mx-auto mb-6 flex justify-center relative">
+          <div className="absolute inset-0 bg-brand-light/30 blur-2xl rounded-full scale-150"></div>
+          <GameLogo className="w-32 h-32 relative z-10 drop-shadow-lg" />
         </div>
-        <h1 className="text-3xl font-black text-slate-800 mb-2">FindMyPuppy</h1>
-        <p className="text-slate-500 mb-6">Join the hide & seek adventure!</p>
+        <h1 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">FindMyPuppy</h1>
+        <p className="text-slate-500 mb-8 font-medium">Join the ultimate hide & seek adventure!</p>
         <div className="flex flex-col gap-4">
           <input 
             type="text" 
             placeholder="What's your name?"
             value={loginName}
             onChange={(e) => setLoginName(e.target.value)}
-            className="w-full px-5 py-4 rounded-xl border-2 border-slate-200 focus:border-brand text-lg text-center font-bold text-slate-700 bg-slate-50"
+            className="w-full px-5 py-4 rounded-2xl border-2 border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all text-lg text-center font-bold text-slate-700 bg-white/50"
             maxLength={12}
           />
-          <Button onClick={handleLogin} disabled={!loginName.trim()} className="w-full bg-brand text-white">
-            Start Playing
+          <Button onClick={handleLogin} disabled={!loginName.trim()} className="w-full bg-gradient-to-r from-brand to-brand-dark text-white shadow-brand/30 hover:shadow-brand/50 hover:scale-[1.02]">
+            Start Playing <i className="fas fa-play ml-2 text-sm"></i>
           </Button>
         </div>
       </div>
@@ -302,46 +316,70 @@ export default function App() {
   );
 
   const renderHome = () => (
-    <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden">
-      <header className="bg-white/90 backdrop-blur-sm px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0">
+    <div className="flex flex-col h-full bg-gradient-to-b from-sky-100 via-white to-green-50 relative overflow-hidden">
+      
+      {/* Decorative Landscape Background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+        {/* Sky */}
+        <i className="fas fa-cloud absolute top-10 left-[-20px] text-8xl text-white/80 animate-[pulse_4s_ease-in-out_infinite]"></i>
+        <i className="fas fa-cloud absolute top-24 right-[-40px] text-9xl text-white/60 animate-[pulse_5s_ease-in-out_infinite] delay-1000"></i>
+        <div className="absolute top-10 right-10 w-24 h-24 bg-yellow-300/20 rounded-full blur-xl"></div>
+        <i className="fas fa-sun absolute top-5 right-5 text-yellow-400/30 text-8xl animate-[spin_60s_linear_infinite]"></i>
+
+        {/* Floating Icons */}
+        <i className="fas fa-paw absolute top-1/4 left-10 text-4xl text-brand/10 -rotate-12"></i>
+        <i className="fas fa-paw absolute top-1/3 right-20 text-3xl text-brand/10 rotate-12"></i>
+        <i className="fas fa-bone absolute bottom-1/2 left-5 text-4xl text-slate-400/10 rotate-45"></i>
+
+        {/* Ground */}
+        <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-green-100/50 to-transparent"></div>
+        <i className="fas fa-tree absolute bottom-20 left-[-20px] text-8xl text-green-200/60"></i>
+        <i className="fas fa-tree absolute bottom-32 right-[-30px] text-7xl text-green-200/50 transform -scale-x-100"></i>
+        <i className="fas fa-dog absolute bottom-5 right-10 text-9xl text-brand-dark/5 rotate-[-5deg]"></i>
+      </div>
+
+      <header className="bg-white/70 backdrop-blur-md px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b border-white/50">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-100 text-indigo-600 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg border-2 border-indigo-200">
+          <div className="bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-11 h-11 rounded-full flex items-center justify-center font-black text-xl border-2 border-white shadow-sm">
              {progress.playerName.charAt(0).toUpperCase()}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">Player</span>
-            <span className="text-lg font-black text-slate-800 leading-none">{progress.playerName}</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Player</span>
+            <span className="text-lg font-black text-slate-800 leading-none drop-shadow-sm">{progress.playerName}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={toggleMute} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors">
+          <button onClick={toggleMute} className="w-11 h-11 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-600 hover:bg-white hover:text-brand transition-colors shadow-sm">
             <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
           </button>
-          <div className="bg-yellow-100 text-yellow-800 px-3 py-1.5 rounded-full font-bold flex items-center gap-2 border border-yellow-200">
-            <i className="fas fa-trophy text-yellow-500"></i>
-            <span>{progress.totalScore}</span>
+          <div className="bg-white/80 backdrop-blur-sm text-yellow-700 px-4 py-2 rounded-full font-bold flex items-center gap-2 border-2 border-white shadow-sm">
+            <i className="fas fa-trophy text-yellow-500 text-lg drop-shadow-sm"></i>
+            <span className="text-lg">{progress.totalScore}</span>
           </div>
         </div>
       </header>
       
-      <main className="flex-1 px-6 py-6 overflow-y-auto flex flex-col items-center z-10">
-        <div className="w-full max-w-sm space-y-6">
-          <div className="flex flex-col items-center mb-6">
-             <GameLogo className="w-24 h-24 mb-4" />
-             <h2 className="text-2xl font-bold text-slate-800">Select Difficulty</h2>
+      <main className="flex-1 px-6 py-8 overflow-y-auto flex flex-col items-center z-10 w-full">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="flex flex-col items-center text-center bg-white/60 p-6 rounded-3xl backdrop-blur-sm shadow-sm border border-white/60 relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent opacity-50"></div>
+             <GameLogo className="w-24 h-24 mb-4 drop-shadow-md transform hover:scale-105 transition-transform duration-500" />
+             <h2 className="text-3xl font-black text-slate-800 tracking-tight">Select Difficulty</h2>
+             <p className="text-slate-600 font-medium text-sm mt-1">Where are the puppies hiding today?</p>
           </div>
-          <div className="space-y-3">
+          
+          <div className="space-y-4 perspective-1000">
             <DifficultyCard 
-              difficulty={Difficulty.EASY} points={10} color="bg-gradient-to-r from-green-400 to-green-500" 
-              description="25 Puppies • Simple" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
+              difficulty={Difficulty.EASY} points={10} color="bg-gradient-to-r from-emerald-400 to-teal-500" 
+              description="25 Puppies • Simple Fun" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
             />
             <DifficultyCard 
-              difficulty={Difficulty.MEDIUM} points={20} color="bg-gradient-to-r from-blue-400 to-blue-500" 
-              description="25 Puppies • Tricky" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
+              difficulty={Difficulty.MEDIUM} points={20} color="bg-gradient-to-r from-blue-400 to-indigo-500" 
+              description="25 Puppies • Tricky Spots" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
             />
             <DifficultyCard 
-              difficulty={Difficulty.HARD} points={50} color="bg-gradient-to-r from-rose-500 to-rose-600" 
-              description="25 Puppies • Extreme" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
+              difficulty={Difficulty.HARD} points={50} color="bg-gradient-to-r from-rose-500 to-pink-600" 
+              description="25 Puppies • Expert Seek" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
             />
           </div>
         </div>
@@ -350,21 +388,25 @@ export default function App() {
   );
 
   const renderWin = () => (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
-        <div className="w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg border-4 border-white">
-           <i className="fas fa-trophy text-5xl text-white"></i>
+    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
+        {/* Confetti Background effect */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400"></div>
+        
+        <div className="w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border-4 border-white relative z-10">
+           <i className="fas fa-trophy text-5xl text-white drop-shadow-md"></i>
+           <i className="fas fa-star absolute -top-2 -right-2 text-3xl text-yellow-200 animate-bounce"></i>
         </div>
         <h2 className="text-3xl font-black text-slate-800 mb-2">Level Cleared!</h2>
         <p className="text-slate-500 mb-8 font-medium">Amazing job, {progress.playerName}!</p>
         <div className="space-y-3">
           {currentLevelId < 25 ? (
-             <Button onClick={nextLevel} className="w-full bg-brand text-white hover:bg-brand-dark">
+             <Button onClick={nextLevel} className="w-full bg-brand text-white hover:bg-brand-dark shadow-lg shadow-brand/30">
                Next Level <i className="fas fa-arrow-right ml-2"></i>
              </Button>
           ) : (
-            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-xl mb-4 font-bold border border-yellow-200">
-              🎉 Difficulty Completed!
+            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-xl mb-4 font-bold border border-yellow-200 flex items-center justify-center gap-2">
+              <i className="fas fa-crown"></i> Difficulty Completed!
             </div>
           )}
           <Button onClick={() => setView('LEVEL_SELECT')} className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200">
@@ -377,13 +419,13 @@ export default function App() {
 
   const renderGame = () => (
     <div className="flex flex-col h-full bg-slate-900">
-      <div className="bg-slate-900 text-white p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800">
+      <div className="bg-slate-900/90 backdrop-blur text-white p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800">
         <button onClick={() => setView('LEVEL_SELECT')} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
            <i className="fas fa-times text-xl"></i>
         </button>
         <div className="flex flex-col items-center">
-           <span className="font-bold text-brand-light uppercase text-xs tracking-wider">{selectedDifficulty} • Level {currentLevelId}</span>
-           <span className="text-xs text-slate-400 max-w-[150px] truncate text-center">{gameState.levelTheme || "Loading..."}</span>
+           <span className="font-bold text-brand-light uppercase text-[10px] tracking-widest">{selectedDifficulty} • Level {currentLevelId}</span>
+           <span className="text-xs text-slate-400 max-w-[150px] truncate text-center opacity-80">{gameState.levelTheme || "Loading..."}</span>
         </div>
         <button 
           onClick={toggleMute}
@@ -401,9 +443,9 @@ export default function App() {
           isLoading={gameState.loading}
           difficulty={selectedDifficulty}
         />
-        <div className="absolute top-4 right-4 bg-slate-800/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-mono text-green-400 border border-slate-700 flex items-center gap-2 pointer-events-none">
+        <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 pointer-events-none shadow-lg">
           <i className="fas fa-paw text-xs"></i>
-          <span>{gameState.puppies.filter(p => p.isFound).length}/{gameState.puppies.length}</span>
+          <span className="font-bold">{gameState.puppies.filter(p => p.isFound).length} / {gameState.puppies.length}</span>
         </div>
       </div>
     </div>
