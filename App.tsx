@@ -150,23 +150,23 @@ const DifficultyCard: React.FC<{
 }> = ({ difficulty, points, color, onClick, description }) => (
   <div 
     onClick={onClick}
-    className={`${color} text-white p-4 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-20 w-full hover:shadow-xl hover:-translate-y-1`}
+    className={`${color} text-white p-3 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-16 w-full hover:shadow-xl hover:-translate-y-1`}
   >
-    <div className="absolute -left-4 -bottom-4 opacity-20 text-6xl group-hover:scale-110 transition-transform rotate-12">
+    <div className="absolute -left-3 -bottom-3 opacity-20 text-5xl group-hover:scale-110 transition-transform rotate-12">
       <i className="fas fa-paw"></i>
     </div>
     
-    <div className="z-10 flex flex-col pl-2">
-      <h3 className="text-2xl font-black leading-none drop-shadow-sm">{difficulty}</h3>
-      <p className="text-white/90 text-xs font-medium mt-1 opacity-90 shadow-sm">{description}</p>
+    <div className="z-10 flex flex-col pl-1">
+      <h3 className="text-lg font-black leading-none drop-shadow-sm">{difficulty}</h3>
+      <p className="text-white/90 text-[10px] font-medium mt-0.5 opacity-90 shadow-sm">{description}</p>
     </div>
 
     <div className="z-10 flex flex-col items-end pr-1">
-      <div className="flex items-center gap-1 bg-white/25 px-2 py-1 rounded-lg backdrop-blur-md shadow-sm">
-        <i className="fas fa-star text-yellow-300 text-xs filter drop-shadow"></i>
-        <span className="font-bold text-sm">{points}</span>
+      <div className="flex items-center gap-1 bg-white/25 px-2 py-0.5 rounded-lg backdrop-blur-md shadow-sm">
+        <i className="fas fa-star text-yellow-300 text-[10px] filter drop-shadow"></i>
+        <span className="font-bold text-xs">{points}</span>
       </div>
-      <span className="text-[10px] mt-1 opacity-90 uppercase font-bold tracking-wider drop-shadow-sm">Points</span>
+      <span className="text-[9px] mt-0.5 opacity-90 uppercase font-bold tracking-wider drop-shadow-sm">Points</span>
     </div>
   </div>
 );
@@ -1019,53 +1019,53 @@ export default function App() {
           {renderThemeBackground()}
         </div>
 
-        <header className={`${activeTheme.headerBg} backdrop-blur-md px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b`}>
-          <div className="flex items-center gap-3">
-            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-11 h-11 rounded-full flex items-center justify-center font-black text-xl border-2 border-white shadow-sm`}>
+        <header className={`${activeTheme.headerBg} backdrop-blur-md px-4 py-2 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b shrink-0 h-16`}>
+          <div className="flex items-center gap-2">
+            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-9 h-9 rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-sm`}>
                {progress.playerName.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col">
-              <span className={`text-[10px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text}`}>Player</span>
-              <span className={`text-lg font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text}`}>Player</span>
+              <span className={`text-sm font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
              {/* Theme Toggle Button */}
             <button 
               onClick={() => setShowThemeModal(true)} 
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
             >
-              <i className="fas fa-paint-brush text-sm"></i>
+              <i className="fas fa-paint-brush text-xs"></i>
             </button>
 
-            <button onClick={toggleMute} className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}>
-              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+            <button onClick={toggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}>
+              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-xs`}></i>
             </button>
             
             <button 
               onClick={() => setShowInfoModal(true)} 
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
             >
-              <i className="fas fa-info text-sm"></i>
+              <i className="fas fa-info text-xs"></i>
             </button>
 
-            <div className={`backdrop-blur-sm px-4 py-2 rounded-full font-bold flex items-center gap-2 border-2 border-white shadow-sm ${activeTheme.cardBg} ${activeTheme.accent}`}>
-              <i className="fas fa-trophy text-lg drop-shadow-sm"></i>
-              <span className="text-lg">{progress.totalScore}</span>
+            <div className={`backdrop-blur-sm px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5 border-2 border-white shadow-sm ${activeTheme.cardBg} ${activeTheme.accent}`}>
+              <i className="fas fa-trophy text-sm drop-shadow-sm"></i>
+              <span className="text-sm">{progress.totalScore}</span>
             </div>
           </div>
         </header>
         
-        <main className="flex-1 px-6 py-8 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
-          <div className="w-full max-w-sm space-y-8">
-            <div className={`flex flex-col items-center text-center p-6 rounded-3xl backdrop-blur-sm shadow-sm border relative overflow-hidden ${activeTheme.cardBg}`}>
+        <main className="flex-1 px-4 py-4 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
+          <div className="w-full max-w-sm space-y-4">
+            <div className={`flex flex-col items-center text-center p-4 rounded-3xl backdrop-blur-sm shadow-sm border relative overflow-hidden ${activeTheme.cardBg}`}>
                <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>
-               <GameLogo className="w-24 h-24 mb-4 drop-shadow-md transform hover:scale-105 transition-transform duration-500" />
-               <h2 className={`text-3xl font-black tracking-tight ${activeTheme.text}`}>Select Difficulty</h2>
-               <p className={`font-medium text-sm mt-1 ${activeTheme.subText}`}>Where are the puppies hiding today?</p>
+               <GameLogo className="w-16 h-16 mb-2 drop-shadow-md transform hover:scale-105 transition-transform duration-500" />
+               <h2 className={`text-2xl font-black tracking-tight ${activeTheme.text}`}>Select Difficulty</h2>
+               <p className={`font-medium text-xs mt-0.5 ${activeTheme.subText}`}>Where are the puppies hiding today?</p>
             </div>
             
-            <div className="space-y-4 perspective-1000">
+            <div className="space-y-3 perspective-1000">
               <DifficultyCard 
                 difficulty={Difficulty.EASY} points={10} color={activeTheme.id === 'night' ? "bg-gradient-to-r from-indigo-600 to-blue-500" : "bg-gradient-to-r from-emerald-400 to-teal-500"}
                 description="100 Levels • Relaxed" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
@@ -1082,24 +1082,24 @@ export default function App() {
               {/* Buy Hints Shop Card */}
               <div 
                 onClick={openHintShop}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-20 w-full hover:shadow-xl hover:-translate-y-1 mt-6 border-2 border-yellow-300"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-3 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-16 w-full hover:shadow-xl hover:-translate-y-1 mt-4 border-2 border-yellow-300"
               >
-                <div className="absolute -left-4 -bottom-4 opacity-20 text-6xl group-hover:scale-110 transition-transform rotate-12">
+                <div className="absolute -left-3 -bottom-3 opacity-20 text-5xl group-hover:scale-110 transition-transform rotate-12">
                   <i className="fas fa-lightbulb"></i>
                 </div>
                 
-                <div className="z-10 flex flex-col pl-2">
-                  <h3 className="text-2xl font-black leading-none drop-shadow-sm">Buy Hints</h3>
-                  <p className="text-white/90 text-xs font-medium mt-1 opacity-90 shadow-sm">
+                <div className="z-10 flex flex-col pl-1">
+                  <h3 className="text-lg font-black leading-none drop-shadow-sm">Buy Hints</h3>
+                  <p className="text-white/90 text-[10px] font-medium mt-0.5 opacity-90 shadow-sm">
                     {progress.premiumHints} Hints Available
                   </p>
                 </div>
 
                 <div className="z-10 flex flex-col items-end pr-1">
-                  <div className="flex items-center gap-1 bg-white/25 px-3 py-1.5 rounded-lg backdrop-blur-md shadow-sm border border-white/20">
-                    <span className="font-black text-lg">₹9</span>
+                  <div className="flex items-center gap-1 bg-white/25 px-2 py-0.5 rounded-lg backdrop-blur-md shadow-sm border border-white/20">
+                    <span className="font-black text-sm">₹9</span>
                   </div>
-                  <span className="text-[10px] mt-1 opacity-90 uppercase font-bold tracking-wider drop-shadow-sm">100 Pack</span>
+                  <span className="text-[9px] mt-0.5 opacity-90 uppercase font-bold tracking-wider drop-shadow-sm">100 Pack</span>
                 </div>
               </div>
 
