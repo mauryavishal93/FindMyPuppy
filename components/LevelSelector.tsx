@@ -19,7 +19,8 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
   isMuted,
   onToggleMute
 }) => {
-  const levels = Array.from({ length: 25 }, (_, i) => i + 1);
+  // Generate 100 levels
+  const levels = Array.from({ length: 100 }, (_, i) => i + 1);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-sky-50 via-white to-indigo-50 relative overflow-hidden">
@@ -46,7 +47,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-transparent z-10 relative">
+      <div className="flex-1 overflow-y-auto p-4 bg-transparent z-10 relative hide-scrollbar">
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 pb-20">
           {levels.map((level) => {
             const levelKey = `${difficulty}_${level}`;

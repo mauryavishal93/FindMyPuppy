@@ -24,7 +24,9 @@ const SOUNDS = {
   // Hint sound
   hint: 'https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3',
   // Cash register/Success
-  pay: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'
+  pay: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
+  // Game Over
+  fail: 'https://assets.mixkit.co/active_storage/sfx/2042/2042-preview.mp3'
 };
 
 // --- Helper Components ---
@@ -71,6 +73,105 @@ const DifficultyCard: React.FC<{
 
 type PaymentStatus = 'idle' | 'processing' | 'verifying';
 
+const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
+  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="bg-white rounded-[2rem] p-6 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden border-4 border-white hide-scrollbar">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-brand-light rounded-full flex items-center justify-center">
+            <i className="fas fa-book text-brand text-lg"></i>
+          </div>
+          <h3 className="text-2xl font-black text-slate-800">How to Play</h3>
+        </div>
+        <button 
+          onClick={onClose}
+          className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
+        >
+          <i className="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div className="space-y-6">
+        {/* Objective */}
+        <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
+           <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+             <i className="fas fa-search"></i> Objective
+           </h4>
+           <p className="text-sm text-indigo-800/80 leading-relaxed">
+             Travel through magical AI worlds and find all the hidden puppies!
+             <br/><br/>
+             There are <strong>100 Levels</strong> for each difficulty. 
+             <br/>
+             <span className="text-xs font-bold text-indigo-600 mt-2 block bg-indigo-100/50 p-2 rounded-lg">
+               <i className="fas fa-exclamation-triangle mr-1"></i> Warning: Every 5 levels, the puppies get smaller and more transparent!
+             </span>
+           </p>
+        </div>
+
+        {/* Controls */}
+        <div>
+          <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Controls</h4>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-slate-50 p-3 rounded-xl flex flex-col items-center text-center gap-2">
+              <i className="fas fa-hand-pointer text-slate-400 text-2xl"></i>
+              <span className="text-xs font-bold text-slate-600">Tap to Find</span>
+            </div>
+            <div className="bg-slate-50 p-3 rounded-xl flex flex-col items-center text-center gap-2">
+               <div className="flex gap-1 text-slate-400 text-xl">
+                 <i className="fas fa-expand-arrows-alt"></i>
+               </div>
+               <span className="text-xs font-bold text-slate-600">Pinch / Wheel to Zoom</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Difficulty Levels */}
+        <div>
+          <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Difficulty Rules</h4>
+          <div className="space-y-2">
+             <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-white border border-emerald-100">
+                <div className="flex items-center gap-2">
+                   <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                   <span className="font-bold text-slate-700">Easy</span>
+                </div>
+                <div className="text-xs font-mono text-slate-500 font-bold">15-25 Pups • No Timer</div>
+             </div>
+             <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-50 to-white border border-blue-100">
+                <div className="flex items-center gap-2">
+                   <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                   <span className="font-bold text-slate-700">Medium</span>
+                </div>
+                <div className="text-xs font-mono text-slate-500 font-bold">25-35 Pups • 3:00-2:00</div>
+             </div>
+             <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-rose-50 to-white border border-rose-100">
+                <div className="flex items-center gap-2">
+                   <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                   <span className="font-bold text-slate-700">Hard</span>
+                </div>
+                <div className="text-xs font-mono text-slate-500 font-bold">40-50 Pups • 2:30-1:30</div>
+             </div>
+          </div>
+        </div>
+
+        {/* Hints */}
+        <div className="border-t border-slate-100 pt-4">
+           <div className="flex items-start gap-3">
+             <i className="fas fa-lightbulb text-yellow-400 text-xl mt-0.5"></i>
+             <div>
+               <h4 className="font-bold text-slate-800 text-sm">Need Help?</h4>
+               <p className="text-xs text-slate-500 mt-1">
+                 You get <strong className="text-slate-700">2 Free Hints</strong> per level. If you run out, you can use your earned points or buy premium hint packs.
+               </p>
+             </div>
+           </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+);
+
 const PaymentModal: React.FC<{ 
   onClose: () => void; 
   onPay: () => void; 
@@ -106,7 +207,7 @@ const PaymentModal: React.FC<{
   // Idle State
   return (
     <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto overflow-x-hidden">
+      <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto overflow-x-hidden hide-scrollbar">
         <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4 shrink-0">
            <i className="fas fa-lightbulb text-3xl text-brand-dark animate-bounce-short"></i>
         </div>
@@ -186,16 +287,23 @@ const PaymentModal: React.FC<{
 // --- Main App ---
 
 export default function App() {
-  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN'>('LOGIN');
+  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER'>('LOGIN');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   
+  // Timer State
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  
   // Payment States
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('idle');
   
+  // Info Modal State
+  const [showInfoModal, setShowInfoModal] = useState(false);
+
   // Hint State
   const [hintsUsedInLevel, setHintsUsedInLevel] = useState(0);
   const [showHints, setShowHints] = useState(false);
@@ -243,10 +351,25 @@ export default function App() {
       }
     };
   }, [view, isMuted]);
+  
+  // Timer Logic
+  useEffect(() => {
+    let interval: any;
+    if (isTimerRunning && timeLeft !== null && view === 'GAME') {
+        if (timeLeft <= 0) {
+            handleGameOver();
+        } else {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => (prev !== null && prev > 0 ? prev - 1 : 0));
+            }, 1000);
+        }
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timeLeft, view]);
 
   const toggleMute = () => setIsMuted(prev => !prev);
 
-  const playSfx = (type: 'found' | 'clear' | 'hint' | 'pay') => {
+  const playSfx = (type: 'found' | 'clear' | 'hint' | 'pay' | 'fail') => {
     if (isMuted) return;
     try {
       const sfx = new Audio(SOUNDS[type]);
@@ -292,21 +415,40 @@ export default function App() {
     setGameState(prev => ({ ...prev, loading: true, bgImage: null, puppies: [], levelTheme: '' }));
     setHintsUsedInLevel(0); // Reset hints for new level
     setShowHints(false);
-
-    const puppyCount = 25;
+    
+    // Difficulty Progression Logic (Harder every 5 levels)
+    const progressionStep = Math.floor((level - 1) / 5);
+    
+    let puppyCount = 15;
     let baseOpacity = 0.5; 
     let minScale = 0.3; 
     let maxScale = 0.5; 
+    let timeLimit = null; 
     
-    if (diff === Difficulty.MEDIUM) {
-      baseOpacity = 0.4;
-      minScale = 0.25;
-      maxScale = 0.4;
+    if (diff === Difficulty.EASY) {
+        // Easy: 15 -> 25 puppies, Opacity 0.6 -> 0.4
+        puppyCount = Math.min(25, 15 + Math.floor(progressionStep / 2)); 
+        timeLimit = null; 
+        baseOpacity = Math.max(0.4, 0.6 - (progressionStep * 0.01));
+    } else if (diff === Difficulty.MEDIUM) {
+        // Medium: 25 -> 35 puppies, Opacity 0.4 -> 0.25, Scale reduces, Time reduces 180s -> 120s
+        puppyCount = Math.min(35, 25 + Math.floor(progressionStep / 2));
+        timeLimit = Math.max(120, 180 - (progressionStep * 3));
+        baseOpacity = Math.max(0.25, 0.4 - (progressionStep * 0.01));
+        minScale = Math.max(0.15, 0.25 - (progressionStep * 0.005));
+        maxScale = Math.max(0.3, 0.4 - (progressionStep * 0.005));
     } else if (diff === Difficulty.HARD) {
-      baseOpacity = 0.3; 
-      minScale = 0.2; 
-      maxScale = 0.35;
+        // Hard: 40 -> 50 puppies, Opacity 0.3 -> 0.15, Scale reduces, Time reduces 150s -> 90s
+        puppyCount = Math.min(50, 40 + Math.floor(progressionStep / 2));
+        timeLimit = Math.max(90, 150 - (progressionStep * 3));
+        baseOpacity = Math.max(0.15, 0.3 - (progressionStep * 0.01));
+        minScale = Math.max(0.12, 0.2 - (progressionStep * 0.004)); 
+        maxScale = Math.max(0.25, 0.35 - (progressionStep * 0.005));
     }
+    
+    // Initialize Timer
+    setTimeLeft(timeLimit);
+    setIsTimerRunning(false); // Changed: Start false, enable on image load
 
     // Get the textual theme for this level
     const theme = await generateLevelTheme(level, diff);
@@ -315,9 +457,11 @@ export default function App() {
     const bgImage = await generateLevelImage(theme, level);
 
     const newPuppies: Puppy[] = [];
-    while (newPuppies.length < puppyCount) {
+    let safetyCounter = 0; // Prevent infinite loops
+    while (newPuppies.length < puppyCount && safetyCounter < 1000) {
+      safetyCounter++;
       const scale = minScale + (Math.random() * (maxScale - minScale));
-      // Added 5% margin to ensure puppies are fully inside the image boundaries
+      // Added margin to ensure puppies are fully inside the image boundaries
       const margin = 5;
       const x = margin + Math.random() * (100 - (margin * 2));
       const y = margin + Math.random() * (100 - (margin * 2));
@@ -326,7 +470,7 @@ export default function App() {
       for (const p of newPuppies) {
         const dx = x - p.x;
         const dy = y - p.y;
-        if (Math.sqrt(dx*dx + dy*dy) < 6) {
+        if (Math.sqrt(dx*dx + dy*dy) < 6) { // Distance check (squared is faster but sqrt needed for 6 unit check)
           overlaps = true;
           break;
         }
@@ -334,13 +478,13 @@ export default function App() {
 
       if (!overlaps) {
         newPuppies.push({
-          id: `pup-${newPuppies.length}-${Date.now()}`,
+          id: `pup-${newPuppies.length}-${Date.now()}-${Math.random()}`,
           x,
           y,
           rotation: Math.random() * 360,
           scale,
           isFound: false,
-          opacity: Math.max(0.3, baseOpacity - (Math.random() * 0.1)), 
+          opacity: Math.max(0.15, baseOpacity - (Math.random() * 0.1)), 
           hueRotate: Math.random() * 360, 
           imageUrl: PUPPY_IMAGES[Math.floor(Math.random() * PUPPY_IMAGES.length)],
         });
@@ -371,10 +515,22 @@ export default function App() {
       
       const allFound = updatedPuppies.every(p => p.isFound);
       if (allFound) {
+        setIsTimerRunning(false);
         setTimeout(() => handleLevelClear(), 800);
       }
       return { ...prev, puppies: updatedPuppies };
     });
+  };
+  
+  const handleGameOver = () => {
+    setIsTimerRunning(false);
+    playSfx('fail');
+    setView('GAME_OVER');
+  };
+  
+  const handleRetry = () => {
+      initLevel(currentLevelId, selectedDifficulty);
+      setView('GAME');
   };
 
   const handleLevelClear = () => {
@@ -489,11 +645,18 @@ export default function App() {
   };
 
   const nextLevel = () => {
-    if (currentLevelId < 25) {
+    if (currentLevelId < 100) {
       handleLevelSelect(currentLevelId + 1);
     } else {
       setView('HOME');
     }
+  };
+  
+  // Formatting seconds to MM:SS
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   const renderLogin = () => (
@@ -509,7 +672,7 @@ export default function App() {
          <i className="fas fa-cloud absolute top-16 right-1/4 text-8xl text-white/60"></i>
       </div>
 
-      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm z-10 text-center border-4 border-white/50 relative overflow-y-auto overflow-x-hidden max-h-[90vh]">
+      <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm z-10 text-center border-4 border-white/50 relative overflow-y-auto overflow-x-hidden max-h-[90vh] hide-scrollbar">
         <div className="mx-auto mb-6 flex justify-center relative">
           <div className="absolute inset-0 bg-brand-light/30 blur-2xl rounded-full scale-150"></div>
           <GameLogo className="w-32 h-32 relative z-10 drop-shadow-lg" />
@@ -570,6 +733,14 @@ export default function App() {
           <button onClick={toggleMute} className="w-11 h-11 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-600 hover:bg-white hover:text-brand transition-colors shadow-sm">
             <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
           </button>
+          
+          <button 
+            onClick={() => setShowInfoModal(true)} 
+            className="w-11 h-11 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-600 hover:bg-white hover:text-brand transition-colors shadow-sm"
+          >
+            <i className="fas fa-info text-sm"></i>
+          </button>
+
           <div className="bg-white/80 backdrop-blur-sm text-yellow-700 px-4 py-2 rounded-full font-bold flex items-center gap-2 border-2 border-white shadow-sm">
             <i className="fas fa-trophy text-yellow-500 text-lg drop-shadow-sm"></i>
             <span className="text-lg">{progress.totalScore}</span>
@@ -577,7 +748,7 @@ export default function App() {
         </div>
       </header>
       
-      <main className="flex-1 px-6 py-8 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full">
+      <main className="flex-1 px-6 py-8 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
         <div className="w-full max-w-sm space-y-8">
           <div className="flex flex-col items-center text-center bg-white/60 p-6 rounded-3xl backdrop-blur-sm shadow-sm border border-white/60 relative overflow-hidden">
              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent opacity-50"></div>
@@ -589,19 +760,39 @@ export default function App() {
           <div className="space-y-4 perspective-1000">
             <DifficultyCard 
               difficulty={Difficulty.EASY} points={10} color="bg-gradient-to-r from-emerald-400 to-teal-500" 
-              description="25 Puppies • Simple Fun" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
+              description="100 Levels • Relaxed" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
             />
             <DifficultyCard 
               difficulty={Difficulty.MEDIUM} points={20} color="bg-gradient-to-r from-blue-400 to-indigo-500" 
-              description="25 Puppies • Tricky Spots" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
+              description="100 Levels • Timed" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
             />
             <DifficultyCard 
               difficulty={Difficulty.HARD} points={50} color="bg-gradient-to-r from-rose-500 to-pink-600" 
-              description="25 Puppies • Expert Seek" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
+              description="100 Levels • Expert" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
             />
           </div>
         </div>
       </main>
+    </div>
+  );
+  
+  const renderGameOver = () => (
+    <div className="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
+        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border-4 border-white">
+           <i className="fas fa-hourglass-end text-5xl text-red-500 drop-shadow-md"></i>
+        </div>
+        <h2 className="text-3xl font-black text-slate-800 mb-2">Time's Up!</h2>
+        <p className="text-slate-500 mb-8 font-medium">The puppies are still hiding!</p>
+        <div className="space-y-3">
+          <Button onClick={handleRetry} className="w-full bg-brand text-white hover:bg-brand-dark shadow-lg shadow-brand/30">
+            <i className="fas fa-redo mr-2"></i> Try Again
+          </Button>
+          <Button onClick={() => setView('LEVEL_SELECT')} className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200">
+            Back to Levels
+          </Button>
+        </div>
+      </div>
     </div>
   );
 
@@ -618,13 +809,13 @@ export default function App() {
         <h2 className="text-3xl font-black text-slate-800 mb-2">Level Cleared!</h2>
         <p className="text-slate-500 mb-8 font-medium">Amazing job, {progress.playerName}!</p>
         <div className="space-y-3">
-          {currentLevelId < 25 ? (
+          {currentLevelId < 100 ? (
              <Button onClick={nextLevel} className="w-full bg-brand text-white hover:bg-brand-dark shadow-lg shadow-brand/30">
                Next Level <i className="fas fa-arrow-right ml-2"></i>
              </Button>
           ) : (
             <div className="p-4 bg-yellow-50 text-yellow-700 rounded-xl mb-4 font-bold border border-yellow-200 flex items-center justify-center gap-2">
-              <i className="fas fa-crown"></i> Difficulty Completed!
+              <i className="fas fa-crown"></i> Game Completed!
             </div>
           )}
           <Button onClick={() => setView('LEVEL_SELECT')} className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200">
@@ -640,22 +831,39 @@ export default function App() {
     const freeHintsRemaining = Math.max(0, 2 - hintsUsedInLevel);
     const hasPremiumHints = progress.premiumHints > 0;
     
+    // Timer Color Logic
+    let timerColorClass = 'bg-slate-800 text-white';
+    if (timeLeft !== null && timeLeft <= 10) timerColorClass = 'bg-red-500 text-white animate-pulse';
+    else if (timeLeft !== null && timeLeft <= 30) timerColorClass = 'bg-orange-500 text-white';
+    
     return (
       <div className="flex flex-col h-full bg-slate-900">
         <div className="bg-slate-900/90 backdrop-blur text-white p-2 sm:p-3 flex justify-between items-center z-10 shadow-lg border-b border-slate-800 shrink-0">
           <button onClick={() => setView('LEVEL_SELECT')} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
              <i className="fas fa-times text-lg sm:text-xl"></i>
           </button>
-          <div className="flex flex-col items-center">
-             <span className="font-bold text-brand-light uppercase text-[9px] sm:text-[10px] tracking-widest">{selectedDifficulty} • Level {currentLevelId}</span>
-             <span className="text-[10px] sm:text-xs text-slate-400 max-w-[120px] sm:max-w-[150px] truncate text-center opacity-80">{gameState.levelTheme || "Loading..."}</span>
+          
+          <div className="flex items-center gap-4">
+             {timeLeft !== null && (
+                 <div className={`px-3 py-1 rounded-full font-mono font-bold text-sm sm:text-base shadow-sm border border-white/20 flex items-center gap-2 ${timerColorClass}`}>
+                    <i className="fas fa-clock text-xs"></i>
+                    {formatTime(timeLeft)}
+                 </div>
+             )}
+             <div className="flex flex-col items-end">
+                <span className="font-bold text-brand-light uppercase text-[9px] sm:text-[10px] tracking-widest">{selectedDifficulty}</span>
+                <span className="text-[10px] sm:text-xs text-slate-400 max-w-[100px] truncate text-center opacity-80">Level {currentLevelId}</span>
+             </div>
           </div>
-          <button 
-            onClick={toggleMute}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
-          >
-            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
-          </button>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleMute}
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+            >
+              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+            </button>
+          </div>
         </div>
   
         <div className="flex-1 relative overflow-hidden">
@@ -666,6 +874,11 @@ export default function App() {
             isLoading={gameState.loading}
             difficulty={selectedDifficulty}
             showHints={showHints}
+            onImageLoaded={() => {
+              if (timeLeft !== null) {
+                setIsTimerRunning(true);
+              }
+            }}
           />
           
           {/* HUD Elements */}
@@ -715,6 +928,9 @@ export default function App() {
       )}
       {view === 'GAME' && renderGame()}
       {view === 'WIN' && renderWin()}
+      {view === 'GAME_OVER' && renderGameOver()}
+      
+      {showInfoModal && <InfoModal onClose={() => setShowInfoModal(false)} />}
       
       {showPaymentModal && (
         <PaymentModal 

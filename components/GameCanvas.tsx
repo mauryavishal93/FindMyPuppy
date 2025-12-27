@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Puppy, Difficulty } from '../types';
 
@@ -9,6 +8,7 @@ interface GameCanvasProps {
   isLoading: boolean;
   difficulty: Difficulty;
   showHints: boolean;
+  onImageLoaded?: () => void;
 }
 
 // Base map size
@@ -20,7 +20,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   onPuppyFound,
   isLoading,
   difficulty,
-  showHints
+  showHints,
+  onImageLoaded
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -89,15 +90,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       img.onload = () => {
         setLoaded(true);
         setLoadError(false);
+        if (onImageLoaded) onImageLoaded();
       };
       // If image fails to load (e.g., file missing), just proceed so we don't hang
       img.onerror = () => {
         console.error(`Failed to load background: ${backgroundImage}`);
         setLoadError(true);
         setLoaded(true); 
+        // We still trigger ready so game can be playable even if BG fails (fallback color)
+        if (onImageLoaded) onImageLoaded();
       };
     }
-  }, [backgroundImage]);
+  }, [backgroundImage, onImageLoaded]);
 
   // Center scroll on load
   useEffect(() => {
