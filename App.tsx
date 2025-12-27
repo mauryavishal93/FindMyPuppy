@@ -4,6 +4,7 @@ import { generateLevelTheme, generateLevelImage } from './services/geminiService
 import { GameCanvas } from './components/GameCanvas';
 import { LevelSelector } from './components/LevelSelector';
 import { GameLogo } from './components/GameLogo';
+import { AdBanner } from './components/AdBanner';
 
 // --- Theme Configuration ---
 const THEME_CONFIGS: Record<ThemeType, ThemeConfig> = {
@@ -109,10 +110,13 @@ const PUPPY_IMAGES = [
   // Husky
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMTUgTDM1LDQwIEwxNSw0NSBaIiBmaWxsPSIjOUNBM0FGIi8+PHBhdGggZD0iTTgwLDE1IEw2NSw0MCBMODUsNDUgWiIgZmlsbD0iIzlDQTNBRiIvPjxwYXRoIGQ9Ik0yMCw0NSBRMTAsODUgNTAsOTAgUTg1LDg1IDgwLDQ1IFE4MCwyNSA1MCwyNSBRMjAsMjUgMjAsNDUiIGZpbGw9IiNFNUU3RUIiLz48cGF0aCBkPSJNMjAsNDUgQTUwLDI1IDgwLDQ1IFE4MCw1NSA3MCw1NSBRNjAsNTUgNTAsNDUgUTQwLDU1IDMwLDU1IFEyMCw1NSAyMCw0NSIgZmlsbD0iIzlDQTNBRiIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzUiIGN5PSI1MCIgcj0iNCIgZmlsbD0iIzNCODJGNiIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEiLz48Y2lyY2xlIGN4PSI2NSIgY3k9IjUwIiByPSI0IiBmaWxsPSIjM0I4MkY2IiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMSIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjY1IiByeD0iNSIgcnk9IjMiIGZpbGw9IiMzMzMiLz48L2c+PC9zdmc+`,
   // Pug/Bulldog
-  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzUgTDM1LDMwIEwzMCw1MCBaIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTgwLDM1IEw2NSwzMCBMNzAsNTAgWiIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjI1IiB5PSIzMCIgd2lkdGg9IjUwIiBoZWlnaHQ9IjU1IiByeD0iMjUiIGZpbGw9IiVEMkI0OEMiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2MCIgcng9IjE4IiByeT0iMTIiIGZpbGw9IiMzMzMiIG9wYWNpdHk9IjAuOSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iNTAiIHI9IjUiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iNTAiIHI9IjIiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNTAiIHI9IjUiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNTAiIHI9IjIiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjYyIiByeD0iNSIgcnk9IjMiIGZpbGw9ImJsYWNrIi8+PC9nPjwvc3ZnPg==`,
+  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzUgTDM1LDQwIEwzMCw1MCBaIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTgwLDM1IEw2NSwzMCBMNzAsNTAgWiIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjI1IiB5PSIzMCIgd2lkdGg9IjUwIiBoZWlnaHQ9IjU1IiByeD0iMjUiIGZpbGw9IiVEMkI0OEMiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2MCIgcng9IjE4IiByeT0iMTIiIGZpbGw9IiMzMzMiIG9wYWNpdHk9IjAuOSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iNTAiIHI9IjUiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iNTAiIHI9IjIiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNTAiIHI9IjUiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNTAiIHI9IjIiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjYyIiByeD0iNSIgcnk9IjMiIGZpbGw9ImJsYWNrIi8+PC9nPjwvc3ZnPg==`,
   // Golden/Floppy
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzAgQTEwLDIwIDc1LDMwIFE4NSw1MCA3NSw4MCBRNTAsOTAgMjUsODAgUTE1LDUwIDI1LDMwIiBmaWxsPSIjRkNEMzREIi8+PHBhdGggZD0iTTI1LDM1IFExMCw1MCAyMCw3MCIgZmlsbD0iI0ZDRDM0RCIvPjxwYXRoIGQ9Ik03NSwzNSBROTAsNTAgODAsNzAiIGZpbGw9IiNGQ0QzNEQiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI1MCIgcj0iNCIgZmlsbD0iIzMzMyIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjY1IiByeD0iNiIgcnk9IjQiIGZpbGw9IiMzMzMiLz48cGF0aCBkPSJNNDUsNzUgQTUwLDgwIDU1LDc1IiBmaWxsPSJub25lIi8+PC9nPjwvc3ZnPg==`,
 ];
+
+// Fallback BG with URL encoding to prevent CSS issues (replaces spaces with %20, etc)
+const FALLBACK_BG = "data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27800%27%20height%3D%27800%27%20viewBox%3D%270%200%20800%20800%27%3E%3Crect%20width%3D%27800%27%20height%3D%27800%27%20fill%3D%27%23e2e8f0%27%2F%3E%3Ccircle%20cx%3D%27400%27%20cy%3D%27400%27%20r%3D%27200%27%20fill%3D%27%23cbd5e1%27%20opacity%3D%270.5%27%2F%3E%3Ctext%20x%3D%2750%25%27%20y%3D%2745%25%27%20dominant-baseline%3D%27middle%27%20text-anchor%3D%27middle%27%20font-family%3D%27sans-serif%27%20font-size%3D%2748%27%20fill%3D%27%2364748b%27%20font-weight%3D%27bold%27%3EAdventure%20Awaits%3C%2Ftext%3E%3Ctext%20x%3D%2750%25%27%20y%3D%2755%25%27%20dominant-baseline%3D%27middle%27%20text-anchor%3D%27middle%27%20font-family%3D%27sans-serif%27%20font-size%3D%2724%27%20fill%3D%27%2394a3b8%27%3ECould%20not%20generate%20scene%3C%2Ftext%3E%3C%2Fsvg%3E";
 
 const SOUNDS = {
   // Use local bgmusic.mp3
@@ -174,25 +178,29 @@ const DifficultyCard: React.FC<{
 type PaymentStatus = 'idle' | 'processing' | 'verifying';
 
 const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-    <div className="bg-white rounded-[2rem] p-6 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden border-4 border-white hide-scrollbar">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand-light rounded-full flex items-center justify-center shadow-sm">
-            <i className="fas fa-book-open text-brand text-lg"></i>
+  <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 px-4 animate-fade-in overflow-hidden">
+    <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl relative max-h-[calc(90vh-2rem)] flex flex-col border-4 border-white overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="flex-shrink-0 p-6 pb-4 border-b border-slate-100">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-brand-light rounded-full flex items-center justify-center shadow-sm">
+              <i className="fas fa-book-open text-brand text-lg"></i>
+            </div>
+            <h3 className="text-2xl font-black text-slate-800">Explorer's Guide</h3>
           </div>
-          <h3 className="text-2xl font-black text-slate-800">Explorer's Guide</h3>
+          <button 
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
+          >
+            <i className="fas fa-times"></i>
+          </button>
         </div>
-        <button 
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
-        >
-          <i className="fas fa-times"></i>
-        </button>
       </div>
 
-      <div className="space-y-6">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-4">
+        <div className="space-y-6">
         {/* Intro */}
         <p className="text-slate-600 text-sm font-medium leading-relaxed">
            Welcome to <strong>FindMyPuppy</strong>! Explore magical worlds generated by AI and rescue the puppies hiding in plain sight.
@@ -288,7 +296,7 @@ const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
              <div className="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-2"></div>
              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider opacity-60">© 2025-2026 MVTechnology</p>
         </div>
-
+        </div>
       </div>
     </div>
   </div>
@@ -861,6 +869,10 @@ export default function App() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const handleImageLoaded = useCallback(() => {
+     setIsTimerRunning(true);
+  }, []);
+
   const renderLogin = () => (
     <div className="flex flex-col h-full items-center justify-center p-8 bg-gradient-to-br from-pink-100 via-white to-blue-100 relative overflow-hidden">
       {/* Creative Background Elements */}
@@ -1099,6 +1111,11 @@ export default function App() {
             </div>
           </div>
         </main>
+
+        {/* Ad Banner - Sticky Footer */}
+        <div className="shrink-0 z-20 w-full flex justify-center items-center bg-white/20 backdrop-blur-md border-t border-white/30 py-2">
+           <AdBanner dataAdSlot="1234567890" className="w-[320px] max-w-full" />
+        </div>
       </div>
     );
   };
@@ -1151,11 +1168,7 @@ export default function App() {
             isLoading={gameState.loading}
             difficulty={selectedDifficulty}
             showHints={showHints}
-            onImageLoaded={() => {
-              if (timeLeft !== null) {
-                setIsTimerRunning(true);
-              }
-            }}
+            onImageLoaded={handleImageLoaded}
           />
           
           {/* HUD Elements */}

@@ -45,9 +45,9 @@ const THEMES = [
 ];
 
 // Curated list of high-quality images to use when AI generation fails (Quota limit/Error)
-// These act as the "local bgImages" folder
+// Using reliable Unsplash images instead of potentially broken external links
 const FALLBACK_BG_IMAGES = [
- "https://mauryavishal93.github.io/FindMyPuppy/asset/1.png",
+"https://mauryavishal93.github.io/FindMyPuppy/asset/1.png",
   "https://mauryavishal93.github.io/FindMyPuppy/asset/2.png",
   "https://mauryavishal93.github.io/FindMyPuppy/asset/3.png",
   "https://mauryavishal93.github.io/FindMyPuppy/asset/4.png",

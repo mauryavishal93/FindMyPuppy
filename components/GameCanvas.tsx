@@ -23,8 +23,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   showHints,
   onImageLoaded
 }) => {
-  const [loaded, setLoaded] = useState(false);
+  // Loading States: 'generating' (AI), 'loading' (Images), 'fading' (Transition), 'complete' (Game On)
+  const [loadingState, setLoadingState] = useState<'generating' | 'loading' | 'fading' | 'complete'>('generating');
+  const [progress, setProgress] = useState(0);
   const [loadError, setLoadError] = useState(false);
+  
   const [zoom, setZoom] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   // Start with a very low min zoom to ensure we don't block zooming out before calculation
@@ -45,12 +48,87 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     zoomRef.current = zoom;
   }, [zoom]);
 
-  // Reset zoom when level changes
+  // Loading Logic
   useEffect(() => {
-    setZoom(1);
-    setLoadError(false);
-    setLoaded(false);
-  }, [backgroundImage]);
+    // 1. If AI is generating the world
+    if (isLoading) {
+      setLoadingState('generating');
+      setProgress(5); // Start at small percentage
+      setLoadError(false);
+      return;
+    }
+
+    // 2. If we have a background image, start loading assets
+    if (backgroundImage) {
+      setLoadingState('loading');
+      setProgress(10); // Jump a bit to show activity
+      
+      // Identify all unique assets to load (Background + Unique Puppies)
+      const uniquePuppyUrls = Array.from(new Set(puppies.map(p => p.imageUrl)));
+      const totalAssets = 1 + uniquePuppyUrls.length; // +1 for BG
+      
+      let loadedCount = 0;
+      let mounted = true;
+
+      const handleAssetLoad = (isError: boolean = false) => {
+        if (!mounted) return;
+        
+        loadedCount++;
+        const currentProgress = Math.round((loadedCount / totalAssets) * 100);
+        // Ensure progress only goes up
+        setProgress(prev => Math.max(prev, currentProgress));
+
+        if (isError && loadedCount === 1) {
+            // If the first item (BG) failed
+            setLoadError(true);
+        }
+
+        // Check if all complete
+        if (loadedCount >= totalAssets) {
+          // Add a tiny delay to ensure the user sees the 100% bar
+          setTimeout(() => {
+             if (mounted) {
+               setLoadingState('fading');
+               
+               // After fade animation (500ms), mark as complete and notify App
+               setTimeout(() => {
+                 if (mounted) {
+                   setLoadingState('complete');
+                   if (onImageLoaded) onImageLoaded();
+                 }
+               }, 500);
+             }
+          }, 200);
+        }
+      };
+
+      // Load Background
+      const bgImg = new Image();
+      bgImg.src = backgroundImage;
+      bgImg.onload = () => handleAssetLoad(false);
+      bgImg.onerror = () => {
+        console.error(`Failed to load background: ${backgroundImage}`);
+        handleAssetLoad(true);
+      };
+
+      // Load Puppies
+      uniquePuppyUrls.forEach(url => {
+        const img = new Image();
+        img.src = url;
+        img.onload = () => handleAssetLoad(false);
+        img.onerror = () => handleAssetLoad(false); // Don't block game if a puppy fails
+      });
+
+      return () => { mounted = false; };
+    }
+  }, [backgroundImage, isLoading, puppies, onImageLoaded]);
+
+  // Reset zoom when level changes (detected by loading state resetting to generating)
+  useEffect(() => {
+    if (loadingState === 'generating') {
+        setZoom(1);
+    }
+  }, [loadingState]);
 
   // Calculate minimum zoom to fit screen using ResizeObserver for robustness
   useEffect(() => {
@@ -62,7 +140,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const widthRatio = clientWidth / MAP_SIZE;
         const heightRatio = clientHeight / MAP_SIZE;
         // Allow zooming out until the whole image fits strictly
-        // We use Math.min to ensure it fits completely within the viewport
         minZoomRef.current = Math.min(widthRatio, heightRatio);
       }
     };
@@ -75,32 +152,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     updateMinZoom(); // Initial check
 
     return () => observer.disconnect();
-  }, [loaded, isLoading]); // Added isLoading to ensure ref exists
+  }, [loadingState]);
 
-  // Preload image
+  // Center scroll when loading is entering fading state (assets ready)
   useEffect(() => {
-    if (backgroundImage) {
-      const img = new Image();
-      img.src = backgroundImage;
-      img.onload = () => {
-        setLoaded(true);
-        setLoadError(false);
-        if (onImageLoaded) onImageLoaded();
-      };
-      // If image fails to load (e.g., file missing), just proceed so we don't hang
-      img.onerror = () => {
-        console.error(`Failed to load background: ${backgroundImage}`);
-        setLoadError(true);
-        setLoaded(true); 
-        // We still trigger ready so game can be playable even if BG fails (fallback color)
-        if (onImageLoaded) onImageLoaded();
-      };
-    }
-  }, [backgroundImage, onImageLoaded]);
-
-  // Center scroll on load
-  useEffect(() => {
-    if (loaded && scrollContainerRef.current) {
+    if ((loadingState === 'fading' || loadingState === 'complete') && scrollContainerRef.current) {
       const { scrollWidth, scrollHeight, clientWidth, clientHeight } = scrollContainerRef.current;
       scrollContainerRef.current.scrollTo({
         left: (scrollWidth - clientWidth) / 2,
@@ -108,7 +164,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         behavior: 'instant'
       });
     }
-  }, [loaded, isLoading]);
+  }, [loadingState]);
 
   // Auto-scroll to hidden puppies when hint is activated
   useEffect(() => {
@@ -170,7 +226,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [isLoading]); // Re-bind when loading state changes
+  }, [loadingState]); 
 
   // Add touch event listeners for pinch zoom
   useEffect(() => {
@@ -226,16 +282,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [isLoading]); // Re-bind when loading state changes
-
-  if (isLoading || !backgroundImage) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 text-slate-400 animate-pulse">
-        <i className="fas fa-paw text-6xl mb-4 text-brand-light animate-bounce"></i>
-        <p className="text-lg font-medium text-brand-dark">Sniffing out a location...</p>
-      </div>
-    );
-  }
+  }, [loadingState]); 
 
   // Camouflage logic helper
   const getPuppyStyles = (puppy: Puppy) => {
@@ -258,25 +305,27 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       };
     }
 
-    let mixBlendMode: any = 'luminosity';
+    let mixBlendMode: any = loadError ? 'normal' : 'luminosity';
     let filter = '';
-    let opacity = puppy.opacity;
+    let opacity = loadError ? 1 : puppy.opacity;
 
-    switch (difficulty) {
-      case Difficulty.EASY:
-        filter = `grayscale(20%) contrast(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.3))`;
-        opacity = Math.max(0.6, puppy.opacity + 0.2);
-        break;
-      case Difficulty.MEDIUM:
-        mixBlendMode = 'luminosity';
-        filter = `grayscale(60%) contrast(1.0) brightness(1.0) hue-rotate(${puppy.hueRotate}deg)`;
-        opacity = Math.max(0.45, puppy.opacity + 0.1);
-        break;
-      case Difficulty.HARD:
-        mixBlendMode = 'luminosity'; 
-        filter = `grayscale(100%) contrast(1.2) brightness(0.9) hue-rotate(${puppy.hueRotate}deg)`;
-        opacity = Math.max(0.35, puppy.opacity);
-        break;
+    if (!loadError) {
+      switch (difficulty) {
+        case Difficulty.EASY:
+          filter = `grayscale(20%) contrast(1.1) drop-shadow(0 0 2px rgba(255,255,255,0.3))`;
+          opacity = Math.max(0.6, puppy.opacity + 0.2);
+          break;
+        case Difficulty.MEDIUM:
+          mixBlendMode = 'luminosity';
+          filter = `grayscale(60%) contrast(1.0) brightness(1.0) hue-rotate(${puppy.hueRotate}deg)`;
+          opacity = Math.max(0.45, puppy.opacity + 0.1);
+          break;
+        case Difficulty.HARD:
+          mixBlendMode = 'luminosity'; 
+          filter = `grayscale(100%) contrast(1.2) brightness(0.9) hue-rotate(${puppy.hueRotate}deg)`;
+          opacity = Math.max(0.35, puppy.opacity);
+          break;
+      }
     }
 
     return { mixBlendMode, filter, opacity, extraClass: '' };
@@ -288,7 +337,82 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
   return (
     <div className="w-full h-full relative">
-       {/* Scrollable Area */}
+       {/* CREATIVE LOADING OVERLAY */}
+       {loadingState !== 'complete' && (
+          <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-700 ${loadingState === 'fading' ? 'opacity-0' : 'opacity-100'}`}>
+            
+            {/* Colorful Animated Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-100 via-pink-100 to-blue-100 overflow-hidden">
+              {/* Floating Paws Background Pattern */}
+              {[...Array(15)].map((_, i) => (
+                <div key={i} 
+                     className="absolute text-brand/10"
+                     style={{
+                       left: `${Math.random() * 100}%`,
+                       top: `${Math.random() * 100}%`,
+                       fontSize: `${20 + Math.random() * 40}px`,
+                       transform: `rotate(${Math.random() * 360}deg)`,
+                       opacity: 0.2 + Math.random() * 0.3,
+                     }}>
+                  <i className="fas fa-paw"></i>
+                </div>
+              ))}
+            </div>
+
+            {/* Main Loading Card */}
+            <div className="relative bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl border-[6px] border-white w-80 max-w-[90%] flex flex-col items-center gap-6 animate-pulse-fast">
+              
+              {/* Central Illustration */}
+              <div className="relative">
+                {/* Spinning Ring */}
+                <div className="absolute inset-0 border-4 border-dashed border-brand/30 rounded-full animate-[spin_10s_linear_infinite] scale-125"></div>
+                
+                {/* Bouncing Circle */}
+                <div className="w-24 h-24 bg-gradient-to-tr from-brand-light to-brand rounded-full flex items-center justify-center shadow-lg animate-bounce relative z-10 border-4 border-white">
+                  <i className={`fas ${loadingState === 'generating' ? 'fa-wand-magic-sparkles' : 'fa-dog'} text-4xl text-white drop-shadow-md`}></i>
+                </div>
+                
+                {/* Decor items */}
+                <div className="absolute -top-4 -right-4 bg-yellow-400 text-white w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm animate-pulse z-20">
+                   <i className="fas fa-bone text-sm"></i>
+                </div>
+              </div>
+
+              <div className="text-center w-full space-y-1">
+                <h3 className="text-2xl font-black text-slate-800 tracking-tight">
+                  {loadingState === 'generating' ? 'Dreaming...' : 'Fetching Pups...'}
+                </h3>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest opacity-70">
+                   {loadingState === 'generating' ? 'Creating World' : 'Almost Ready'}
+                </p>
+              </div>
+
+              {/* Creative Progress Bar */}
+              <div className="w-full space-y-2">
+                <div className="h-6 bg-slate-100 rounded-full border-2 border-slate-200 relative overflow-visible shadow-inner">
+                   {/* Fill */}
+                   <div 
+                     className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all duration-300 ease-out relative"
+                     style={{ width: `${Math.max(5, progress)}%` }}
+                   >
+                     {/* Moving Dog Head at tip of bar */}
+                     <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-9 h-9 bg-white rounded-full border-2 border-orange-400 shadow-sm flex items-center justify-center z-20">
+                       <span className="text-lg leading-none pt-0.5">🐶</span>
+                     </div>
+                   </div>
+                </div>
+                
+                <div className="flex justify-between w-full text-[10px] font-black text-slate-400 uppercase tracking-wider px-1">
+                   <span>{loadingState === 'generating' ? 'AI Magic' : 'Loading Assets'}</span>
+                   <span className="text-brand">{progress}%</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+       )}
+
+       {/* GAME SCROLLABLE AREA */}
       <div 
         ref={scrollContainerRef}
         className={`w-full h-full overflow-auto bg-slate-900 shadow-inner hide-scrollbar ${isContentSmaller ? 'flex items-center justify-center' : ''}`}
@@ -313,7 +437,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               transformOrigin: '0 0',
               // Use background color as ultimate fallback if image fails
               backgroundColor: '#334155', // Lighter slate for better contrast if image is missing 
-              backgroundImage: loadError ? 'none' : `url(${backgroundImage})`,
+              backgroundImage: loadError ? 'none' : `url("${backgroundImage}")`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
