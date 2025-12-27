@@ -182,7 +182,7 @@ const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
           <div className="w-10 h-10 bg-brand-light rounded-full flex items-center justify-center">
             <i className="fas fa-book text-brand text-lg"></i>
           </div>
-          <h3 className="text-2xl font-black text-slate-800">How to Play</h3>
+          <h3 className="text-2xl font-black text-slate-800">Explorer's Guide</h3>
         </div>
         <button 
           onClick={onClose}
@@ -199,81 +199,101 @@ const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
              <i className="fas fa-search"></i> Objective
            </h4>
            <p className="text-sm text-indigo-800/80 leading-relaxed">
-             Travel through magical AI worlds and find all the hidden puppies!
+             Embark on a journey through magical AI-generated worlds. Your mission is to rescue all the puppies hiding in plain sight!
              <br/><br/>
-             There are <strong>100 Levels</strong> for each difficulty. 
-             <br/>
              <span className="text-xs font-bold text-indigo-600 mt-2 block bg-indigo-100/50 p-2 rounded-lg">
-               <i className="fas fa-exclamation-triangle mr-1"></i> Warning: Every 5 levels, the puppies get smaller and more transparent!
+               <i className="fas fa-exclamation-triangle mr-1"></i> Alert: Every 5 levels, the puppies get smaller and camouflage better!
              </span>
            </p>
         </div>
 
         {/* Controls */}
         <div>
-          <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Controls</h4>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-50 p-3 rounded-xl flex flex-col items-center text-center gap-2">
-              <i className="fas fa-hand-pointer text-slate-400 text-2xl"></i>
-              <span className="text-xs font-bold text-slate-600">Tap to Find</span>
-            </div>
-            <div className="bg-slate-50 p-3 rounded-xl flex flex-col items-center text-center gap-2">
-               <div className="flex gap-1 text-slate-400 text-xl">
-                 <i className="fas fa-expand-arrows-alt"></i>
-               </div>
-               <span className="text-xs font-bold text-slate-600">Pinch / Wheel to Zoom</span>
-            </div>
+          <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">How to Play</h4>
+          <div className="bg-slate-50 p-4 rounded-xl flex items-center justify-center gap-4 border border-slate-100 shadow-sm">
+             <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm text-slate-400">
+                <i className="fas fa-hand-pointer text-xl animate-bounce-short"></i>
+             </div>
+             <span className="text-sm font-bold text-slate-600">Tap the hidden puppies to rescue them!</span>
           </div>
         </div>
 
-        {/* Difficulty Levels */}
+        {/* Difficulty Rules */}
         <div>
-          <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Difficulty Rules</h4>
+          <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Difficulty & Rewards</h4>
           <div className="space-y-2">
              <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-white border border-emerald-100">
                 <div className="flex items-center gap-2">
-                   <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                   <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                     <i className="fas fa-seedling text-[10px]"></i>
+                   </div>
                    <span className="font-bold text-slate-700">Easy</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-mono text-slate-500 font-bold">15-25 Pups • No Timer</div>
-                  <div className="text-[10px] font-bold text-emerald-600">Reward: 10 Points</div>
+                  <div className="text-xs font-mono text-slate-500 font-bold">15-25 Pups • Relaxed</div>
+                  <div className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-0.5">+10 Points</div>
                 </div>
              </div>
              <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-50 to-white border border-blue-100">
                 <div className="flex items-center gap-2">
-                   <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                   <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                     <i className="fas fa-stopwatch text-[10px]"></i>
+                   </div>
                    <span className="font-bold text-slate-700">Medium</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-mono text-slate-500 font-bold">25-35 Pups • 3:00-2:00</div>
-                  <div className="text-[10px] font-bold text-blue-600">Reward: 20 Points</div>
+                  <div className="text-xs font-mono text-slate-500 font-bold">25-35 Pups • Timed</div>
+                  <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-0.5">+20 Points</div>
                 </div>
              </div>
              <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-rose-50 to-white border border-rose-100">
                 <div className="flex items-center gap-2">
-                   <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                   <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                     <i className="fas fa-skull text-[10px]"></i>
+                   </div>
                    <span className="font-bold text-slate-700">Hard</span>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs font-mono text-slate-500 font-bold">40-50 Pups • 2:30-1:30</div>
-                  <div className="text-[10px] font-bold text-rose-600">Reward: 50 Points</div>
+                  <div className="text-xs font-mono text-slate-500 font-bold">40-50 Pups • Rush</div>
+                  <div className="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md inline-block mt-0.5">+50 Points</div>
                 </div>
              </div>
           </div>
         </div>
 
-        {/* Hints */}
-        <div className="border-t border-slate-100 pt-4">
-           <div className="flex items-start gap-3">
-             <i className="fas fa-lightbulb text-yellow-400 text-xl mt-0.5"></i>
-             <div>
-               <h4 className="font-bold text-slate-800 text-sm">Need Help?</h4>
-               <p className="text-xs text-slate-500 mt-1">
-                 You get <strong className="text-slate-700">2 Free Hints</strong> per level. If you run out, you can use your earned points or buy premium hint packs.
-               </p>
-             </div>
-           </div>
+        {/* Pro Tips */}
+        <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 relative overflow-hidden">
+           <i className="fas fa-lightbulb absolute -top-2 -right-2 text-6xl text-orange-200/40 rotate-12"></i>
+           <h4 className="font-bold text-orange-900 mb-2 flex items-center gap-2 relative z-10">
+             <i className="fas fa-star text-orange-500"></i> Pro Tips
+           </h4>
+           <ul className="text-xs text-orange-800/90 space-y-2 list-disc pl-4 relative z-10 font-medium">
+              <li>Puppies love to hide near objects of similar color.</li>
+              <li>Look for out-of-place ears, tails, or paws!</li>
+              <li>Use the <strong>Pinch Zoom</strong> gesture to scan crowded areas.</li>
+              <li>Save your hints for the final few hidden pups.</li>
+           </ul>
+        </div>
+        
+        {/* Game Info / Tech */}
+        <div className="flex items-center justify-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+           <i className="fas fa-magic text-purple-400"></i>
+           <span className="text-[10px] text-slate-500 font-medium">
+             Worlds generated infinitely by <strong>Google Gemini AI</strong>
+           </span>
+        </div>
+
+        {/* Hints Footer */}
+        <div className="border-t border-slate-100 pt-2">
+           <p className="text-[10px] text-center text-slate-400">
+             You receive 2 free hints every level. Good luck!
+           </p>
+        </div>
+
+        {/* Copyright Footer - Moved Here */}
+        <div className="pt-4 text-center">
+             <div className="w-16 h-1 bg-slate-100 rounded-full mx-auto mb-3"></div>
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider opacity-60">© 2025-2026 MVTechnology</p>
         </div>
 
       </div>
@@ -1083,10 +1103,6 @@ export default function App() {
                 </div>
               </div>
 
-            </div>
-
-            <div className="mt-8 text-center pb-4">
-               <span className="text-[10px] text-slate-400/60 font-medium mix-blend-multiply">© 2025-2026 MVTechnology</span>
             </div>
           </div>
         </main>

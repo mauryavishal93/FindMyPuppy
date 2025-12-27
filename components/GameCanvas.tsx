@@ -75,7 +75,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     updateMinZoom(); // Initial check
 
     return () => observer.disconnect();
-  }, [loaded]);
+  }, [loaded, isLoading]); // Added isLoading to ensure ref exists
 
   // Preload image
   useEffect(() => {
@@ -108,7 +108,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         behavior: 'instant'
       });
     }
-  }, [loaded]);
+  }, [loaded, isLoading]);
 
   // Auto-scroll to hidden puppies when hint is activated
   useEffect(() => {
@@ -170,7 +170,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
+  }, [isLoading]); // Re-bind when loading state changes
 
   // Add touch event listeners for pinch zoom
   useEffect(() => {
@@ -226,7 +226,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, []); // Bind once
+  }, [isLoading]); // Re-bind when loading state changes
 
   if (isLoading || !backgroundImage) {
     return (
