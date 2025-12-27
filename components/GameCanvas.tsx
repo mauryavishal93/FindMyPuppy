@@ -64,11 +64,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // Allow zooming out until the whole image fits strictly
         // We use Math.min to ensure it fits completely within the viewport
         minZoomRef.current = Math.min(widthRatio, heightRatio);
-        
-        // Optional: If current zoom is significantly invalid (smaller than min), we could clamp it,
-        // but usually we want to respect user's state. 
-        // If the user resizes the window and the map becomes smaller than allowed, we could auto-zoom,
-        // but for now, we just update the limit for the next interaction.
       }
     };
 
@@ -364,7 +359,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                   <img 
                     src={puppy.imageUrl} 
                     alt="puppy"
-                    className={`w-full h-full object-contain ${puppy.isFound ? 'found-celebration' : ''}`}
+                    className={`w-full h-full object-contain ${puppy.isFound ? 'animate-bounce' : ''}`}
                     draggable={false}
                     style={!puppy.isFound && !showHints ? { filter: 'none' } : undefined}
                   />
