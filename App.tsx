@@ -106,7 +106,7 @@ const PUPPY_IMAGES = [
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMTUgTDM1LDQwIEwxNSw0NSBaIiBmaWxsPSIjNUQ2RDdFIi8+PHBhdGggZD0iTTgwLDE1IEw2NSw0MCBMODUsNDUgWiIgZmlsbD0iIzVENkQ3RSIvPjxwYXRoIGQ9Ik0yMCw0NSBRMTAsODUgNTAsOTAgUTg1LDg1IDgwLDQ1IFE4MCwyNSA1MCwyNSBRMjAsMjUgMjAsNDUiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTIwLDQ1IFE1MCwyNSA4MCw0NSBRODAsNTUgNzAsNTUgUTYwLDU1IDUwLDQ1IFE0MCw1NSAzMCw1NSBRMjAsNTUgMjAsNDUiIGZpbGw9IiM1RDZDN0UiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjQiIGZpbGw9IiM4NUMxRTkiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIxIi8+PGNpcmNsZSBjeD0iNjUiIGN5PSI1MCIgcj0iMCIgZmlsbD0iIzg1QzFFOSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjUiIHJ5PSIzIiBmaWxsPSIjMzMzIi8+PC9nPjwvc3ZnPg==`,
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTUsMzUgTDMwLDMwIEwyNSw1MCBaIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTg1LDM1IEw3MCwzMCBMNzUsNTAgWiIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjIwIiB5PSIzMCIgd2lkdGg9IjYwIiBoZWlnaHQ9IjU1IiByeD0iMjUiIGZpbGw9IiVGNUNCQTciLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2MCIgcng9IjIwIiByeT0iMTUiIGZpbGw9IiMzMzMiIG9wYWNpdHk9IjAuOSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjYiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM1IiBjeT0iNTAiIHI9IjMiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNTAiIHI9IjYiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjY1IiBjeT0iNTAiIHI9IjMiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjYyIiByeD0iNiIgcnk9IjMiIGZpbGw9ImJsYWNrIi8+PC9nPjwvc3ZnPg==`,
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiM0RTM0MkUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMzAsMzAgQTQwLDQwIDAgMCAxIDcwLDMwIEE1MCw1MCAwIDAgMSA3NSw3MCBBNTAsMzAgMCAwIDEgMjUsNzAgQTQwLDQwIDAgMCAxIDMwLDMwIiBmaWxsPSIjRDM1NDAwIi8+PHBhdGggZD0iTTMwLDM1IFE1MCw5MCA2MCwzNSIgZmlsbD0iI0Y1Q0JBNyIgc3Ryb2tlPSJub25lIi8+PGVsbGlwc2UgY3g9IjUwIiBjeT0iNjAiIHJ4PSIxMiIgcnk9IjEwIiBmaWxsPSIjRjVDQkE3IiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjQ4IiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjQ4IiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiLz48cGF0aCBkPSJNNDYsNTggTDU0LDU4IEw1MCw2NCBaIiBmaWxsPSIjMzMzIi8+PC9nPjwvc3ZnPg==`,
-  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzAgUTEwLDQwIDIwLDYwIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTc1LDMwIFE5MCw0MCA4MCw2MCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0yNSwzMCBRNTAsMjAgNzUsMzAgUTg1LDUwIDc1LDc1IFE1MCw4NSAyNSw3NSBRMTUsNTAgMjUsMzAiIGZpbGw9IiNGRkYiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjYiIHJ5PSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI3MCIgcj0iMyIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PC9nPjwvc3ZnPg==`,
+  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzAgUTEwLDQwIDIwLDYwIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTc1LDMwIFE5MCw0MCA4MCw2MCIgZmlsbD0iIzMzMyIvPjxwYXRoIGQ9Ik0yNSwzMCBRNTAsMjAgNzUsMzAgUTg1LDUwIDc1LDc1IFE1MCw8NSAyNSw3NSBRMTUsNTAgMjUsMzAiIGZpbGw9IiNGRkYiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIiBzdHJva2U9Im5vbmUiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2NSIgcng9IjYiIHJ5PSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iMzAiIGN5PSI0MCIgcj0iMiIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PGNpcmNsZSBjeD0iNzAiIGN5PSI3MCIgcj0iMyIgZmlsbD0iIzMzMyIgc3Ryb2tlPSJub25lIi8+PC9nPjwvc3ZnPg==`,
 ];
 
 const SOUNDS = {
@@ -326,7 +326,9 @@ const PaymentModal: React.FC<{
   currentPoints: number;
   paymentStatus: PaymentStatus;
   onCancelPayment: () => void;
-}> = ({ onClose, onPay, onPayWithPoints, currentPoints, paymentStatus, onCancelPayment }) => {
+  title?: string;
+  description?: string;
+}> = ({ onClose, onPay, onPayWithPoints, currentPoints, paymentStatus, onCancelPayment, title, description }) => {
   
   if (paymentStatus === 'processing' || paymentStatus === 'verifying') {
     return (
@@ -358,9 +360,9 @@ const PaymentModal: React.FC<{
         <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4 shrink-0">
            <i className="fas fa-lightbulb text-3xl text-brand-dark animate-bounce-short"></i>
         </div>
-        <h3 className="text-2xl font-black text-slate-800 mb-1">Need a Hint?</h3>
+        <h3 className="text-2xl font-black text-slate-800 mb-1">{title || "Need a Hint?"}</h3>
         <p className="text-slate-500 text-sm mb-6 font-medium">
-          You're out of free hints for this level.
+          {description || "You're out of free hints for this level."}
         </p>
 
         {/* Pay with Points */}
@@ -447,6 +449,7 @@ export default function App() {
   // Payment States
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('idle');
+  const [paymentModalConfig, setPaymentModalConfig] = useState<{title?: string, description?: string}>({});
   
   // Info Modal State
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -735,9 +738,22 @@ export default function App() {
     } 
     // Out of hints
     else {
+      setPaymentModalConfig({
+        title: "Need a Hint?",
+        description: "You're out of free hints for this level."
+      });
       setPaymentStatus('idle'); // Ensure status is idle when opening
       setShowPaymentModal(true);
     }
+  };
+
+  const openHintShop = () => {
+    setPaymentModalConfig({
+      title: 'Hint Shop',
+      description: 'Stock up on hints for the harder levels!'
+    });
+    setPaymentStatus('idle');
+    setShowPaymentModal(true);
   };
   
   // Payment Automation Logic
@@ -1024,62 +1040,37 @@ export default function App() {
                 difficulty={Difficulty.HARD} points={50} color={activeTheme.id === 'night' ? "bg-gradient-to-r from-pink-700 to-rose-600" : "bg-gradient-to-r from-rose-500 to-pink-600"}
                 description="100 Levels • Expert" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
               />
+              
+              {/* Buy Hints Shop Card */}
+              <div 
+                onClick={openHintShop}
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-4 rounded-2xl shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between h-20 w-full hover:shadow-xl hover:-translate-y-1 mt-6 border-2 border-yellow-300"
+              >
+                <div className="absolute -left-4 -bottom-4 opacity-20 text-6xl group-hover:scale-110 transition-transform rotate-12">
+                  <i className="fas fa-lightbulb"></i>
+                </div>
+                
+                <div className="z-10 flex flex-col pl-2">
+                  <h3 className="text-2xl font-black leading-none drop-shadow-sm">Buy Hints</h3>
+                  <p className="text-white/90 text-xs font-medium mt-1 opacity-90 shadow-sm">
+                    {progress.premiumHints} Hints Available
+                  </p>
+                </div>
+
+                <div className="z-10 flex flex-col items-end pr-1">
+                  <div className="flex items-center gap-1 bg-white/25 px-3 py-1.5 rounded-lg backdrop-blur-md shadow-sm border border-white/20">
+                    <span className="font-black text-lg">₹9</span>
+                  </div>
+                  <span className="text-[10px] mt-1 opacity-90 uppercase font-bold tracking-wider drop-shadow-sm">100 Pack</span>
+                </div>
+              </div>
+
             </div>
           </div>
         </main>
       </div>
     );
   };
-  
-  const renderGameOver = () => (
-    <div className="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
-        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border-4 border-white">
-           <i className="fas fa-hourglass-end text-5xl text-red-500 drop-shadow-md"></i>
-        </div>
-        <h2 className="text-3xl font-black text-slate-800 mb-2">Time's Up!</h2>
-        <p className="text-slate-500 mb-8 font-medium">The puppies are still hiding!</p>
-        <div className="space-y-3">
-          <Button onClick={handleRetry} className="w-full bg-brand text-white hover:bg-brand-dark shadow-lg shadow-brand/30">
-            <i className="fas fa-redo mr-2"></i> Try Again
-          </Button>
-          <Button onClick={() => setView('LEVEL_SELECT')} className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200">
-            Back to Levels
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderWin = () => (
-    <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
-        {/* Confetti Background effect */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-blue-400"></div>
-        
-        <div className="w-24 h-24 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl border-4 border-white relative z-10">
-           <i className="fas fa-trophy text-5xl text-white drop-shadow-md"></i>
-           <i className="fas fa-star absolute -top-2 -right-2 text-3xl text-yellow-200 animate-bounce"></i>
-        </div>
-        <h2 className="text-3xl font-black text-slate-800 mb-2">Level Cleared!</h2>
-        <p className="text-slate-500 mb-8 font-medium">Amazing job, {progress.playerName}!</p>
-        <div className="space-y-3">
-          {currentLevelId < 100 ? (
-             <Button onClick={nextLevel} className="w-full bg-brand text-white hover:bg-brand-dark shadow-lg shadow-brand/30">
-               Next Level <i className="fas fa-arrow-right ml-2"></i>
-             </Button>
-          ) : (
-            <div className="p-4 bg-yellow-50 text-yellow-700 rounded-xl mb-4 font-bold border border-yellow-200 flex items-center justify-center gap-2">
-              <i className="fas fa-crown"></i> Game Completed!
-            </div>
-          )}
-          <Button onClick={() => setView('LEVEL_SELECT')} className="w-full bg-slate-100 text-slate-600 hover:bg-slate-200">
-            Back to Levels
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
 
   const renderGame = () => {
     // Determine hint button visual state
@@ -1137,6 +1128,7 @@ export default function App() {
           />
           
           {/* HUD Elements */}
+          {/* Found Count - Top Right (Optional but helpful) */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col gap-2 items-end pointer-events-none">
             <div className="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 shadow-lg">
               <i className="fas fa-paw text-[10px] sm:text-xs"></i>
@@ -1168,9 +1160,10 @@ export default function App() {
   };
 
   return (
-    <div className="h-[100dvh] w-full max-w-lg mx-auto bg-white shadow-2xl overflow-hidden relative font-sans">
+    <div className="h-full w-full bg-slate-100 font-sans text-slate-900 select-none overflow-hidden fixed inset-0">
       {view === 'LOGIN' && renderLogin()}
       {view === 'HOME' && renderHome()}
+      
       {view === 'LEVEL_SELECT' && (
         <LevelSelector 
           difficulty={selectedDifficulty}
@@ -1182,12 +1175,78 @@ export default function App() {
           currentTheme={progress.selectedTheme || 'sunny'}
         />
       )}
+
       {view === 'GAME' && renderGame()}
-      {view === 'WIN' && renderWin()}
-      {view === 'GAME_OVER' && renderGameOver()}
+
+      {view === 'WIN' && (
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-white">
+            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white animate-bounce-short">
+               <i className="fas fa-trophy text-6xl text-yellow-500 drop-shadow-sm"></i>
+            </div>
+            
+            <h2 className="text-3xl font-black text-slate-800 mt-12 mb-2">Level Clear!</h2>
+            <p className="text-slate-500 font-medium mb-6">Fantastic job finding all the pups!</p>
+            
+            <div className="flex justify-center gap-4 mb-8">
+               <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100 flex flex-col items-center w-24">
+                  <span className="text-xs font-bold text-yellow-600 uppercase">Score</span>
+                  <span className="text-2xl font-black text-yellow-500">{progress.totalScore}</span>
+               </div>
+               <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col items-center w-24">
+                  <span className="text-xs font-bold text-blue-600 uppercase">Level</span>
+                  <span className="text-2xl font-black text-blue-500">{currentLevelId}</span>
+               </div>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button onClick={nextLevel} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg shadow-emerald-200">
+                Next Level <i className="fas fa-arrow-right ml-2"></i>
+              </Button>
+              <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
+                Back to Map
+              </button>
+            </div>
+          </div>
+          
+          {/* Confetti */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+             {[...Array(20)].map((_, i) => (
+                <div key={i} className="absolute animate-fall" style={{
+                   left: `${Math.random() * 100}%`,
+                   top: `-10%`,
+                   animationDuration: `${2 + Math.random() * 3}s`,
+                   animationDelay: `${Math.random() * 2}s`
+                }}>
+                   <i className={`fas fa-square text-xs transform rotate-45 text-${['red','yellow','blue','green','pink'][Math.floor(Math.random()*5)]}-400`}></i>
+                </div>
+             ))}
+          </div>
+        </div>
+      )}
       
-      {showInfoModal && <InfoModal onClose={() => setShowInfoModal(false)} />}
-      
+      {view === 'GAME_OVER' && (
+        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-red-100">
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+               <i className="fas fa-times text-5xl text-red-500"></i>
+            </div>
+            
+            <h2 className="text-3xl font-black text-slate-800 mt-10 mb-2">Time's Up!</h2>
+            <p className="text-slate-500 font-medium mb-6">Those puppies were too good at hiding.</p>
+
+            <div className="flex flex-col gap-3">
+              <Button onClick={handleRetry} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg shadow-blue-200">
+                <i className="fas fa-redo mr-2"></i> Try Again
+              </Button>
+              <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
+                Give Up
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showThemeModal && (
         <ThemeModal 
           onClose={() => setShowThemeModal(false)}
@@ -1195,15 +1254,21 @@ export default function App() {
           currentTheme={progress.selectedTheme || 'sunny'}
         />
       )}
-      
+
+      {showInfoModal && (
+        <InfoModal onClose={() => setShowInfoModal(false)} />
+      )}
+
       {showPaymentModal && (
         <PaymentModal 
-          onClose={() => setShowPaymentModal(false)} 
-          onPay={handlePayment} 
+          onClose={() => { setShowPaymentModal(false); setPaymentStatus('idle'); }}
+          onPay={handlePayment}
           onPayWithPoints={handlePayWithPoints}
           currentPoints={progress.totalScore}
           paymentStatus={paymentStatus}
           onCancelPayment={handleCancelPayment}
+          title={paymentModalConfig.title}
+          description={paymentModalConfig.description}
         />
       )}
     </div>
