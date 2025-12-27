@@ -294,7 +294,7 @@ const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
         {/* Copyright Footer */}
         <div className="pt-2 text-center">
              <div className="w-12 h-1 bg-slate-100 rounded-full mx-auto mb-2"></div>
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider opacity-60">© 2025-2026 MVTechnology</p>
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider opacity-60">© 2025-2026 MV Technology</p>
         </div>
         </div>
       </div>

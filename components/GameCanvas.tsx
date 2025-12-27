@@ -34,6 +34,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const minZoomRef = useRef(0.1); 
   const prevShowHintsRef = useRef(showHints);
   
+  // Track the last loaded background to prevent re-triggering loading on game updates (like finding a puppy)
+  const prevBgRef = useRef<string | null>(null);
+  
   // Refs for pinch zoom state
   const touchState = useRef<{
     initialDistance: number;
@@ -55,11 +58,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       setLoadingState('generating');
       setProgress(5); // Start at small percentage
       setLoadError(false);
+      prevBgRef.current = null; // Reset so next BG load triggers
       return;
     }
 
     // 2. If we have a background image, start loading assets
-    if (backgroundImage) {
+    // Only run this if the background image has effectively changed to prevent reloading when finding puppies
+    if (backgroundImage && backgroundImage !== prevBgRef.current) {
+      prevBgRef.current = backgroundImage;
       setLoadingState('loading');
       setProgress(10); // Jump a bit to show activity
       
