@@ -1175,7 +1175,7 @@ export default function App() {
           </div>
           
           {/* Hint Button (Pointer Events Enabled) */}
-          <div className="absolute bottom-6 right-4 sm:bottom-8 sm:right-6 z-20 pb-[env(safe-area-inset-bottom)]">
+          <div className="absolute bottom-20 sm:bottom-24 right-6 z-[60] pb-[env(safe-area-inset-bottom)] transition-all duration-300">
              <button 
                onClick={handleUseHint}
                disabled={gameState.loading || showHints}
