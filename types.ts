@@ -31,6 +31,7 @@ export interface UserProgress {
   totalScore: number;
   unlockedDifficulties: Difficulty[];
   premiumHints: number;
+  selectedTheme?: ThemeType;
 }
 
 export interface GameSession {
@@ -39,4 +40,20 @@ export interface GameSession {
   currentDifficulty: Difficulty;
   score: number;
   timeLeft?: number;
+}
+
+export type ThemeType = 'sunny' | 'night' | 'candy' | 'forest' | 'park' | 'bath' | 'toys';
+
+export interface ThemeConfig {
+  id: ThemeType;
+  name: string;
+  icon: string;
+  background: string; // Main background gradient
+  cardBg: string; // Background for panels/cards
+  text: string; // Primary text color
+  subText: string; // Secondary text color
+  accent: string; // Accent color for buttons/highlights
+  button: string; // Primary button style
+  headerBg: string; // Header background
+  iconBg: string; // Icon button background
 }

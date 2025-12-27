@@ -1,9 +1,104 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Difficulty, UserProgress, Puppy } from './types';
+import { Difficulty, UserProgress, Puppy, ThemeType, ThemeConfig } from './types';
 import { generateLevelTheme, generateLevelImage } from './services/geminiService';
 import { GameCanvas } from './components/GameCanvas';
 import { LevelSelector } from './components/LevelSelector';
 import { GameLogo } from './components/GameLogo';
+
+// --- Theme Configuration ---
+const THEME_CONFIGS: Record<ThemeType, ThemeConfig> = {
+  sunny: {
+    id: 'sunny',
+    name: 'Sunny Day',
+    icon: 'fa-sun',
+    background: 'bg-gradient-to-b from-sky-100 via-white to-green-50',
+    cardBg: 'bg-white/60 border-white/60',
+    text: 'text-slate-800',
+    subText: 'text-slate-600',
+    accent: 'text-brand',
+    button: 'bg-gradient-to-r from-brand to-brand-dark',
+    headerBg: 'bg-white/70 border-white/50',
+    iconBg: 'bg-white/80 border-white text-slate-600 hover:text-brand'
+  },
+  night: {
+    id: 'night',
+    name: 'Starry Night',
+    icon: 'fa-moon',
+    background: 'bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900',
+    cardBg: 'bg-slate-800/60 border-indigo-500/30',
+    text: 'text-indigo-50',
+    subText: 'text-indigo-300',
+    accent: 'text-yellow-300',
+    button: 'bg-gradient-to-r from-indigo-600 to-purple-700',
+    headerBg: 'bg-slate-900/70 border-slate-700/50',
+    iconBg: 'bg-slate-800/80 border-slate-700 text-indigo-300 hover:text-yellow-300'
+  },
+  candy: {
+    id: 'candy',
+    name: 'Candy Land',
+    icon: 'fa-candy-cane',
+    background: 'bg-gradient-to-b from-pink-100 via-purple-50 to-pink-50',
+    cardBg: 'bg-white/70 border-pink-200/60',
+    text: 'text-purple-900',
+    subText: 'text-purple-600',
+    accent: 'text-pink-500',
+    button: 'bg-gradient-to-r from-pink-400 to-purple-400',
+    headerBg: 'bg-white/70 border-pink-100/50',
+    iconBg: 'bg-white/80 border-white text-pink-400 hover:text-purple-500'
+  },
+  forest: {
+    id: 'forest',
+    name: 'Magic Forest',
+    icon: 'fa-tree',
+    background: 'bg-gradient-to-b from-emerald-100 via-teal-50 to-emerald-50',
+    cardBg: 'bg-white/60 border-emerald-200/60',
+    text: 'text-emerald-900',
+    subText: 'text-emerald-700',
+    accent: 'text-teal-600',
+    button: 'bg-gradient-to-r from-emerald-500 to-teal-600',
+    headerBg: 'bg-white/70 border-emerald-100/50',
+    iconBg: 'bg-white/80 border-white text-emerald-600 hover:text-teal-700'
+  },
+  park: {
+    id: 'park',
+    name: 'Puppy Park',
+    icon: 'fa-baseball-ball',
+    background: 'bg-gradient-to-b from-green-100 via-lime-50 to-sky-100',
+    cardBg: 'bg-white/60 border-lime-300/60',
+    text: 'text-emerald-800',
+    subText: 'text-emerald-600',
+    accent: 'text-lime-600',
+    button: 'bg-gradient-to-r from-lime-500 to-green-600',
+    headerBg: 'bg-white/70 border-lime-200/50',
+    iconBg: 'bg-white/80 border-white text-lime-600 hover:text-green-700'
+  },
+  bath: {
+    id: 'bath',
+    name: 'Bubble Bath',
+    icon: 'fa-bath',
+    background: 'bg-gradient-to-b from-cyan-100 via-blue-50 to-white',
+    cardBg: 'bg-white/70 border-cyan-200/60',
+    text: 'text-cyan-900',
+    subText: 'text-cyan-700',
+    accent: 'text-blue-500',
+    button: 'bg-gradient-to-r from-cyan-400 to-blue-500',
+    headerBg: 'bg-white/70 border-cyan-100/50',
+    iconBg: 'bg-white/80 border-white text-cyan-500 hover:text-blue-600'
+  },
+  toys: {
+    id: 'toys',
+    name: 'Toy Paradise',
+    icon: 'fa-puzzle-piece',
+    background: 'bg-gradient-to-b from-yellow-100 via-red-50 to-blue-50',
+    cardBg: 'bg-white/70 border-orange-200/60',
+    text: 'text-slate-800',
+    subText: 'text-slate-600',
+    accent: 'text-orange-500',
+    button: 'bg-gradient-to-r from-orange-400 to-red-500',
+    headerBg: 'bg-white/70 border-yellow-100/50',
+    iconBg: 'bg-white/80 border-white text-orange-500 hover:text-red-500'
+  }
+};
 
 // --- Assets ---
 const PUPPY_IMAGES = [
@@ -172,6 +267,58 @@ const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
   </div>
 );
 
+const ThemeModal: React.FC<{ 
+  onClose: () => void; 
+  onSelect: (theme: ThemeType) => void; 
+  currentTheme: ThemeType 
+}> = ({ onClose, onSelect, currentTheme }) => (
+  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl border-4 border-white animate-fade-in max-h-[80vh] overflow-y-auto">
+      <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+        <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+          <i className="fas fa-paint-brush text-brand"></i> Theme
+        </h3>
+        <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
+          <i className="fas fa-times text-slate-500"></i>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {(Object.keys(THEME_CONFIGS) as ThemeType[]).map((themeKey) => {
+          const theme = THEME_CONFIGS[themeKey];
+          const isSelected = currentTheme === themeKey;
+          return (
+            <button
+              key={themeKey}
+              onClick={() => onSelect(themeKey)}
+              className={`
+                relative p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2
+                ${isSelected 
+                  ? 'border-brand bg-brand-light/20 scale-105 shadow-md' 
+                  : 'border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-300'
+                }
+              `}
+            >
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm ${
+                isSelected ? 'bg-brand text-white' : 'bg-white text-slate-400'
+              }`}>
+                <i className={`fas ${theme.icon}`}></i>
+              </div>
+              <span className={`text-sm font-bold ${isSelected ? 'text-brand-dark' : 'text-slate-500'}`}>
+                {theme.name}
+              </span>
+              {isSelected && (
+                <div className="absolute top-2 right-2 w-3 h-3 bg-brand rounded-full border-2 border-white"></div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+);
+
+
 const PaymentModal: React.FC<{ 
   onClose: () => void; 
   onPay: () => void; 
@@ -303,6 +450,9 @@ export default function App() {
   
   // Info Modal State
   const [showInfoModal, setShowInfoModal] = useState(false);
+  
+  // Theme Modal State
+  const [showThemeModal, setShowThemeModal] = useState(false);
 
   // Hint State
   const [hintsUsedInLevel, setHintsUsedInLevel] = useState(0);
@@ -312,14 +462,18 @@ export default function App() {
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('findMyPuppy_progress');
-    return saved ? JSON.parse(saved) : {
+    const defaultProgress = {
       playerName: '',
       clearedLevels: {},
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
-      premiumHints: 0
+      premiumHints: 0,
+      selectedTheme: 'sunny' as ThemeType
     };
+    return saved ? { ...defaultProgress, ...JSON.parse(saved) } : defaultProgress;
   });
+
+  const activeTheme = THEME_CONFIGS[progress.selectedTheme || 'sunny'];
 
   // Handle Background Audio
   useEffect(() => {
@@ -409,6 +563,11 @@ export default function App() {
     if (ambientAudioRef.current && !isMuted) {
       ambientAudioRef.current.play().catch(() => {});
     }
+  };
+
+  const handleThemeChange = (theme: ThemeType) => {
+    setProgress(prev => ({ ...prev, selectedTheme: theme }));
+    setShowThemeModal(false);
   };
 
   const initLevel = useCallback(async (level: number, diff: Difficulty) => {
@@ -696,85 +855,181 @@ export default function App() {
     </div>
   );
 
-  const renderHome = () => (
-    <div className="flex flex-col h-full bg-gradient-to-b from-sky-100 via-white to-green-50 relative overflow-hidden">
-      
-      {/* Decorative Landscape Background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
-        {/* Sky */}
-        <i className="fas fa-cloud absolute top-10 left-[-20px] text-8xl text-white/80 animate-[pulse_4s_ease-in-out_infinite]"></i>
-        <i className="fas fa-cloud absolute top-24 right-[-40px] text-9xl text-white/60 animate-[pulse_5s_ease-in-out_infinite] delay-1000"></i>
-        <div className="absolute top-10 right-10 w-24 h-24 bg-yellow-300/20 rounded-full blur-xl"></div>
-        <i className="fas fa-sun absolute top-5 right-5 text-yellow-400/30 text-8xl animate-[spin_60s_linear_infinite]"></i>
+  const renderHome = () => {
+    // Dynamic Theme Rendering
+    const renderThemeBackground = () => {
+      switch (activeTheme.id) {
+        case 'night':
+          return (
+            <>
+               <i className="fas fa-moon absolute top-10 left-[-20px] text-6xl text-yellow-200/20 animate-pulse"></i>
+               <i className="fas fa-star absolute top-24 right-[-40px] text-4xl text-white/20 animate-pulse delay-1000"></i>
+               <div className="absolute top-10 right-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl"></div>
+               <i className="fas fa-paw absolute top-1/4 left-10 text-4xl text-indigo-400/10 -rotate-12"></i>
+               <i className="fas fa-meteor absolute top-5 right-1/3 text-6xl text-purple-300/10 rotate-45"></i>
+               {/* Ground */}
+               <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-slate-900 via-indigo-900/50 to-transparent"></div>
+               <i className="fas fa-tree absolute bottom-20 left-[-20px] text-8xl text-indigo-900/40"></i>
+               <i className="fas fa-tree absolute bottom-32 right-[-30px] text-7xl text-indigo-900/30 transform -scale-x-100"></i>
+            </>
+          );
+        case 'candy':
+          return (
+            <>
+               <i className="fas fa-cloud absolute top-10 left-[-20px] text-8xl text-pink-200/50 animate-[pulse_4s_ease-in-out_infinite]"></i>
+               <i className="fas fa-candy-cane absolute top-24 right-[-40px] text-9xl text-pink-400/10 rotate-12"></i>
+               <div className="absolute top-10 right-10 w-24 h-24 bg-pink-300/20 rounded-full blur-xl"></div>
+               <i className="fas fa-heart absolute top-5 right-5 text-pink-400/20 text-6xl animate-bounce"></i>
+               <i className="fas fa-ice-cream absolute bottom-1/2 left-5 text-4xl text-purple-300/20 rotate-12"></i>
+               {/* Ground */}
+               <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-pink-200/50 to-transparent"></div>
+               <i className="fas fa-cookie absolute bottom-20 left-10 text-6xl text-yellow-600/10"></i>
+            </>
+          );
+        case 'forest':
+           return (
+            <>
+               <i className="fas fa-leaf absolute top-10 left-[-20px] text-8xl text-emerald-200/50 rotate-45"></i>
+               <i className="fas fa-sun absolute top-5 right-5 text-yellow-400/20 text-8xl animate-[spin_60s_linear_infinite]"></i>
+               <i className="fas fa-tree absolute top-1/3 right-20 text-3xl text-emerald-700/10 rotate-12"></i>
+               {/* Ground */}
+               <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-emerald-100/50 to-transparent"></div>
+               <i className="fas fa-tree absolute bottom-20 left-[-20px] text-9xl text-emerald-800/20"></i>
+               <i className="fas fa-frog absolute bottom-10 right-20 text-4xl text-emerald-600/20"></i>
+            </>
+           );
+        case 'park':
+           return (
+            <>
+               <i className="fas fa-sun absolute -top-5 -left-5 text-9xl text-yellow-300/40 animate-[spin_40s_linear_infinite]"></i>
+               <i className="fas fa-cloud absolute top-10 right-10 text-8xl text-white/60 animate-pulse"></i>
+               <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-lime-300/10 rounded-full blur-2xl"></div>
+               <i className="fas fa-baseball-ball absolute top-1/3 right-10 text-5xl text-white/40 rotate-12"></i>
+               <i className="fas fa-bone absolute bottom-1/2 left-10 text-6xl text-amber-200/20 -rotate-12"></i>
+               {/* Ground */}
+               <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-lime-200 via-green-100/50 to-transparent"></div>
+               <i className="fas fa-dog absolute bottom-10 right-10 text-8xl text-emerald-800/10"></i>
+            </>
+           );
+        case 'bath':
+           return (
+            <>
+               <div className="absolute top-10 left-10 w-20 h-20 rounded-full border-4 border-white/20 animate-bounce"></div>
+               <div className="absolute top-40 right-20 w-12 h-12 rounded-full border-2 border-white/20 animate-pulse"></div>
+               <i className="fas fa-soap absolute top-10 right-10 text-7xl text-pink-200/30 rotate-12"></i>
+               <i className="fas fa-shower absolute top-5 left-1/3 text-6xl text-cyan-500/10"></i>
+               {/* Water */}
+               <div className="absolute bottom-0 w-full h-2/5 bg-gradient-to-t from-cyan-200/50 to-transparent"></div>
+               <i className="fas fa-bath absolute bottom-10 left-10 text-9xl text-white/30"></i>
+               <i className="fas fa-tint absolute top-1/2 right-1/3 text-5xl text-blue-400/20 animate-bounce"></i>
+            </>
+           );
+        case 'toys':
+           return (
+            <>
+               <i className="fas fa-puzzle-piece absolute top-10 left-10 text-8xl text-red-400/10 -rotate-12"></i>
+               <i className="fas fa-gamepad absolute top-20 right-10 text-7xl text-purple-400/10 rotate-12"></i>
+               <i className="fas fa-robot absolute bottom-1/2 right-1/4 text-8xl text-blue-400/10"></i>
+               <i className="fas fa-shapes absolute top-1/3 left-1/3 text-6xl text-yellow-400/20 animate-spin-slow"></i>
+               {/* Ground */}
+               <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-orange-100/50 to-transparent"></div>
+               <i className="fas fa-cube absolute bottom-10 left-10 text-8xl text-orange-400/10"></i>
+            </>
+           );
+        case 'sunny':
+        default:
+          return (
+            <>
+               <i className="fas fa-cloud absolute top-10 left-[-20px] text-8xl text-white/80 animate-[pulse_4s_ease-in-out_infinite]"></i>
+               <i className="fas fa-cloud absolute top-24 right-[-40px] text-9xl text-white/60 animate-[pulse_5s_ease-in-out_infinite] delay-1000"></i>
+               <div className="absolute top-10 right-10 w-24 h-24 bg-yellow-300/20 rounded-full blur-xl"></div>
+               <i className="fas fa-sun absolute top-5 right-5 text-yellow-400/30 text-8xl animate-[spin_60s_linear_infinite]"></i>
+               <i className="fas fa-paw absolute top-1/4 left-10 text-4xl text-brand/10 -rotate-12"></i>
+               <i className="fas fa-paw absolute top-1/3 right-20 text-3xl text-brand/10 rotate-12"></i>
+               <i className="fas fa-bone absolute bottom-1/2 left-5 text-4xl text-slate-400/10 rotate-45"></i>
+               {/* Ground */}
+               <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-green-100/50 to-transparent"></div>
+               <i className="fas fa-tree absolute bottom-20 left-[-20px] text-8xl text-green-200/60"></i>
+               <i className="fas fa-tree absolute bottom-32 right-[-30px] text-7xl text-green-200/50 transform -scale-x-100"></i>
+               <i className="fas fa-dog absolute bottom-5 right-10 text-9xl text-brand-dark/5 rotate-[-5deg]"></i>
+            </>
+          );
+      }
+    };
 
-        {/* Floating Icons */}
-        <i className="fas fa-paw absolute top-1/4 left-10 text-4xl text-brand/10 -rotate-12"></i>
-        <i className="fas fa-paw absolute top-1/3 right-20 text-3xl text-brand/10 rotate-12"></i>
-        <i className="fas fa-bone absolute bottom-1/2 left-5 text-4xl text-slate-400/10 rotate-45"></i>
+    return (
+      <div className={`flex flex-col h-full ${activeTheme.background} relative overflow-hidden transition-colors duration-500`}>
+        
+        {/* Decorative Landscape Background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+          {renderThemeBackground()}
+        </div>
 
-        {/* Ground */}
-        <div className="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-green-100/50 to-transparent"></div>
-        <i className="fas fa-tree absolute bottom-20 left-[-20px] text-8xl text-green-200/60"></i>
-        <i className="fas fa-tree absolute bottom-32 right-[-30px] text-7xl text-green-200/50 transform -scale-x-100"></i>
-        <i className="fas fa-dog absolute bottom-5 right-10 text-9xl text-brand-dark/5 rotate-[-5deg]"></i>
+        <header className={`${activeTheme.headerBg} backdrop-blur-md px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b`}>
+          <div className="flex items-center gap-3">
+            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-11 h-11 rounded-full flex items-center justify-center font-black text-xl border-2 border-white shadow-sm`}>
+               {progress.playerName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className={`text-[10px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text}`}>Player</span>
+              <span className={`text-lg font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+             {/* Theme Toggle Button */}
+            <button 
+              onClick={() => setShowThemeModal(true)} 
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
+            >
+              <i className="fas fa-paint-brush text-sm"></i>
+            </button>
+
+            <button onClick={toggleMute} className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}>
+              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+            </button>
+            
+            <button 
+              onClick={() => setShowInfoModal(true)} 
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
+            >
+              <i className="fas fa-info text-sm"></i>
+            </button>
+
+            <div className={`backdrop-blur-sm px-4 py-2 rounded-full font-bold flex items-center gap-2 border-2 border-white shadow-sm ${activeTheme.cardBg} ${activeTheme.accent}`}>
+              <i className="fas fa-trophy text-lg drop-shadow-sm"></i>
+              <span className="text-lg">{progress.totalScore}</span>
+            </div>
+          </div>
+        </header>
+        
+        <main className="flex-1 px-6 py-8 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
+          <div className="w-full max-w-sm space-y-8">
+            <div className={`flex flex-col items-center text-center p-6 rounded-3xl backdrop-blur-sm shadow-sm border relative overflow-hidden ${activeTheme.cardBg}`}>
+               <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>
+               <GameLogo className="w-24 h-24 mb-4 drop-shadow-md transform hover:scale-105 transition-transform duration-500" />
+               <h2 className={`text-3xl font-black tracking-tight ${activeTheme.text}`}>Select Difficulty</h2>
+               <p className={`font-medium text-sm mt-1 ${activeTheme.subText}`}>Where are the puppies hiding today?</p>
+            </div>
+            
+            <div className="space-y-4 perspective-1000">
+              <DifficultyCard 
+                difficulty={Difficulty.EASY} points={10} color={activeTheme.id === 'night' ? "bg-gradient-to-r from-indigo-600 to-blue-500" : "bg-gradient-to-r from-emerald-400 to-teal-500"}
+                description="100 Levels • Relaxed" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
+              />
+              <DifficultyCard 
+                difficulty={Difficulty.MEDIUM} points={20} color={activeTheme.id === 'night' ? "bg-gradient-to-r from-purple-600 to-indigo-600" : "bg-gradient-to-r from-blue-400 to-indigo-500"}
+                description="100 Levels • Timed" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
+              />
+              <DifficultyCard 
+                difficulty={Difficulty.HARD} points={50} color={activeTheme.id === 'night' ? "bg-gradient-to-r from-pink-700 to-rose-600" : "bg-gradient-to-r from-rose-500 to-pink-600"}
+                description="100 Levels • Expert" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
+              />
+            </div>
+          </div>
+        </main>
       </div>
-
-      <header className="bg-white/70 backdrop-blur-md px-6 py-4 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b border-white/50">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-11 h-11 rounded-full flex items-center justify-center font-black text-xl border-2 border-white shadow-sm">
-             {progress.playerName.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Player</span>
-            <span className="text-lg font-black text-slate-800 leading-none drop-shadow-sm">{progress.playerName}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={toggleMute} className="w-11 h-11 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-600 hover:bg-white hover:text-brand transition-colors shadow-sm">
-            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
-          </button>
-          
-          <button 
-            onClick={() => setShowInfoModal(true)} 
-            className="w-11 h-11 rounded-full bg-white/80 border border-white flex items-center justify-center text-slate-600 hover:bg-white hover:text-brand transition-colors shadow-sm"
-          >
-            <i className="fas fa-info text-sm"></i>
-          </button>
-
-          <div className="bg-white/80 backdrop-blur-sm text-yellow-700 px-4 py-2 rounded-full font-bold flex items-center gap-2 border-2 border-white shadow-sm">
-            <i className="fas fa-trophy text-yellow-500 text-lg drop-shadow-sm"></i>
-            <span className="text-lg">{progress.totalScore}</span>
-          </div>
-        </div>
-      </header>
-      
-      <main className="flex-1 px-6 py-8 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="flex flex-col items-center text-center bg-white/60 p-6 rounded-3xl backdrop-blur-sm shadow-sm border border-white/60 relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand to-transparent opacity-50"></div>
-             <GameLogo className="w-24 h-24 mb-4 drop-shadow-md transform hover:scale-105 transition-transform duration-500" />
-             <h2 className="text-3xl font-black text-slate-800 tracking-tight">Select Difficulty</h2>
-             <p className="text-slate-600 font-medium text-sm mt-1">Where are the puppies hiding today?</p>
-          </div>
-          
-          <div className="space-y-4 perspective-1000">
-            <DifficultyCard 
-              difficulty={Difficulty.EASY} points={10} color="bg-gradient-to-r from-emerald-400 to-teal-500" 
-              description="100 Levels • Relaxed" onClick={() => { setSelectedDifficulty(Difficulty.EASY); setView('LEVEL_SELECT'); }}
-            />
-            <DifficultyCard 
-              difficulty={Difficulty.MEDIUM} points={20} color="bg-gradient-to-r from-blue-400 to-indigo-500" 
-              description="100 Levels • Timed" onClick={() => { setSelectedDifficulty(Difficulty.MEDIUM); setView('LEVEL_SELECT'); }}
-            />
-            <DifficultyCard 
-              difficulty={Difficulty.HARD} points={50} color="bg-gradient-to-r from-rose-500 to-pink-600" 
-              description="100 Levels • Expert" onClick={() => { setSelectedDifficulty(Difficulty.HARD); setView('LEVEL_SELECT'); }}
-            />
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+    );
+  };
   
   const renderGameOver = () => (
     <div className="fixed inset-0 bg-slate-900/80 z-50 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in">
@@ -924,6 +1179,7 @@ export default function App() {
           onBack={() => setView('HOME')}
           isMuted={isMuted}
           onToggleMute={toggleMute}
+          currentTheme={progress.selectedTheme || 'sunny'}
         />
       )}
       {view === 'GAME' && renderGame()}
@@ -931,6 +1187,14 @@ export default function App() {
       {view === 'GAME_OVER' && renderGameOver()}
       
       {showInfoModal && <InfoModal onClose={() => setShowInfoModal(false)} />}
+      
+      {showThemeModal && (
+        <ThemeModal 
+          onClose={() => setShowThemeModal(false)}
+          onSelect={handleThemeChange}
+          currentTheme={progress.selectedTheme || 'sunny'}
+        />
+      )}
       
       {showPaymentModal && (
         <PaymentModal 
