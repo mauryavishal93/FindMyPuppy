@@ -1,8 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 import { Difficulty } from "../types";
 
-// Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy-load Gemini API instance (only when API key is available)
+let aiInstance: GoogleGenAI | null = null;
+
+const getAI = (): GoogleGenAI => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing in environment variables");
+  }
+  if (!aiInstance) {
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 // --- THEMES ---
 const THEMES = [
@@ -36,23 +47,32 @@ const THEMES = [
 // Curated list of high-quality images to use when AI generation fails (Quota limit/Error)
 // These act as the "local bgImages" folder
 const FALLBACK_BG_IMAGES = [
-  "https://i.pinimg.com/1200x/a1/5a/a7/a15aa757cbe31b1f01a70747e5f2285e.jpg",
-  "https://i.pinimg.com/1200x/0b/1e/9a/0b1e9ab6b24c5243207512208a281f2a.jpg",
-  "https://i.pinimg.com/736x/24/20/1b/24201b2d3ffa5717f91d869169748a44.jpg",
-  "https://i.pinimg.com/1200x/f8/d9/53/f8d9536cf847c759bf648a13278800f8.jpg",
-  "https://i.pinimg.com/736x/5e/24/66/5e24661d7e60573574f785e192659d6f.jpg",
-  "https://i.pinimg.com/736x/cd/e3/41/cde34175f01981e4d4388453210902b9.jpg",
-  "https://i.pinimg.com/736x/63/4c/b2/634cb28ec99c014bca55f29f38a022a1.jpg",
-  "https://i.pinimg.com/1200x/8c/f9/0f/8cf90f7fda56f0c16c2cf567c119fffc.jpg",
-  "https://i.pinimg.com/1200x/3b/d1/62/3bd1627edcb6105e94b3571764e23445.jpg",
-  "https://i.pinimg.com/1200x/0a/2f/fb/0a2ffbe057f5f5b5e7def0366f20d25e.jpg",
-  "https://i.pinimg.com/1200x/1e/90/ac/1e90acddbf954fdd3ddbaa8142a9e2fe.jpg",
-  "https://i.pinimg.com/1200x/f4/b7/9c/f4b79ca82021062bb448cbf75d087e49.jpg",
-  "https://i.pinimg.com/1200x/b5/8d/1e/b58d1e36a15f1dcb95f182620357ad16.jpg",
-  "https://i.pinimg.com/736x/f6/ce/d3/f6ced38951c83fa6d4200c1a60f1d700.jpg",
-  "https://i.pinimg.com/736x/d7/d4/9f/d7d49fa3f3f28448455c3fddf6858f7f.jpg",
-  "https://i.pinimg.com/1200x/0a/42/22/0a42228911f2b349aa509bcb5bcddc8d.jpg",
-  "https://i.pinimg.com/736x/c8/d9/20/c8d920bf98f717e5e966346e12051042.jpg"
+ "https://mauryavishal93.github.io/FindMyPuppy/asset/1.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/2.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/3.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/4.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/5.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/6.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/7.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/8.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/9.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/10.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/11.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/12.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/13.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/14.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/15.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/16.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/17.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/18.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/19.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/20.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/21.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/22.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/23.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/24.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/25.png",
+  "https://mauryavishal93.github.io/FindMyPuppy/asset/26.png"
 ];
 
 // --- BROWSER CACHE IMPLEMENTATION (IndexedDB) ---
@@ -123,16 +143,13 @@ const getRandomFromCache = async (): Promise<string | null> => {
   }
 };
 
-export const generateLevelTheme = async (levelId: number, difficulty: Difficulty): Promise<string> => {
+export const generateLevelTheme = async (levelId: number, _difficulty: Difficulty): Promise<string> => {
   return THEMES[(levelId - 1) % THEMES.length];
 };
 
 export const generateLevelImage = async (theme: string, levelId: number): Promise<string> => {
   try {
-    if (!process.env.API_KEY) {
-        throw new Error("API Key is missing in environment variables");
-    }
-
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
