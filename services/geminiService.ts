@@ -124,7 +124,7 @@ const getRandomFromCache = async (): Promise<string | null> => {
   }
 };
 
-export const generateLevelTheme = async (levelId: number, difficulty: Difficulty): Promise<string> => {
+export const generateLevelTheme = async (levelId: number, _difficulty: Difficulty): Promise<string> => {
   return THEMES[(levelId - 1) % THEMES.length];
 };
 

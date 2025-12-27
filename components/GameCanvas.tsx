@@ -121,15 +121,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       if (hiddenPuppies.length > 0) {
         // Check if any are visible in the current viewport
+        // Use a margin to ensure the puppy is not just on the edge
+        const margin = 50; 
+        
         const isAnyVisible = hiddenPuppies.some(p => {
           const px = (p.x / 100) * MAP_SIZE * zoom;
           const py = (p.y / 100) * MAP_SIZE * zoom;
-          // Add margin to consider the element visible
           return (
-            px >= scrollLeft &&
-            px <= scrollLeft + clientWidth &&
-            py >= scrollTop &&
-            py <= scrollTop + clientHeight
+            px >= scrollLeft + margin &&
+            px <= scrollLeft + clientWidth - margin &&
+            py >= scrollTop + margin &&
+            py <= scrollTop + clientHeight - margin
           );
         });
 

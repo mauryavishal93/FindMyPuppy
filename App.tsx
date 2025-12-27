@@ -111,7 +111,7 @@ const PUPPY_IMAGES = [
   // Pug/Bulldog
   `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzUgTDM1LDMwIEwzMCw1MCBaIiBmaWxsPSIjMzMzIi8+PHBhdGggZD0iTTgwLDM1IEw2NSwzMCBMNzAsNTAgWiIgZmlsbD0iIzMzMyIvPjxyZWN0IHg9IjI1IiB5PSIzMCIgd2lkdGg9IjUwIiBoZWlnaHQ9IjU1IiByeD0iMjUiIGZpbGw9IiVEMkI0OEMiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSI2MCIgcng9IjE4IiByeT0iMTIiIGZpbGw9IiMzMzMiIG9wYWNpdHk9IjAuOSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iNTAiIHI9IjUiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjM4IiBjeT0iNTAiIHI9IjIiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNTAiIHI9IjUiIGZpbGw9IiNGRkYiIHN0cm9rZT0ibm9uZSIvPjxjaXJjbGUgY3g9IjYyIiBjeT0iNTAiIHI9IjIiIGZpbGw9IiMzMzMiIHN0cm9rZT0ibm9uZSIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjYyIiByeD0iNSIgcnk9IjMiIGZpbGw9ImJsYWNrIi8+PC9nPjwvc3ZnPg==`,
   // Golden/Floppy
-  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjUsMzAgQTUwLDIwIDc1LDMwIFE4NSw1MCA3NSw4MCBRNTAsOTAgMjUsODAgUTE1LDUwIDI1LDMwIiBmaWxsPSIjRkNEMzREIi8+PHBhdGggZD0iTTI1LDM1IFExMCw1MCAyMCw3MCIgZmlsbD0iI0ZDRDM0RCIvPjxwYXRoIGQ9Ik03NSwzNSBROTAsNTAgODAsNzAiIGZpbGw9IiNGQ0QzNEQiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI1MCIgcj0iNCIgZmlsbD0iIzMzMyIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjY1IiByeD0iNiIgcnk9IjQiIGZpbGw9IiMzMzMiLz48cGF0aCBkPSJNNDUsNzUgQTUwLDgwIDU1LDc1IiBmaWxsPSJub25lIi8+PC9nPjwvc3ZnPg==`,
+  `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48ZyBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMjAsMzAgQTEwLDIwIDc1LDMwIFE4NSw1MCA3NSw4MCBRNTAsOTAgMjUsODAgUTE1LDUwIDI1LDMwIiBmaWxsPSIjRkNEMzREIi8+PHBhdGggZD0iTTI1LDM1IFExMCw1MCAyMCw3MCIgZmlsbD0iI0ZDRDM0RCIvPjxwYXRoIGQ9Ik03NSwzNSBROTAsNTAgODAsNzAiIGZpbGw9IiNGQ0QzNEQiLz48Y2lyY2xlIGN4PSI0MCIgY3k9IjUwIiByPSI0IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iNjAiIGN5PSI1MCIgcj0iNCIgZmlsbD0iIzMzMyIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjY1IiByeD0iNiIgcnk9IjQiIGZpbGw9IiMzMzMiLz48cGF0aCBkPSJNNDUsNzUgQTUwLDgwIDU1LDc1IiBmaWxsPSJub25lIi8+PC9nPjwvc3ZnPg==`,
 ];
 
 const SOUNDS = {
@@ -174,7 +174,7 @@ const DifficultyCard: React.FC<{
 type PaymentStatus = 'idle' | 'processing' | 'verifying';
 
 const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
-  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+  <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
     <div className="bg-white rounded-[2rem] p-6 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto overflow-x-hidden border-4 border-white hide-scrollbar">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
@@ -235,21 +235,30 @@ const InfoModal: React.FC<{ onClose: () => void }> = ({ onClose }) => (
                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                    <span className="font-bold text-slate-700">Easy</span>
                 </div>
-                <div className="text-xs font-mono text-slate-500 font-bold">15-25 Pups • No Timer</div>
+                <div className="text-right">
+                  <div className="text-xs font-mono text-slate-500 font-bold">15-25 Pups • No Timer</div>
+                  <div className="text-[10px] font-bold text-emerald-600">Reward: 10 Points</div>
+                </div>
              </div>
              <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-blue-50 to-white border border-blue-100">
                 <div className="flex items-center gap-2">
                    <span className="w-2 h-2 rounded-full bg-blue-400"></span>
                    <span className="font-bold text-slate-700">Medium</span>
                 </div>
-                <div className="text-xs font-mono text-slate-500 font-bold">25-35 Pups • 3:00-2:00</div>
+                <div className="text-right">
+                  <div className="text-xs font-mono text-slate-500 font-bold">25-35 Pups • 3:00-2:00</div>
+                  <div className="text-[10px] font-bold text-blue-600">Reward: 20 Points</div>
+                </div>
              </div>
              <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-rose-50 to-white border border-rose-100">
                 <div className="flex items-center gap-2">
                    <span className="w-2 h-2 rounded-full bg-rose-400"></span>
                    <span className="font-bold text-slate-700">Hard</span>
                 </div>
-                <div className="text-xs font-mono text-slate-500 font-bold">40-50 Pups • 2:30-1:30</div>
+                <div className="text-right">
+                  <div className="text-xs font-mono text-slate-500 font-bold">40-50 Pups • 2:30-1:30</div>
+                  <div className="text-[10px] font-bold text-rose-600">Reward: 50 Points</div>
+                </div>
              </div>
           </div>
         </div>
@@ -277,7 +286,7 @@ const ThemeModal: React.FC<{
   onSelect: (theme: ThemeType) => void; 
   currentTheme: ThemeType 
 }> = ({ onClose, onSelect, currentTheme }) => (
-  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+  <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
     <div className="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl border-4 border-white animate-fade-in max-h-[80vh] overflow-y-auto">
       <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
         <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
@@ -337,7 +346,7 @@ const PaymentModal: React.FC<{
   
   if (paymentStatus === 'processing' || paymentStatus === 'verifying') {
     return (
-      <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="absolute inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
         <div className="bg-white rounded-3xl p-8 w-full max-w-xs text-center shadow-2xl animate-fade-in mx-4">
            <div className="animate-spin text-4xl text-brand mb-4 mx-auto w-min"><i className="fas fa-circle-notch"></i></div>
            <h3 className="text-xl font-bold text-slate-800 mb-2">
@@ -360,7 +369,7 @@ const PaymentModal: React.FC<{
 
   // Idle State
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+    <div className="absolute inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white rounded-3xl p-6 w-full max-w-xs text-center shadow-2xl relative mx-4 max-h-[90vh] overflow-y-auto overflow-x-hidden hide-scrollbar">
         <div className="w-16 h-16 bg-brand-light rounded-full flex items-center justify-center mx-auto mb-4 shrink-0">
            <i className="fas fa-lightbulb text-3xl text-brand-dark animate-bounce-short"></i>
@@ -873,6 +882,10 @@ export default function App() {
           </Button>
         </div>
       </div>
+      
+      <div className="absolute bottom-6 w-full text-center pointer-events-none z-10">
+          <span className="text-[10px] text-slate-400/80 font-medium">© 2025-2026 MVTechnology</span>
+      </div>
     </div>
   );
 
@@ -1071,6 +1084,10 @@ export default function App() {
               </div>
 
             </div>
+
+            <div className="mt-8 text-center pb-4">
+               <span className="text-[10px] text-slate-400/60 font-medium mix-blend-multiply">© 2025-2026 MVTechnology</span>
+            </div>
           </div>
         </main>
       </div>
@@ -1165,118 +1182,128 @@ export default function App() {
   };
 
   return (
-    <div className="h-full w-full bg-slate-100 font-sans text-slate-900 select-none overflow-hidden fixed inset-0">
-      {view === 'LOGIN' && renderLogin()}
-      {view === 'HOME' && renderHome()}
+    <div className="h-screen w-screen bg-slate-200 flex items-center justify-center overflow-hidden font-sans select-none relative">
       
-      {view === 'LEVEL_SELECT' && (
-        <LevelSelector 
-          difficulty={selectedDifficulty}
-          clearedLevels={progress.clearedLevels}
-          onSelectLevel={handleLevelSelect}
-          onBack={() => setView('HOME')}
-          isMuted={isMuted}
-          onToggleMute={toggleMute}
-          currentTheme={progress.selectedTheme || 'sunny'}
-        />
-      )}
+      {/* PC Background (blurred pattern) */}
+      <div className="absolute inset-0 z-0 bg-slate-300 opacity-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200 via-slate-200 to-slate-300">
+         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.2\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}></div>
+      </div>
 
-      {/* Render Game Underneath Modals for better UX */}
-      {(view === 'GAME' || view === 'WIN' || view === 'GAME_OVER') && renderGame()}
+      {/* Phone Frame Container */}
+      <div className="w-full h-full sm:w-[400px] sm:h-[850px] sm:max-h-[90vh] bg-slate-50 relative sm:rounded-[2.5rem] sm:border-[8px] sm:border-slate-800 sm:shadow-2xl overflow-hidden z-10 flex flex-col">
+         
+        {view === 'LOGIN' && renderLogin()}
+        {view === 'HOME' && renderHome()}
+        
+        {view === 'LEVEL_SELECT' && (
+          <LevelSelector 
+            difficulty={selectedDifficulty}
+            clearedLevels={progress.clearedLevels}
+            onSelectLevel={handleLevelSelect}
+            onBack={() => setView('HOME')}
+            isMuted={isMuted}
+            onToggleMute={toggleMute}
+            currentTheme={progress.selectedTheme || 'sunny'}
+          />
+        )}
 
-      {view === 'WIN' && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-white">
-            <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white animate-bounce-short">
-               <i className="fas fa-trophy text-6xl text-yellow-500 drop-shadow-sm"></i>
-            </div>
-            
-            <h2 className="text-3xl font-black text-slate-800 mt-12 mb-2">Level Clear!</h2>
-            <p className="text-slate-500 font-medium mb-6">Fantastic job finding all the pups!</p>
-            
-            <div className="flex justify-center gap-4 mb-8">
-               <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100 flex flex-col items-center w-24">
-                  <span className="text-xs font-bold text-yellow-600 uppercase">Score</span>
-                  <span className="text-2xl font-black text-yellow-500">{progress.totalScore}</span>
-               </div>
-               <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col items-center w-24">
-                  <span className="text-xs font-bold text-blue-600 uppercase">Level</span>
-                  <span className="text-2xl font-black text-blue-500">{currentLevelId}</span>
-               </div>
-            </div>
+        {/* Render Game Underneath Modals for better UX */}
+        {(view === 'GAME' || view === 'WIN' || view === 'GAME_OVER') && renderGame()}
 
-            <div className="flex flex-col gap-3">
-              <Button onClick={nextLevel} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg shadow-emerald-200">
-                Next Level <i className="fas fa-arrow-right ml-2"></i>
-              </Button>
-              <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
-                Back to Map
-              </button>
-            </div>
-          </div>
-          
-          {/* Confetti */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-             {[...Array(20)].map((_, i) => (
-                <div key={i} className="absolute animate-fall" style={{
-                   left: `${Math.random() * 100}%`,
-                   top: `-10%`,
-                   animationDuration: `${2 + Math.random() * 3}s`,
-                   animationDelay: `${Math.random() * 2}s`
-                }}>
-                   <i className={`fas fa-square text-xs transform rotate-45 text-${['red','yellow','blue','green','pink'][Math.floor(Math.random()*5)]}-400`}></i>
+        {view === 'WIN' && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-white">
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white animate-bounce-short">
+                <i className="fas fa-trophy text-6xl text-yellow-500 drop-shadow-sm"></i>
+              </div>
+              
+              <h2 className="text-3xl font-black text-slate-800 mt-12 mb-2">Level Clear!</h2>
+              <p className="text-slate-500 font-medium mb-6">Fantastic job finding all the pups!</p>
+              
+              <div className="flex justify-center gap-4 mb-8">
+                <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100 flex flex-col items-center w-24">
+                    <span className="text-xs font-bold text-yellow-600 uppercase">Score</span>
+                    <span className="text-2xl font-black text-yellow-500">{progress.totalScore}</span>
                 </div>
-             ))}
-          </div>
-        </div>
-      )}
-      
-      {view === 'GAME_OVER' && (
-        <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-red-100">
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
-               <i className="fas fa-times text-5xl text-red-500"></i>
+                <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 flex flex-col items-center w-24">
+                    <span className="text-xs font-bold text-blue-600 uppercase">Level</span>
+                    <span className="text-2xl font-black text-blue-500">{currentLevelId}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Button onClick={nextLevel} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg shadow-emerald-200">
+                  Next Level <i className="fas fa-arrow-right ml-2"></i>
+                </Button>
+                <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
+                  Back to Map
+                </button>
+              </div>
             </div>
             
-            <h2 className="text-3xl font-black text-slate-800 mt-10 mb-2">Time's Up!</h2>
-            <p className="text-slate-500 font-medium mb-6">Those puppies were too good at hiding.</p>
-
-            <div className="flex flex-col gap-3">
-              <Button onClick={handleRetry} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg shadow-blue-200">
-                <i className="fas fa-redo mr-2"></i> Try Again
-              </Button>
-              <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
-                Give Up
-              </button>
+            {/* Confetti */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(20)].map((_, i) => (
+                  <div key={i} className="absolute animate-fall" style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `-10%`,
+                    animationDuration: `${2 + Math.random() * 3}s`,
+                    animationDelay: `${Math.random() * 2}s`
+                  }}>
+                    <i className={`fas fa-square text-xs transform rotate-45 text-${['red','yellow','blue','green','pink'][Math.floor(Math.random()*5)]}-400`}></i>
+                  </div>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
+        
+        {view === 'GAME_OVER' && (
+          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-red-100">
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
+                <i className="fas fa-times text-5xl text-red-500"></i>
+              </div>
+              
+              <h2 className="text-3xl font-black text-slate-800 mt-10 mb-2">Time's Up!</h2>
+              <p className="text-slate-500 font-medium mb-6">Those puppies were too good at hiding.</p>
 
-      {showThemeModal && (
-        <ThemeModal 
-          onClose={() => setShowThemeModal(false)}
-          onSelect={handleThemeChange}
-          currentTheme={progress.selectedTheme || 'sunny'}
-        />
-      )}
+              <div className="flex flex-col gap-3">
+                <Button onClick={handleRetry} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg shadow-blue-200">
+                  <i className="fas fa-redo mr-2"></i> Try Again
+                </Button>
+                <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
+                  Give Up
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {showInfoModal && (
-        <InfoModal onClose={() => setShowInfoModal(false)} />
-      )}
+        {showThemeModal && (
+          <ThemeModal 
+            onClose={() => setShowThemeModal(false)}
+            onSelect={handleThemeChange}
+            currentTheme={progress.selectedTheme || 'sunny'}
+          />
+        )}
 
-      {showPaymentModal && (
-        <PaymentModal 
-          onClose={() => { setShowPaymentModal(false); setPaymentStatus('idle'); }}
-          onPay={handlePayment}
-          onPayWithPoints={handlePayWithPoints}
-          currentPoints={progress.totalScore}
-          paymentStatus={paymentStatus}
-          onCancelPayment={handleCancelPayment}
-          title={paymentModalConfig.title}
-          description={paymentModalConfig.description}
-        />
-      )}
+        {showInfoModal && (
+          <InfoModal onClose={() => setShowInfoModal(false)} />
+        )}
+
+        {showPaymentModal && (
+          <PaymentModal 
+            onClose={() => { setShowPaymentModal(false); setPaymentStatus('idle'); }}
+            onPay={handlePayment}
+            onPayWithPoints={handlePayWithPoints}
+            currentPoints={progress.totalScore}
+            paymentStatus={paymentStatus}
+            onCancelPayment={handleCancelPayment}
+            title={paymentModalConfig.title}
+            description={paymentModalConfig.description}
+          />
+        )}
+      </div>
     </div>
   );
 }
