@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 interface AdBannerProps {
+  dataAdClient: string;
   dataAdSlot: string;
   dataAdFormat?: string;
   dataFullWidthResponsive?: boolean;
@@ -8,6 +9,7 @@ interface AdBannerProps {
 }
 
 export const AdBanner: React.FC<AdBannerProps> = ({
+  dataAdClient,
   dataAdSlot,
   dataAdFormat = 'auto',
   dataFullWidthResponsive = true,
@@ -16,6 +18,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   // Reserved for future AdSense implementation
   void dataAdFormat;
   void dataFullWidthResponsive;
+  void dataAdClient;
   
   const adRef = useRef<HTMLDivElement>(null);
 
