@@ -42,7 +42,7 @@ export interface GameSession {
   timeLeft?: number;
 }
 
-export type ThemeType = 'sunny' | 'night' | 'candy' | 'forest' | 'park' | 'bath' | 'toys';
+export type ThemeType = 'sunny' | 'night' | 'candy' | 'forest' | 'park' | 'bath' | 'toys' | 'streetDog' | 'puppyPlush' | 'dogParkDark' | 'puppyCandy' | 'neonPup' | 'handDrawnPup' | 'cosmicPuppy' | 'safariPup' | 'puppyHologram' | 'cartoonChaos';
 
 export interface ThemeConfig {
   id: ThemeType;
