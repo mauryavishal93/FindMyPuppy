@@ -63,7 +63,7 @@ export const PurchaseHistoryModal: React.FC<PurchaseHistoryModalProps> = ({
         <div className={`${activeTheme.headerBg} px-6 py-4 flex items-center justify-between border-b border-white/20`}>
           <h2 className={`text-xl font-black ${activeTheme.text} flex items-center gap-2`}>
             <i className="fas fa-history text-lg"></i>
-            Purchase History
+            Buy History
           </h2>
           <button
             onClick={onClose}
