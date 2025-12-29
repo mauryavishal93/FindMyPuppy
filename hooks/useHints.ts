@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { UserProgress } from '../types';
+import { db } from '../services/db';
 
 interface UseHintsProps {
   progress: UserProgress;
@@ -29,14 +30,25 @@ export const useHints = ({ progress, setProgress, playSfx, onOutOfHints }: UseHi
     } 
     // Check Premium Hints
     else if (progress.premiumHints && progress.premiumHints > 0) {
-      setProgress(prev => ({...prev, premiumHints: prev.premiumHints - 1}));
+      setProgress(prev => {
+        const newHints = prev.premiumHints - 1;
+        
+        // Sync hints to database if user is logged in
+        if (prev.playerName) {
+          db.updateHints(prev.playerName, newHints).catch(err => {
+            console.error('Failed to update hints in database:', err);
+          });
+        }
+        
+        return {...prev, premiumHints: newHints};
+      });
       activateHint();
     } 
     // Out of hints
     else {
       onOutOfHints();
     }
-  }, [showHints, hintsUsedInLevel, progress.premiumHints, activateHint, setProgress, onOutOfHints]);
+  }, [showHints, hintsUsedInLevel, progress.premiumHints, progress.playerName, activateHint, setProgress, onOutOfHints]);
 
   const resetHints = useCallback(() => {
     setHintsUsedInLevel(0);

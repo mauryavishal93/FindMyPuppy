@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Difficulty, UserProgress, ThemeConfig } from '../types';
 import { DifficultyCard } from '../components/ui/DifficultyCard';
 import { GameLogo } from '../components/GameLogo';
 import { AdBanner } from '../components/AdBanner';
 import { GOOGLE_AD_CLIENT_ID, GOOGLE_AD_SLOT_ID } from '../constants/ads';
 import { renderThemeBackground } from '../utils/themeBackground';
+import { UserDropdown } from '../components/ui/UserDropdown';
 
 interface HomeViewProps {
   progress: UserProgress;
@@ -16,6 +17,7 @@ interface HomeViewProps {
   onOpenThemeModal: () => void;
   onOpenInfoModal: () => void;
   onOpenHintShop: () => void;
+  onLogout: () => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -27,8 +29,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   isMuted,
   onOpenThemeModal,
   onOpenInfoModal,
-  onOpenHintShop
+  onOpenHintShop,
+  onLogout
 }) => {
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   return (
     <div className={`flex flex-col h-full ${activeTheme.background} relative overflow-hidden transition-colors duration-500`}>
       
@@ -37,34 +41,33 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {renderThemeBackground(activeTheme.id)}
       </div>
 
-      <header className={`${activeTheme.headerBg} backdrop-blur-md px-4 py-2 shadow-sm flex justify-between items-center z-10 sticky top-0 border-b shrink-0 h-16`}>
-        <div className="flex items-center gap-2">
-          <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-9 h-9 rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-sm`}>
-             {progress.playerName.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex flex-col">
-            <span className={`text-[9px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text}`}>Player</span>
-            <span className={`text-sm font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-           {/* Theme Toggle Button */}
-          <button 
-            onClick={onOpenThemeModal} 
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
+      <header className={`${activeTheme.headerBg} backdrop-blur-md px-4 py-2 shadow-sm flex justify-between items-center z-[100] sticky top-0 border-b shrink-0 h-16 relative`}>
+        <div className="flex items-center gap-2 relative">
+          <button
+            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <i className="fas fa-paint-brush text-xs"></i>
-          </button>
-
-          <button onClick={onToggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}>
-            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-xs`}></i>
+            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-9 h-9 rounded-full flex items-center justify-center font-black text-lg border-2 border-white shadow-sm cursor-pointer`}>
+               {progress.playerName.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className={`text-[9px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text}`}>Player</span>
+              <span className={`text-sm font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
+            </div>
           </button>
           
-          <button 
-            onClick={onOpenInfoModal} 
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}
-          >
-            <i className="fas fa-info text-xs"></i>
+          <UserDropdown
+            isOpen={isUserDropdownOpen}
+            onClose={() => setIsUserDropdownOpen(false)}
+            activeTheme={activeTheme}
+            onInfoClick={onOpenInfoModal}
+            onThemeClick={onOpenThemeModal}
+            onLogout={onLogout}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={onToggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}>
+            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-xs`}></i>
           </button>
 
           <div className={`backdrop-blur-sm px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5 border-2 border-white shadow-sm ${activeTheme.cardBg} ${activeTheme.accent}`}>

@@ -5,8 +5,3 @@ declare namespace NodeJS {
     API_KEY: string;
   }
 }
-
-declare var process: {
-  env: NodeJS.ProcessEnv;
-};
-

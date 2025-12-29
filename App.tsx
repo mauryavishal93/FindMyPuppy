@@ -14,6 +14,7 @@ import { useTimer } from './hooks/useTimer';
 import { usePayment } from './hooks/usePayment';
 import { useHints } from './hooks/useHints';
 import { useAudio } from './hooks/useAudio';
+import { db } from './services/db';
 
 export default function App() {
   const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER'>('LOGIN');
@@ -64,7 +65,18 @@ export default function App() {
   });
 
   const handlePaymentSuccess = useCallback((hints: number) => {
-    setProgress(prev => ({...prev, premiumHints: (prev.premiumHints || 0) + hints}));
+    setProgress(prev => {
+      const newHints = (prev.premiumHints || 0) + hints;
+      
+      // Sync hints to database if user is logged in
+      if (prev.playerName && hints > 0) {
+        db.updateHints(prev.playerName, newHints).catch(err => {
+          console.error('Failed to update hints in database:', err);
+        });
+      }
+      
+      return {...prev, premiumHints: newHints};
+    });
   }, []);
 
   const {
@@ -100,22 +112,64 @@ export default function App() {
     onOutOfHints: handleOutOfHints
   });
 
+  // Ensure login page is shown on initial load
   useEffect(() => {
-    if (progress.playerName) {
-      setView('HOME');
-    }
+    // Always start with LOGIN view - users must authenticate first
+    setView('LOGIN');
   }, []);
 
   useEffect(() => {
     localStorage.setItem('findMyPuppy_progress', JSON.stringify(progress));
   }, [progress]);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!loginName.trim()) return;
-    setProgress(prev => ({ ...prev, playerName: loginName.trim() }));
+    const username = loginName.trim();
+    
+    // Load user data from database if available
+    try {
+      const userData = await db.getUser(username);
+      if (userData.success && userData.user) {
+        // Sync database values to local progress
+        setProgress(prev => ({
+          ...prev,
+          playerName: username,
+          totalScore: userData.user?.points || prev.totalScore,
+          premiumHints: userData.user?.hints || prev.premiumHints || 0
+        }));
+      } else {
+        // User not found in DB, just set the name
+        setProgress(prev => ({ ...prev, playerName: username }));
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+      // Fallback: just set the name if DB call fails
+      setProgress(prev => ({ ...prev, playerName: username }));
+    }
+    
     setView('HOME');
     if (ambientAudioRef.current && !isMuted) {
       ambientAudioRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear progress and reset to login
+    setProgress({
+      playerName: '',
+      clearedLevels: {},
+      totalScore: 0,
+      unlockedDifficulties: [Difficulty.EASY],
+      premiumHints: 0,
+      selectedTheme: 'sunny' as ThemeType
+    });
+    localStorage.removeItem('findMyPuppy_progress');
+    setLoginName('');
+    setView('LOGIN');
+    setIsMuted(false);
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.pause();
+      ambientAudioRef.current.currentTime = 0;
     }
   };
 
@@ -140,7 +194,7 @@ export default function App() {
     handleInitLevel(levelId, selectedDifficulty);
   };
 
-  const handleLevelClear = useCallback(() => {
+  const handleLevelClear = useCallback(async () => {
     playSfx('clear', isMuted);
     const levelKey = `${selectedDifficulty}_${currentLevelId}`;
     const isFirstClear = !progress.clearedLevels[levelKey];
@@ -152,14 +206,49 @@ export default function App() {
       if (selectedDifficulty === Difficulty.HARD) pointsAwarded = 50;
     }
 
-    setProgress(prev => ({
-      ...prev,
-      clearedLevels: { ...prev.clearedLevels, [levelKey]: true },
-      totalScore: prev.totalScore + pointsAwarded
-    }));
+    setProgress(prev => {
+      const newTotalScore = prev.totalScore + pointsAwarded;
+      const updatedClearedLevels = { ...prev.clearedLevels, [levelKey]: true };
+      
+      // Count levels passed for each difficulty
+      const countLevelsPassed = (difficulty: Difficulty) => {
+        return Object.keys(updatedClearedLevels).filter(key => {
+          const [diff] = key.split('_');
+          return diff === difficulty && updatedClearedLevels[key];
+        }).length;
+      };
+      
+      const levelPassedEasy = countLevelsPassed(Difficulty.EASY);
+      const levelPassedMedium = countLevelsPassed(Difficulty.MEDIUM);
+      const levelPassedHard = countLevelsPassed(Difficulty.HARD);
+      
+      // Sync points and level passed counts to database if user is logged in
+      if (prev.playerName) {
+        if (pointsAwarded > 0) {
+          db.updatePoints(prev.playerName, newTotalScore).catch(err => {
+            console.error('Failed to update points in database:', err);
+          });
+        }
+        
+        // Sync level passed count for the current difficulty
+        db.updateLevelPassed(prev.playerName, selectedDifficulty, 
+          selectedDifficulty === Difficulty.EASY ? levelPassedEasy :
+          selectedDifficulty === Difficulty.MEDIUM ? levelPassedMedium :
+          levelPassedHard
+        ).catch(err => {
+          console.error('Failed to update level passed count in database:', err);
+        });
+      }
+      
+      return {
+        ...prev,
+        clearedLevels: updatedClearedLevels,
+        totalScore: newTotalScore
+      };
+    });
 
     setView('WIN');
-  }, [playSfx, isMuted, selectedDifficulty, currentLevelId, progress.clearedLevels]);
+  }, [playSfx, isMuted, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName]);
 
   const handlePuppyFound = useCallback((id: string) => {
     playSfx('found', isMuted);
@@ -195,11 +284,26 @@ export default function App() {
   const handlePayWithPoints = () => {
     if (progress.totalScore >= 10) {
       playSfx('pay', isMuted);
-      setProgress(prev => ({
-        ...prev,
-        totalScore: prev.totalScore - 10,
-        premiumHints: (prev.premiumHints || 0) + 2
-      }));
+      setProgress(prev => {
+        const newTotalScore = prev.totalScore - 10;
+        const newHints = (prev.premiumHints || 0) + 2;
+        
+        // Sync both points and hints to database if user is logged in
+        if (prev.playerName) {
+          db.updatePoints(prev.playerName, newTotalScore).catch(err => {
+            console.error('Failed to update points in database:', err);
+          });
+          db.updateHints(prev.playerName, newHints).catch(err => {
+            console.error('Failed to update hints in database:', err);
+          });
+        }
+        
+        return {
+          ...prev,
+          totalScore: newTotalScore,
+          premiumHints: newHints
+        };
+      });
       closePaymentModal();
     }
   };
@@ -251,6 +355,7 @@ export default function App() {
             onOpenThemeModal={() => setShowThemeModal(true)}
             onOpenInfoModal={() => setShowInfoModal(true)}
             onOpenHintShop={openHintShop}
+            onLogout={handleLogout}
           />
         )}
         
