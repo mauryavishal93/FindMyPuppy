@@ -112,11 +112,12 @@ export default function App() {
     onOutOfHints: handleOutOfHints
   });
 
-  // Ensure login page is shown on initial load
+  // Restore session: if a playerName is present, stay logged in
   useEffect(() => {
-    // Always start with LOGIN view - users must authenticate first
-    setView('LOGIN');
-  }, []);
+    if (progress.playerName) {
+      setView('HOME');
+    }
+  }, []); // run once on mount to preserve logged-in state
 
   useEffect(() => {
     localStorage.setItem('findMyPuppy_progress', JSON.stringify(progress));
