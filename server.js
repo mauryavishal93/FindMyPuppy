@@ -3,6 +3,12 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = 5174;
@@ -285,4 +291,35 @@ app.get('/api/user/:username', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend Server running on http://localhost:${PORT}`);
+  
+  // Start the frontend dev server
+  console.log('📦 Starting frontend dev server...');
+  const viteProcess = spawn('npm', ['run', 'dev'], {
+    cwd: __dirname,
+    stdio: 'inherit',
+    shell: true
+  });
+  
+  viteProcess.on('error', (error) => {
+    console.error('❌ Failed to start frontend dev server:', error);
+  });
+  
+  viteProcess.on('exit', (code) => {
+    if (code !== 0) {
+      console.error(`❌ Frontend dev server exited with code ${code}`);
+    }
+  });
+  
+  // Handle graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down servers...');
+    viteProcess.kill();
+    process.exit(0);
+  });
+  
+  process.on('SIGTERM', () => {
+    console.log('\n🛑 Shutting down servers...');
+    viteProcess.kill();
+    process.exit(0);
+  });
 });
