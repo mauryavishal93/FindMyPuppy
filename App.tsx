@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Difficulty, UserProgress, ThemeType } from './types';
 import { THEME_CONFIGS } from './constants/themeConfig';
 import { LevelSelector } from './components/LevelSelector';
 import { InfoModal } from './components/modals/InfoModal';
 import { ThemeModal } from './components/modals/ThemeModal';
 import { PaymentModal } from './components/modals/PaymentModal';
+import { PurchaseHistoryModal } from './components/modals/PurchaseHistoryModal';
 import { Button } from './components/ui/Button';
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
@@ -30,6 +31,12 @@ export default function App() {
   
   // Theme Modal State
   const [showThemeModal, setShowThemeModal] = useState(false);
+  
+  // Purchase History Modal State
+  const [showPurchaseHistoryModal, setShowPurchaseHistoryModal] = useState(false);
+
+  // Track last processed payment ID to avoid duplicate history entries
+  const lastProcessedPaymentIdRef = useRef<number | null>(null);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('findMyPuppy_progress');
@@ -64,18 +71,35 @@ export default function App() {
     onTimeUp: handleGameOver
   });
 
-  const handlePaymentSuccess = useCallback((hints: number) => {
+  const handlePaymentSuccess = useCallback((hints: number, paymentId: number) => {
+    // Deduplicate by paymentId: if we've already processed this, ignore
+    if (lastProcessedPaymentIdRef.current === paymentId) {
+      return;
+    }
+    lastProcessedPaymentIdRef.current = paymentId;
+
+    // Always add purchased hints on top of existing hints
     setProgress(prev => {
       const newHints = (prev.premiumHints || 0) + hints;
-      
-      // Sync hints to database if user is logged in
+
+      // Sync hints to database and create ONE purchase entry per pack
       if (prev.playerName && hints > 0) {
         db.updateHints(prev.playerName, newHints).catch(err => {
           console.error('Failed to update hints in database:', err);
         });
+
+        db.createPurchaseHistory(
+          prev.playerName,
+          9.0, // Amount for 100 hints pack
+          'Hints',
+          `${hints} Hints Pack`,
+          'Money'
+        ).catch(err => {
+          console.error('Failed to save purchase history:', err);
+        });
       }
-      
-      return {...prev, premiumHints: newHints};
+
+      return { ...prev, premiumHints: newHints };
     });
   }, []);
 
@@ -288,8 +312,8 @@ export default function App() {
       setProgress(prev => {
         const newTotalScore = prev.totalScore - 10;
         const newHints = (prev.premiumHints || 0) + 2;
-        
-        // Sync both points and hints to database if user is logged in
+
+        // Sync both points and hints to database and create ONE purchase entry
         if (prev.playerName) {
           db.updatePoints(prev.playerName, newTotalScore).catch(err => {
             console.error('Failed to update points in database:', err);
@@ -297,8 +321,18 @@ export default function App() {
           db.updateHints(prev.playerName, newHints).catch(err => {
             console.error('Failed to update hints in database:', err);
           });
+
+          db.createPurchaseHistory(
+            prev.playerName,
+            10, // Points spent
+            'Hints',
+            '2 Hints Pack (Points)',
+            'Points'
+          ).catch(err => {
+            console.error('Failed to save purchase history:', err);
+          });
         }
-        
+
         return {
           ...prev,
           totalScore: newTotalScore,
@@ -356,6 +390,7 @@ export default function App() {
             onOpenThemeModal={() => setShowThemeModal(true)}
             onOpenInfoModal={() => setShowInfoModal(true)}
             onOpenHintShop={openHintShop}
+            onOpenPurchaseHistory={() => setShowPurchaseHistoryModal(true)}
             onLogout={handleLogout}
           />
         )}
@@ -484,6 +519,14 @@ export default function App() {
             onCancelPayment={handleCancelPayment}
             title={paymentModalConfig.title}
             description={paymentModalConfig.description}
+          />
+        )}
+
+        {showPurchaseHistoryModal && (
+          <PurchaseHistoryModal
+            onClose={() => setShowPurchaseHistoryModal(false)}
+            username={progress.playerName}
+            activeTheme={activeTheme}
           />
         )}
       </div>

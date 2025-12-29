@@ -43,6 +43,20 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// Purchase History Schema
+const purchaseHistorySchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  purchaseDate: { type: Date, default: Date.now },
+  purchaseId: { type: String, required: true, unique: true },
+  amount: { type: Number, required: true },
+  purchaseType: { type: String, required: true, enum: ['Premium', 'Hints'] },
+  pack: { type: String, required: true }, // Hint count or Premium type
+  // How the purchase was made: 'Money' (₹) or 'Points' (Pts)
+  purchaseMode: { type: String, enum: ['Money', 'Points'], default: 'Money' }
+}, { collection: 'purchaseHistory' });
+
+const PurchaseHistory = mongoose.model('PurchaseHistory', purchaseHistorySchema);
+
 // --- ROUTES ---
 
 app.get('/api/health', (req, res) => {
@@ -257,6 +271,128 @@ app.post('/api/user/update-level-passed', async (req, res) => {
   } catch (error) {
     console.error('Update Level Passed Error:', error);
     res.status(500).json({ success: false, message: "Server error updating level passed count." });
+  }
+});
+
+// Create Purchase History Endpoint
+app.post('/api/purchase-history', async (req, res) => {
+  try {
+    const { username, amount, purchaseType, pack, purchaseMode } = req.body;
+
+    if (!username || !amount || !purchaseType || !pack) {
+      return res.status(400).json({ success: false, message: "Username, amount, purchaseType, and pack are required." });
+    }
+
+    if (purchaseType !== 'Premium' && purchaseType !== 'Hints') {
+      return res.status(400).json({ success: false, message: "purchaseType must be 'Premium' or 'Hints'." });
+    }
+
+    // Default purchaseMode to 'Money' if not provided (for backward compatibility)
+    const safePurchaseMode = purchaseMode === 'Points' ? 'Points' : 'Money';
+
+    // --- De-duplication guard ---
+    // If there is already a purchase with the same user, pack, type and mode
+    // in the last few seconds, treat it as the same purchase and don't insert another row.
+    const now = new Date();
+    const tenSecondsAgo = new Date(now.getTime() - 10_000);
+
+    const existingRecentPurchase = await PurchaseHistory.findOne({
+      username,
+      purchaseType,
+      pack,
+      purchaseMode: safePurchaseMode,
+      purchaseDate: { $gte: tenSecondsAgo }
+    }).exec();
+
+    if (existingRecentPurchase) {
+      return res.status(200).json({
+        success: true,
+        message: "Duplicate purchase request ignored; existing recent purchase returned.",
+        purchase: {
+          purchaseId: existingRecentPurchase.purchaseId,
+          purchaseDate: existingRecentPurchase.purchaseDate,
+          amount: existingRecentPurchase.amount,
+          purchaseType: existingRecentPurchase.purchaseType,
+          pack: existingRecentPurchase.pack,
+          purchaseMode: existingRecentPurchase.purchaseMode || 'Money'
+        }
+      });
+    }
+
+    // Generate unique purchase ID for a new record
+    const purchaseId = `PURCHASE_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+    const purchase = await PurchaseHistory.findOneAndUpdate(
+      {
+        username,
+        purchaseType,
+        pack,
+        purchaseMode: safePurchaseMode,
+        purchaseDate: { $gte: tenSecondsAgo }
+      },
+      {
+        $setOnInsert: {
+          username,
+          purchaseId,
+          amount,
+          purchaseType,
+          pack,
+          purchaseMode: safePurchaseMode,
+          purchaseDate: new Date()
+        }
+      },
+      {
+        new: true,
+        upsert: true
+      }
+    );
+
+    await purchase.save();
+
+    res.status(201).json({ 
+      success: true, 
+      message: "Purchase history created successfully!", 
+      purchase: {
+        purchaseId: purchase.purchaseId,
+        purchaseDate: purchase.purchaseDate,
+        amount: purchase.amount,
+        purchaseType: purchase.purchaseType,
+        pack: purchase.pack,
+        purchaseMode: purchase.purchaseMode
+      }
+    });
+  } catch (error) {
+    console.error('Create Purchase History Error:', error);
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: "Purchase ID already exists." });
+    }
+    res.status(500).json({ success: false, message: "Seƒory." });
+  }
+});
+
+// Get Purchase History Endpoint
+app.get('/api/purchase-history/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    const purchases = await PurchaseHistory.find({ username })
+      .sort({ purchaseDate: -1 }) // Most recent first
+      .exec();
+
+    res.status(200).json({ 
+      success: true, 
+      purchases: purchases.map(p => ({
+        purchaseId: p.purchaseId,
+        purchaseDate: p.purchaseDate,
+        amount: p.amount,
+        purchaseType: p.purchaseType,
+        pack: p.pack,
+        purchaseMode: p.purchaseMode || 'Money'
+      }))
+    });
+  } catch (error) {
+    console.error('Get Purchase History Error:', error);
+    res.status(500).json({ success: false, message: "Server error fetching purchase history." });
   }
 });
 

@@ -7,6 +7,7 @@ interface UserDropdownProps {
   activeTheme: ThemeConfig;
   onInfoClick: () => void;
   onThemeClick: () => void;
+  onPurchaseHistoryClick: () => void;
   onLogout: () => void;
 }
 
@@ -16,6 +17,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
   activeTheme,
   onInfoClick,
   onThemeClick,
+  onPurchaseHistoryClick,
   onLogout
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,21 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({
           >
             <i className="fas fa-info-circle text-base"></i>
             <span className="text-sm font-bold">Info</span>
+          </button>
+          
+          {/* Divider */}
+          <div className={`h-px ${activeTheme.text} opacity-20 mx-2`}></div>
+          
+          {/* Purchase History Option */}
+          <button
+            onClick={() => {
+              onPurchaseHistoryClick();
+              onClose();
+            }}
+            className={`w-full px-4 py-3 flex items-center gap-3 hover:bg-white/10 transition-colors ${activeTheme.text}`}
+          >
+            <i className="fas fa-history text-base"></i>
+            <span className="text-sm font-bold">Buy History</span>
           </button>
           
           {/* Divider */}

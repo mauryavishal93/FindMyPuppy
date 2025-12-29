@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PaymentStatus } from '../types/payment';
 
 interface UsePaymentProps {
-  onPaymentSuccess: (hints: number) => void;
+  onPaymentSuccess: (hints: number, paymentId: number) => void;
   playSfx: (type: 'pay') => void;
 }
 
@@ -11,7 +11,16 @@ export const usePayment = ({ onPaymentSuccess, playSfx }: UsePaymentProps) => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentModalConfig, setPaymentModalConfig] = useState<{title?: string, description?: string}>({});
 
+  // Ensure payment success logic runs only once per payment session
+  const hasVerifiedRef = useRef(false);
+  // Incrementing ID to uniquely identify each payment attempt
+  const paymentIdRef = useRef(0);
+
   const handlePayment = () => {
+    // Reset verification flag for a new payment
+    hasVerifiedRef.current = false;
+    // Bump payment ID for this new attempt
+    paymentIdRef.current += 1;
     setPaymentStatus('processing');
 
     // UPI Configuration
@@ -34,13 +43,19 @@ export const usePayment = ({ onPaymentSuccess, playSfx }: UsePaymentProps) => {
   // Listen for app return to trigger simulated verification
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && paymentStatus === 'processing') {
+      if (
+        document.visibilityState === 'visible' &&
+        paymentStatus === 'processing' &&
+        !hasVerifiedRef.current
+      ) {
+         // Guard to prevent duplicate verification / purchases
+         hasVerifiedRef.current = true;
          setPaymentStatus('verifying');
          
          // Simulate network verification (Auto-Success)
          setTimeout(() => {
              playSfx('pay');
-             onPaymentSuccess(100);
+            onPaymentSuccess(100, paymentIdRef.current);
              setPaymentStatus('idle');
              setShowPaymentModal(false);
          }, 3000);

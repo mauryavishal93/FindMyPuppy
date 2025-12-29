@@ -14,6 +14,15 @@ export interface User {
   levelPassedHard?: number;
 }
 
+export interface PurchaseHistory {
+  purchaseId: string;
+  purchaseDate: Date | string;
+  amount: number;
+  purchaseType: 'Premium' | 'Hints';
+  pack: string;
+  purchaseMode?: 'Money' | 'Points'; // Money (₹) or Points (Pts)
+}
+
 export interface AuthResponse {
   success: boolean;
   message?: string;
@@ -143,6 +152,53 @@ export const db = {
       return data;
     } catch (error) {
       console.error("DB Update Level Passed Error:", error);
+      return { success: false, message: "Connection error. Is the backend running?" };
+    }
+  },
+
+  createPurchaseHistory: async (
+    username: string,
+    amount: number,
+    purchaseType: 'Premium' | 'Hints',
+    pack: string,
+    purchaseMode: 'Money' | 'Points' = 'Money'
+  ): Promise<{ success: boolean; message?: string; purchase?: PurchaseHistory }> => {
+    try {
+      const response = await fetch('/api/purchase-history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, amount, purchaseType, pack, purchaseMode }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to create purchase history" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Create Purchase History Error:", error);
+      return { success: false, message: "Connection error. Is the backend running?" };
+    }
+  },
+
+  getPurchaseHistory: async (username: string): Promise<{ success: boolean; message?: string; purchases?: PurchaseHistory[] }> => {
+    try {
+      const response = await fetch(`/api/purchase-history/${username}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to fetch purchase history" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Get Purchase History Error:", error);
       return { success: false, message: "Connection error. Is the backend running?" };
     }
   },

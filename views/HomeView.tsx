@@ -17,6 +17,7 @@ interface HomeViewProps {
   onOpenThemeModal: () => void;
   onOpenInfoModal: () => void;
   onOpenHintShop: () => void;
+  onOpenPurchaseHistory: () => void;
   onLogout: () => void;
 }
 
@@ -30,6 +31,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenThemeModal,
   onOpenInfoModal,
   onOpenHintShop,
+  onOpenPurchaseHistory,
   onLogout
 }) => {
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -62,6 +64,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             activeTheme={activeTheme}
             onInfoClick={onOpenInfoModal}
             onThemeClick={onOpenThemeModal}
+            onPurchaseHistoryClick={onOpenPurchaseHistory}
             onLogout={onLogout}
           />
         </div>
@@ -121,7 +124,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div className="z-10 flex flex-col pl-1">
                 <h3 className="text-lg font-black leading-none drop-shadow-sm">Buy Hints</h3>
                 <p className="text-white/90 text-[10px] font-medium mt-0.5 opacity-90 shadow-sm">
-                  {progress.premiumHints || 0} Hints Available
+                  Total Hints: {progress.premiumHints || 0}
                 </p>
               </div>
 
