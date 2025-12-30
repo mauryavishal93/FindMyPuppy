@@ -273,9 +273,9 @@ export default function App() {
     let pointsAwarded = 0;
     
     if (isFirstClear) {
-      if (selectedDifficulty === Difficulty.EASY) pointsAwarded = 10;
-      if (selectedDifficulty === Difficulty.MEDIUM) pointsAwarded = 20;
-      if (selectedDifficulty === Difficulty.HARD) pointsAwarded = 50;
+      if (selectedDifficulty === Difficulty.EASY) pointsAwarded = 5;
+      if (selectedDifficulty === Difficulty.MEDIUM) pointsAwarded = 10;
+      if (selectedDifficulty === Difficulty.HARD) pointsAwarded = 15;
     }
 
     setProgress(prev => {
