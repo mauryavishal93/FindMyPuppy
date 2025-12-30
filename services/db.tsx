@@ -29,6 +29,14 @@ export interface AuthResponse {
   user?: User;
 }
 
+export interface PriceOffer {
+  hintPack: string;
+  marketPrice: number;
+  offerPrice: number;
+  hintCount: number;
+  offerReason?: string; // Reason for the offer (e.g., "Special Offer", "Limited Time Deal", etc.)
+}
+
 export const db = {
   login: async (username: string, password: string): Promise<AuthResponse> => {
     try {
@@ -219,6 +227,26 @@ export const db = {
       return data;
     } catch (error) {
       console.error("DB Get User Error:", error);
+      return { success: false, message: "Connection error. Is the backend running?" };
+    }
+  },
+
+  getPriceOffer: async (): Promise<{ success: boolean; message?: string; offer?: PriceOffer }> => {
+    try {
+      const response = await fetch('/api/price-offer', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to fetch price offer" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Get Price Offer Error:", error);
       return { success: false, message: "Connection error. Is the backend running?" };
     }
   }

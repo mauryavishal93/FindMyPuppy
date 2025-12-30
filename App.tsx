@@ -16,7 +16,7 @@ import { useTimer } from './hooks/useTimer';
 import { usePayment } from './hooks/usePayment';
 import { useHints } from './hooks/useHints';
 import { useAudio } from './hooks/useAudio';
-import { db } from './services/db';
+import { db, PriceOffer } from './services/db';
 
 export default function App() {
   const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER'>('LOGIN');
@@ -38,6 +38,9 @@ export default function App() {
 
   // Track last processed payment ID to avoid duplicate history entries
   const lastProcessedPaymentIdRef = useRef<number | null>(null);
+
+  // Price Offer State
+  const [priceOffer, setPriceOffer] = useState<PriceOffer | null>(null);
 
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('findMyPuppy_progress');
@@ -73,6 +76,33 @@ export default function App() {
   });
 
   // --- DATA SYNCHRONIZATION HELPERS ---
+
+  // Fetch price offer from database
+  const fetchPriceOffer = useCallback(async () => {
+    try {
+      const response = await db.getPriceOffer();
+      if (response.success && response.offer) {
+        setPriceOffer(response.offer);
+      } else {
+        // Fallback to default if fetch fails
+        setPriceOffer({
+          hintPack: '100 Hints Pack',
+          marketPrice: 99,
+          offerPrice: 9,
+          hintCount: 100
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch price offer:", error);
+      // Fallback to default on error
+      setPriceOffer({
+        hintPack: '100 Hints Pack',
+        marketPrice: 99,
+        offerPrice: 9,
+        hintCount: 100
+      });
+    }
+  }, []);
 
   const syncUserData = useCallback(async (username: string) => {
     if (!username) return;
@@ -116,7 +146,7 @@ export default function App() {
     }
   }, []);
 
-  const handlePaymentSuccess = useCallback((hints: number, paymentId: number) => {
+  const handlePaymentSuccess = useCallback((hints: number, paymentId: number, amount: number) => {
     // Deduplicate by paymentId: if we've already processed this, ignore
     if (lastProcessedPaymentIdRef.current === paymentId) {
       return;
@@ -133,9 +163,10 @@ export default function App() {
           console.error('Failed to update hints in database:', err);
         });
 
+        // Use amount passed from payment success (which uses offerPrice from DB)
         db.createPurchaseHistory(
           prev.playerName,
-          9.0, // Amount for 100 hints pack
+          amount,
           'Hints',
           `${hints} Hints Pack`,
           'Money'
@@ -146,7 +177,7 @@ export default function App() {
 
       return { ...prev, premiumHints: newHints };
     });
-  }, []);
+  }, [priceOffer]);
 
   const {
     paymentStatus,
@@ -158,7 +189,8 @@ export default function App() {
     closePaymentModal
   } = usePayment({
     onPaymentSuccess: handlePaymentSuccess,
-    playSfx: (type) => playSfx(type, isMuted)
+    playSfx: (type) => playSfx(type, isMuted),
+    priceOffer: priceOffer
   });
 
   const handleOutOfHints = useCallback(() => {
@@ -182,6 +214,16 @@ export default function App() {
   });
 
   // --- EFFECTS ---
+
+  // Fetch price offer on mount
+  useEffect(() => {
+    fetchPriceOffer();
+  }, [fetchPriceOffer]);
+
+  // Fetch price offer when view changes (app load, refresh, open game, come back from game)
+  useEffect(() => {
+    fetchPriceOffer();
+  }, [view, fetchPriceOffer]);
 
   // Restore session: if a playerName is present, stay logged in and sync data
   useEffect(() => {
@@ -439,6 +481,7 @@ export default function App() {
             onOpenHintShop={openHintShop}
             onOpenPurchaseHistory={() => setShowPurchaseHistoryModal(true)}
             onLogout={handleLogout}
+            priceOffer={priceOffer}
           />
         )}
         
@@ -566,6 +609,7 @@ export default function App() {
             onCancelPayment={handleCancelPayment}
             title={paymentModalConfig.title}
             description={paymentModalConfig.description}
+            priceOffer={priceOffer}
           />
         )}
 
