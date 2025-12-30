@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Difficulty, UserProgress, ThemeType } from './types';
 import { THEME_CONFIGS } from './constants/themeConfig';
@@ -71,6 +72,50 @@ export default function App() {
     onTimeUp: handleGameOver
   });
 
+  // --- DATA SYNCHRONIZATION HELPERS ---
+
+  const syncUserData = useCallback(async (username: string) => {
+    if (!username) return;
+    try {
+      const response = await db.getUser(username);
+      if (response.success && response.user) {
+        const user = response.user;
+        
+        setProgress(prev => {
+          const newClearedLevels = { ...prev.clearedLevels };
+          
+          // Reconstruct cleared levels from DB counters
+          // Easy
+          const easyCount = user.levelPassedEasy || 0;
+          for (let i = 1; i <= easyCount; i++) {
+             newClearedLevels[`${Difficulty.EASY}_${i}`] = true;
+          }
+          // Medium
+          const mediumCount = user.levelPassedMedium || 0;
+          for (let i = 1; i <= mediumCount; i++) {
+             newClearedLevels[`${Difficulty.MEDIUM}_${i}`] = true;
+          }
+          // Hard
+          const hardCount = user.levelPassedHard || 0;
+          for (let i = 1; i <= hardCount; i++) {
+             newClearedLevels[`${Difficulty.HARD}_${i}`] = true;
+          }
+
+          return {
+            ...prev,
+            playerName: user.username, // Ensure casing matches DB
+            totalScore: user.points || 0,
+            premiumHints: user.hints || 0,
+            clearedLevels: newClearedLevels
+            // Preserve theme as it might be local pref or we could sync it if DB supported it
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Failed to sync user data:", error);
+    }
+  }, []);
+
   const handlePaymentSuccess = useCallback((hints: number, paymentId: number) => {
     // Deduplicate by paymentId: if we've already processed this, ignore
     if (lastProcessedPaymentIdRef.current === paymentId) {
@@ -136,12 +181,22 @@ export default function App() {
     onOutOfHints: handleOutOfHints
   });
 
-  // Restore session: if a playerName is present, stay logged in
+  // --- EFFECTS ---
+
+  // Restore session: if a playerName is present, stay logged in and sync data
   useEffect(() => {
     if (progress.playerName) {
       setView('HOME');
+      syncUserData(progress.playerName);
     }
-  }, []); // run once on mount to preserve logged-in state
+  }, []); // Run once on mount
+
+  // Sync data whenever returning to HOME screen
+  useEffect(() => {
+    if (view === 'HOME' && progress.playerName) {
+      syncUserData(progress.playerName);
+    }
+  }, [view, progress.playerName, syncUserData]);
 
   useEffect(() => {
     localStorage.setItem('findMyPuppy_progress', JSON.stringify(progress));
@@ -151,28 +206,20 @@ export default function App() {
     if (!loginName.trim()) return;
     const username = loginName.trim();
     
-    // Load user data from database if available
-    try {
-      const userData = await db.getUser(username);
-      if (userData.success && userData.user) {
-        // Sync database values to local progress
-        setProgress(prev => ({
-          ...prev,
-          playerName: username,
-          totalScore: userData.user?.points || prev.totalScore,
-          premiumHints: userData.user?.hints || prev.premiumHints || 0
-        }));
-      } else {
-        // User not found in DB, just set the name
-        setProgress(prev => ({ ...prev, playerName: username }));
-      }
-    } catch (error) {
-      console.error('Failed to load user data:', error);
-      // Fallback: just set the name if DB call fails
-      setProgress(prev => ({ ...prev, playerName: username }));
-    }
-    
+    // Set view immediately for better UX
     setView('HOME');
+    
+    // Sync data from DB
+    await syncUserData(username);
+    
+    // Ensure local name is set even if sync fails (offline mode support)
+    setProgress(prev => {
+        if (prev.playerName !== username) {
+            return { ...prev, playerName: username };
+        }
+        return prev;
+    });
+
     if (ambientAudioRef.current && !isMuted) {
       ambientAudioRef.current.play().catch(() => {});
     }
