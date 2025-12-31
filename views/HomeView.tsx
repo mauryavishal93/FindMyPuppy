@@ -51,7 +51,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {renderThemeBackground(activeTheme.id)}
       </div>
 
-      <header className={`${activeTheme.headerBg} backdrop-blur-md px-4 py-2 shadow-sm flex justify-between items-center z-[100] sticky top-0 border-b shrink-0 h-16 relative`}>
+      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md px-4 py-2 shadow-sm flex justify-between items-center z-[100] sticky top-0 border-b shrink-0 h-16 relative`}>
         <div className="flex items-center gap-2 relative">
           <button
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -88,7 +88,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </header>
       
-      <main className="flex-1 px-4 py-4 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
+      <main className="mobile-main-content flex-1 px-4 py-4 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
         <div className="w-full max-w-sm space-y-4">
           <div className={`flex flex-col items-center text-center p-4 rounded-3xl backdrop-blur-sm shadow-sm border relative overflow-hidden ${activeTheme.cardBg}`}>
              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50 ${activeTheme.accent}`}></div>
@@ -156,7 +156,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </main>
 
       {/* Ad Banner - Sticky Footer */}
-      <div className="shrink-0 z-20 w-full flex justify-center items-center bg-white/20 backdrop-blur-md border-t border-white/30 py-2">
+      <div className="mobile-ad-section shrink-0 z-20 w-full flex justify-center items-center bg-white/20 backdrop-blur-md border-t border-white/30 py-2">
          <AdBanner 
             dataAdClient={GOOGLE_AD_CLIENT_ID}
             dataAdSlot={GOOGLE_AD_SLOT_ID}

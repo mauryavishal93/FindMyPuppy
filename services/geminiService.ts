@@ -147,9 +147,14 @@ export const generateLevelTheme = async (levelId: number, _difficulty: Difficult
   return THEMES[(levelId - 1) % THEMES.length];
 };
 
-export const generateLevelImage = async (theme: string, levelId: number): Promise<string> => {
+export const generateLevelImage = async (theme: string, levelId: number, timestamp?: number): Promise<string> => {
   try {
     const ai = getAI();
+    // Include timestamp in variation ID to ensure different images each time
+    const variationId = timestamp 
+      ? `${levelId}-${timestamp}-${Math.random().toString(36).substring(7)}`
+      : `${levelId}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
@@ -157,7 +162,7 @@ export const generateLevelImage = async (theme: string, levelId: number): Promis
           {
             text: `Generate a detailed, top-down view illustration suitable for a hidden object game background. 
                    The scene is: ${theme}. 
-                   Variation ID: ${levelId}-${Math.random().toString(36).substring(7)}.
+                   Variation ID: ${variationId}.
                    Style: Colorful, cozy, semi-realistic or detailed artistic style. 
                    Composition: Cluttered with many small objects and textures to make finding items challenging. 
                    Perspective: Top-down or high-angle isometric. 

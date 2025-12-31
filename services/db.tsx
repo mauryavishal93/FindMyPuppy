@@ -87,7 +87,7 @@ export const db = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, hints }),
+        body: JSON.stringify({ username, hints, currentUser: username }),
       });
 
       const data = await response.json();
@@ -108,7 +108,7 @@ export const db = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, points }),
+        body: JSON.stringify({ username, points, currentUser: username }),
       });
 
       const data = await response.json();
@@ -129,7 +129,7 @@ export const db = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, premium }),
+        body: JSON.stringify({ username, premium, currentUser: username }),
       });
 
       const data = await response.json();
@@ -150,7 +150,7 @@ export const db = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, difficulty, levelPassed }),
+        body: JSON.stringify({ username, difficulty, levelPassed, currentUser: username }),
       });
 
       const data = await response.json();
@@ -177,7 +177,7 @@ export const db = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, amount, purchaseType, pack, purchaseMode }),
+        body: JSON.stringify({ username, amount, purchaseType, pack, purchaseMode, currentUser: username }),
       });
 
       const data = await response.json();
@@ -193,7 +193,7 @@ export const db = {
 
   getPurchaseHistory: async (username: string): Promise<{ success: boolean; message?: string; purchases?: PurchaseHistory[] }> => {
     try {
-      const response = await fetch(`/api/purchase-history/${username}`, {
+      const response = await fetch(`/api/purchase-history/${username}?currentUser=${encodeURIComponent(username)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ export const db = {
 
   getUser: async (username: string): Promise<{ success: boolean; message?: string; user?: User }> => {
     try {
-      const response = await fetch(`/api/user/${username}`, {
+      const response = await fetch(`/api/user/${username}?currentUser=${encodeURIComponent(username)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

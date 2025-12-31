@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>FindMyPuppy</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐶</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -38,6 +38,100 @@
       }
       .puppy-found {
         animation: ping 1s cubic-bezier(0, 0, 0.2, 1) 1;
+      }
+
+      /* Mobile-specific styles - Respect notification bar and safe areas */
+      @media (max-width: 640px) {
+        /* Ensure body respects safe areas on mobile */
+        body {
+          padding-top: env(safe-area-inset-top, 0px);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          padding-left: env(safe-area-inset-left, 0px);
+          padding-right: env(safe-area-inset-right, 0px);
+          /* Prevent full screen on mobile */
+          height: 100vh;
+          height: 100dvh; /* Dynamic viewport height */
+          overflow: hidden;
+        }
+
+        /* Main app container - not full screen on mobile */
+        .mobile-app-container {
+          height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+          height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+          width: 100%;
+          max-height: 100%;
+          /* Add top padding to account for notification bar */
+          padding-top: env(safe-area-inset-top, 20px);
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+          padding-left: env(safe-area-inset-left, 0px);
+          padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        /* Phone frame container adjustments for mobile */
+        .mobile-phone-frame {
+          width: 100%;
+          height: 100%;
+          max-height: 100%;
+          border-radius: 0;
+          border: none;
+          /* Ensure content fits */
+          overflow: hidden;
+        }
+
+        /* Header adjustments for mobile */
+        .mobile-header {
+          padding-top: max(8px, env(safe-area-inset-top, 0px));
+          min-height: 56px;
+          height: auto;
+        }
+
+        /* Ensure buttons and interactive elements are properly sized */
+        .mobile-button {
+          min-height: 44px; /* iOS recommended touch target */
+          min-width: 44px;
+          /* Ensure buttons are touch-friendly */
+          touch-action: manipulation;
+        }
+
+        /* All clickable elements should have proper touch targets */
+        button, a, [role="button"] {
+          min-height: 44px;
+          min-width: 44px;
+          touch-action: manipulation;
+        }
+
+        /* Adjust main content area */
+        .mobile-main-content {
+          flex: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+          /* Account for header and safe areas */
+          max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 56px);
+          max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 56px);
+        }
+
+        /* Ad banner adjustments */
+        .mobile-ad-section {
+          padding: 8px;
+          margin: 8px 0;
+          /* Ensure ad section doesn't overflow */
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Game view adjustments */
+        .mobile-game-container {
+          height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+          height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+        }
+      }
+
+      /* Desktop styles remain unchanged */
+      @media (min-width: 641px) {
+        .mobile-app-container {
+          height: 100vh;
+        }
       }
     </style>
   <script type="importmap">

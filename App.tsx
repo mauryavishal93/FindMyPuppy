@@ -69,7 +69,7 @@ export default function App() {
     setView('GAME_OVER');
   }, [playSfx, isMuted]);
 
-  const { timeLeft, setTimeLeft, formatTime } = useTimer({
+  const { timeLeft, setTimeLeft, formatTime, resetTimer } = useTimer({
     timeLimit,
     isRunning: isTimerRunning,
     onTimeUp: handleGameOver
@@ -293,14 +293,27 @@ export default function App() {
   };
 
   const handleInitLevel = useCallback(async (level: number, diff: Difficulty) => {
-    resetHints();
-    const result = await initLevel(level, diff);
-    setTimeLimit(result.timeLimit);
-    if (result.timeLimit !== null) {
-      setTimeLeft(result.timeLimit);
-    }
+    // Stop timer first to prevent it from continuing
     setIsTimerRunning(false);
-  }, [initLevel, resetHints, setTimeLeft]);
+    resetHints();
+    
+    const result = await initLevel(level, diff);
+    
+    // Always reset timer to the full time limit for a fresh start
+    // Set timeLimit first, then reset timer to ensure fresh start
+    if (result.timeLimit !== null) {
+      setTimeLimit(result.timeLimit);
+      // Reset timer to full time limit - this ensures fresh start even for same level
+      setTimeLeft(result.timeLimit);
+      resetTimer(); // Force reset using resetKey
+    } else {
+      setTimeLimit(null);
+      setTimeLeft(null);
+    }
+    
+    // Ensure timer is stopped until image loads
+    setIsTimerRunning(false);
+  }, [initLevel, resetHints, setTimeLeft, resetTimer]);
 
   const handleLevelSelect = (levelId: number) => {
     setCurrentLevelId(levelId);
@@ -447,7 +460,7 @@ export default function App() {
   const toggleMute = () => setIsMuted(prev => !prev);
 
   return (
-    <div className="h-screen w-screen bg-slate-200 flex items-center justify-center overflow-hidden font-sans select-none relative">
+    <div className="mobile-app-container h-screen w-screen bg-slate-200 flex items-center justify-center overflow-hidden font-sans select-none relative">
       
       {/* PC Background (blurred pattern) */}
       <div className="absolute inset-0 z-0 bg-slate-300 opacity-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200 via-slate-200 to-slate-300">
@@ -455,7 +468,7 @@ export default function App() {
       </div>
 
       {/* Phone Frame Container */}
-      <div className="w-full h-full sm:w-[400px] sm:h-[850px] sm:max-h-[90vh] bg-slate-50 relative sm:rounded-[2.5rem] sm:border-[8px] sm:border-slate-800 sm:shadow-2xl overflow-hidden z-10 flex flex-col">
+      <div className="mobile-phone-frame w-full h-full sm:w-[400px] sm:h-[850px] sm:max-h-[90vh] bg-slate-50 relative sm:rounded-[2.5rem] sm:border-[8px] sm:border-slate-800 sm:shadow-2xl overflow-hidden z-10 flex flex-col">
          
         {view === 'LOGIN' && (
           <LoginView 
@@ -514,7 +527,18 @@ export default function App() {
             onImageLoaded={handleImageLoaded}
             onUseHint={handleUseHint}
             onToggleMute={toggleMute}
-            onBack={() => setView('LEVEL_SELECT')}
+            onBack={() => {
+              // Stop and reset timer when user aborts the game
+              setIsTimerRunning(false);
+              // Reset timer to full time limit for next play
+              if (timeLimit !== null) {
+                setTimeLeft(timeLimit);
+                resetTimer();
+              } else {
+                setTimeLeft(null);
+              }
+              setView('LEVEL_SELECT');
+            }}
           />
         )}
 

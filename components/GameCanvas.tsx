@@ -38,6 +38,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const prevShowHintsRef = useRef(showHints);
   // Track which specific puppies should be highlighted (1-2 max)
   const [highlightedPuppyIds, setHighlightedPuppyIds] = useState<Set<string>>(new Set());
+  // Track if initial scroll position has been set
+  const initialScrollSetRef = useRef(false);
   
   // Track the last loaded background to prevent re-triggering loading on game updates (like finding a puppy)
   const prevBgRef = useRef<string | null>(null);
@@ -165,15 +167,31 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     return () => observer.disconnect();
   }, [loadingState]);
 
-  // Center scroll when loading is entering fading state (assets ready)
+  // Random initial scroll position when loading is entering fading state (assets ready)
   useEffect(() => {
-    if ((loadingState === 'fading' || loadingState === 'complete') && scrollContainerRef.current) {
+    if ((loadingState === 'fading' || loadingState === 'complete') && scrollContainerRef.current && !initialScrollSetRef.current) {
       const { scrollWidth, scrollHeight, clientWidth, clientHeight } = scrollContainerRef.current;
+      
+      // Calculate maximum scroll positions
+      const maxScrollLeft = Math.max(0, scrollWidth - clientWidth);
+      const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
+      
+      // Random position anywhere on the map
+      const randomScrollLeft = Math.random() * maxScrollLeft;
+      const randomScrollTop = Math.random() * maxScrollTop;
+      
       scrollContainerRef.current.scrollTo({
-        left: (scrollWidth - clientWidth) / 2,
-        top: (scrollHeight - clientHeight) / 2,
+        left: randomScrollLeft,
+        top: randomScrollTop,
         behavior: 'instant'
       });
+      
+      initialScrollSetRef.current = true;
+    }
+    
+    // Reset the flag when loading starts (new level)
+    if (loadingState === 'generating' || loadingState === 'loading') {
+      initialScrollSetRef.current = false;
     }
   }, [loadingState]);
 

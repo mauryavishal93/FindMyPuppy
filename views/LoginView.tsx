@@ -63,7 +63,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
   };
 
   return (
-    <div className="flex flex-col h-full items-center justify-center p-6 bg-gradient-to-br from-pink-100 via-white to-blue-100 relative overflow-hidden">
+    <div className="mobile-main-content flex flex-col h-full items-center justify-center p-6 bg-gradient-to-br from-pink-100 via-white to-blue-100 relative overflow-hidden">
       {/* Creative Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[30%] bg-pink-200/40 blur-[80px] rounded-full animate-pulse"></div>
