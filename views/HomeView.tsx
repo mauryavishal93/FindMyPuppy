@@ -77,6 +77,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
           />
         </div>
         <div className="flex items-center gap-2">
+          <a 
+            href="https://raw.githubusercontent.com/mauryavishal93/FindMyPuppy/main/apk/release/findmypuppy.apk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm ${activeTheme.iconBg} hover:scale-110 active:scale-95`}
+            title="Download Android APK"
+          >
+            <i className={`fas fa-download text-xs ${activeTheme.text}`}></i>
+          </a>
+
           <button onClick={onToggleMute} className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-sm ${activeTheme.iconBg}`}>
             <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-xs`}></i>
           </button>
