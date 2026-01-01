@@ -42,6 +42,9 @@ export default function App() {
   // Price Offer State
   const [priceOffer, setPriceOffer] = useState<PriceOffer | null>(null);
 
+  // Quit Confirmation State
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+
   const [progress, setProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('findMyPuppy_progress');
     const defaultProgress = {
@@ -401,6 +404,19 @@ export default function App() {
     setView('GAME');
   };
 
+  const handleQuitGame = () => {
+    setShowQuitConfirm(false);
+    setIsTimerRunning(false);
+    // Reset timer for next time
+    if (timeLimit !== null) {
+      setTimeLeft(timeLimit);
+      resetTimer();
+    } else {
+      setTimeLeft(null);
+    }
+    setView('LEVEL_SELECT');
+  };
+
   const openHintShop = () => {
     openPaymentModal({
       title: 'Hint Shop',
@@ -459,6 +475,80 @@ export default function App() {
 
   const toggleMute = () => setIsMuted(prev => !prev);
 
+  const handleBack = useCallback(() => {
+    // 1. If any modal is open, close it and ensure we are on HOME (Select Difficulty)
+    if (showInfoModal || showThemeModal || showPurchaseHistoryModal || showPaymentModal) {
+      setShowInfoModal(false);
+      setShowThemeModal(false);
+      setShowPurchaseHistoryModal(false);
+      closePaymentModal();
+      setView('HOME');
+      return;
+    }
+
+    // 2. If quit confirmation is open, just close it
+    if (showQuitConfirm) {
+      setShowQuitConfirm(false);
+      return;
+    }
+
+    // 3. Handle View-specific back logic
+    switch (view) {
+      case 'GAME':
+        // Show confirmation pop-up, timer keeps running
+        setShowQuitConfirm(true);
+        break;
+      case 'LEVEL_SELECT':
+      case 'WIN':
+      case 'GAME_OVER':
+        setView('HOME');
+        break;
+      case 'HOME':
+      case 'LOGIN':
+        // On base screens, we allow the natural back behavior to close/exit the app.
+        // This is handled by NOT pushing to the history stack in these views.
+        break;
+      default:
+        break;
+    }
+  }, [
+    view, 
+    showInfoModal, 
+    showThemeModal, 
+    showPurchaseHistoryModal, 
+    showPaymentModal, 
+    showQuitConfirm, 
+    closePaymentModal
+  ]);
+
+  // Sync history state to intercept hardware back button on Android/Mobile
+  useEffect(() => {
+    // Base screens: HOME (Select Difficulty) or LOGIN
+    const isBaseScreen = (view === 'LOGIN' || view === 'HOME') && 
+                         !showInfoModal && !showThemeModal && 
+                         !showPurchaseHistoryModal && !showPaymentModal && 
+                         !showQuitConfirm;
+
+    if (!isBaseScreen) {
+      // If we are not on a base screen, ensure there is a history entry to "pop"
+      // This prevents the hardware back button from closing the app immediately.
+      if (window.history.state?.page !== 'sub-screen') {
+        window.history.pushState({ page: 'sub-screen' }, '');
+      }
+    }
+
+    const onPopState = (e: PopStateEvent) => {
+      // If the back button was pressed and we are in a sub-screen/modal,
+      // intercept it and run our custom back logic.
+      if (!isBaseScreen) {
+        handleBack();
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, handleBack]);
+
   return (
     <div className="mobile-app-container h-screen w-screen bg-slate-200 flex items-center justify-center overflow-hidden font-sans select-none relative">
       
@@ -503,7 +593,7 @@ export default function App() {
             difficulty={selectedDifficulty}
             clearedLevels={progress.clearedLevels}
             onSelectLevel={handleLevelSelect}
-            onBack={() => setView('HOME')}
+            onBack={handleBack}
             isMuted={isMuted}
             onToggleMute={toggleMute}
             currentTheme={progress.selectedTheme || 'sunny'}
@@ -527,18 +617,7 @@ export default function App() {
             onImageLoaded={handleImageLoaded}
             onUseHint={handleUseHint}
             onToggleMute={toggleMute}
-            onBack={() => {
-              // Stop and reset timer when user aborts the game
-              setIsTimerRunning(false);
-              // Reset timer to full time limit for next play
-              if (timeLimit !== null) {
-                setTimeLeft(timeLimit);
-                resetTimer();
-              } else {
-                setTimeLeft(null);
-              }
-              setView('LEVEL_SELECT');
-            }}
+            onBack={handleBack}
           />
         )}
 
@@ -643,6 +722,35 @@ export default function App() {
             username={progress.playerName}
             activeTheme={activeTheme}
           />
+        )}
+
+        {showQuitConfirm && (
+          <div className="absolute inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className={`bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 ${activeTheme.id === 'night' ? 'border-indigo-500/30' : 'border-white'}`}>
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-sign-out-alt text-2xl text-red-500"></i>
+                </div>
+                <h2 className="text-2xl font-black text-slate-800">Quit Game?</h2>
+                <p className="text-slate-500 font-medium mt-2">Are you sure you want to quit? Your current level progress will be lost.</p>
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                <Button 
+                  onClick={handleQuitGame}
+                  className="w-full bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-200"
+                >
+                  Quit Game
+                </Button>
+                <button 
+                  onClick={() => setShowQuitConfirm(false)}
+                  className="py-3 px-6 text-slate-500 font-bold hover:text-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
