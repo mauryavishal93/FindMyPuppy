@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,11 +33,24 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from the 'dist' directory in production
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 const distPath = join(__dirname, '..', 'dist');
 
+console.log('--- Deployment Diagnostics ---');
+console.log(`Node version: ${process.version}`);
+console.log(`Current Dir: ${__dirname}`);
+console.log(`Target Dist Path: ${distPath}`);
+console.log(`Environment: ${process.env.NODE_ENV}`);
+
 if (isProduction) {
-  app.use(express.static(distPath));
+  if (fs.existsSync(distPath)) {
+    console.log('✅ Dist folder found. Serving static files.');
+    app.use(express.static(distPath));
+  } else {
+    console.error('❌ CRITICAL ERROR: Dist folder NOT found! Run "npm run build" before starting the server.');
+  }
+} else {
+  console.log('🚀 Running in DEVELOPMENT mode.');
 }
 
 // MongoDB Connection
@@ -874,11 +888,21 @@ app.listen(PORT, () => {
     // In production, for any request that doesn't match a static file or API route,
     // serve index.html to support client-side routing (SPA)
     app.get('*', (req, res) => {
-      // Don't intercept API calls that might have reached here due to errors
+      // 1. Never serve HTML for API calls
       if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
       
+      // 2. Never serve HTML for missing static assets (fixes MIME error)
+      if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|webmanifest)$/)) {
+        return res.status(404).send('Asset not found');
+      }
+
+      // 3. Serve index.html for everything else (SPA routing)
       const indexPath = join(distPath, 'index.html');
-      res.sendFile(indexPath);
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send('Application not built. Please run "npm run build".');
+      }
     });
   } else {
     // Start the frontend dev server ONLY in development
