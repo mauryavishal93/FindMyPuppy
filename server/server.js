@@ -33,8 +33,9 @@ app.use(express.json());
 
 // Serve static files from the 'dist' directory in production
 const isProduction = process.env.NODE_ENV === 'production';
+const distPath = join(__dirname, '..', 'dist');
+
 if (isProduction) {
-  const distPath = join(__dirname, '..', 'dist');
   app.use(express.static(distPath));
 }
 
@@ -875,7 +876,9 @@ app.listen(PORT, () => {
     app.get('*', (req, res) => {
       // Don't intercept API calls that might have reached here due to errors
       if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
-      res.sendFile(join(__dirname, '..', 'dist', 'index.html'));
+      
+      const indexPath = join(distPath, 'index.html');
+      res.sendFile(indexPath);
     });
   } else {
     // Start the frontend dev server ONLY in development
