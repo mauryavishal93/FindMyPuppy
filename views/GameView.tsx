@@ -48,7 +48,7 @@ export const GameView: React.FC<GameViewProps> = ({
   
   return (
     <div className="mobile-game-container flex flex-col h-full bg-slate-900 absolute inset-0 z-0">
-      <div className="mobile-header bg-slate-900/90 backdrop-blur text-white px-2 sm:px-3 flex justify-between z-10 shadow-lg border-b border-slate-800 shrink-0">
+      <div className="mobile-header bg-slate-900/90 backdrop-blur text-white flex justify-between z-10 shadow-lg border-b border-slate-800 shrink-0">
         <button onClick={onBack} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition">
            <i className="fas fa-times text-lg sm:text-xl"></i>
         </button>

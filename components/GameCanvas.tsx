@@ -206,7 +206,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       if (hiddenPuppies.length > 0) {
         // Use a margin to ensure the puppy is not just on the edge
-        const margin = 50;
+        const margin = 50; 
         
         // Find puppies visible in current viewport
         const visiblePuppies = hiddenPuppies.filter(p => {

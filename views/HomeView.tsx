@@ -18,6 +18,7 @@ interface HomeViewProps {
   onOpenInfoModal: () => void;
   onOpenHintShop: () => void;
   onOpenPurchaseHistory: () => void;
+  onOpenReferModal: () => void;
   onLogout: () => void;
   priceOffer: PriceOffer | null;
 }
@@ -32,6 +33,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenInfoModal,
   onOpenHintShop,
   onOpenPurchaseHistory,
+  onOpenReferModal,
   onLogout,
   priceOffer
 }) => {
@@ -49,7 +51,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {renderThemeBackground(activeTheme.id)}
       </div>
 
-      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md px-4 shadow-sm flex justify-between z-[100] sticky top-0 border-b shrink-0 relative transition-all duration-500`}>
+      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md shadow-sm flex justify-between z-[100] sticky top-0 border-b shrink-0 relative transition-all duration-500`}>
         <div className="flex items-center gap-2 relative">
           <button
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -71,6 +73,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             onInfoClick={onOpenInfoModal}
             onThemeClick={onOpenThemeModal}
             onPurchaseHistoryClick={onOpenPurchaseHistory}
+            onReferClick={onOpenReferModal}
             onLogout={onLogout}
           />
         </div>

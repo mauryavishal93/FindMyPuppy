@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        },
         manifest: {
           name: 'Find My Puppy',
           short_name: 'FindPuppy',
@@ -35,7 +38,9 @@ export default defineConfig(({ mode }) => {
           ]
         },
         devOptions: {
-          enabled: true
+          enabled: true,
+          suppressWarnings: true,
+          navigateFallbackAllowlist: [/^\/api/],
         }
       })
     ],
@@ -48,7 +53,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Forward all requests starting with /api to the Express server
         '/api': {
-          target: 'http://localhost:5174',
+          target: 'http://localhost:5170',
           changeOrigin: true,
           secure: false,
         },

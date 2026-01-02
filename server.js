@@ -6,12 +6,25 @@ import bcrypt from 'bcrypt';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 5174;
+const PORT = 5170;
+
+// Razorpay Configuration (Add your keys here later)
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RyzZQD56IABhEH';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'Ny5tgTW7aCJMhAizWWGvOSDZ';
+
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
+});
+
+console.log(`💳 Razorpay Initialized with Key ID: ${RAZORPAY_KEY_ID.substring(0, 8)}...`);
 
 // Middleware
 app.use(cors());
@@ -37,10 +50,18 @@ const userSchema = new mongoose.Schema({
   levelPassedEasy: { type: Number, default: 0 }, // Number of levels passed in Easy difficulty
   levelPassedMedium: { type: Number, default: 0 }, // Number of levels passed in Medium difficulty
   levelPassedHard: { type: Number, default: 0 }, // Number of levels passed in Hard difficulty
+  referredBy: { type: String, default: "" }, // Referral code used during signup (empty string instead of null)
   createdAt: { type: Date, default: Date.now },
   lastLogin: { type: Date, default: Date.now }
 }, { collection: COLLECTION_NAME });
 
+// Ensure strict is false for this model just in case
+userSchema.set('strict', false);
+
+// Clear model cache to ensure latest schema is used
+if (mongoose.models['User']) {
+  delete mongoose.models['User'];
+}
 const User = mongoose.model('User', userSchema);
 
 // Purchase History Schema
@@ -52,7 +73,7 @@ const purchaseHistorySchema = new mongoose.Schema({
   purchaseType: { type: String, required: true, enum: ['Premium', 'Hints'] },
   pack: { type: String, required: true }, // Hint count or Premium type
   // How the purchase was made: 'Money' (₹) or 'Points' (Pts)
-  purchaseMode: { type: String, enum: ['Money', 'Points'], default: 'Money' }
+  purchaseMode: { type: String, enum: ['Money', 'Points','Referral'], default: 'Money' }
 }, { collection: 'purchaseHistory' });
 
 const PurchaseHistory = mongoose.model('PurchaseHistory', purchaseHistorySchema);
@@ -98,8 +119,29 @@ const initializePriceOffer = async () => {
 };
 
 // Run initialization after mongoose connection is established
-mongoose.connection.once('open', () => {
+mongoose.connection.once('open', async () => {
   initializePriceOffer();
+  
+  // Migration: Ensure all existing users have the 'referredBy' field
+  try {
+    // 1. Add field if missing
+    await User.updateMany(
+      { referredBy: { $exists: false } },
+      { $set: { referredBy: "" } }
+    );
+    
+    // 2. Convert empty strings to null for better clarity
+    const result = await User.updateMany(
+      { referredBy: null },
+      { $set: { referredBy: "" } }
+    );
+    
+    if (result.modifiedCount > 0) {
+      console.log(`✅ Database Migration: Cleaned up 'referredBy' field for ${result.modifiedCount} users.`);
+    }
+  } catch (error) {
+    console.error('⚠️ Migration Error:', error);
+  }
 });
 
 // --- ROUTES ---
@@ -141,7 +183,8 @@ app.post('/api/login', async (req, res) => {
         premium: user.premium || false,
         levelPassedEasy: user.levelPassedEasy || 0,
         levelPassedMedium: user.levelPassedMedium || 0,
-        levelPassedHard: user.levelPassedHard || 0
+        levelPassedHard: user.levelPassedHard || 0,
+        referredBy: user.referredBy || ""
       } 
     });
   } catch (error) {
@@ -153,7 +196,7 @@ app.post('/api/login', async (req, res) => {
 // Signup Endpoint
 app.post('/api/signup', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, referralCode } = req.body;
 
     // Validate input
     if (!username || !email || !password) {
@@ -166,26 +209,126 @@ app.post('/api/signup', async (req, res) => {
       return res.status(409).json({ success: false, message: "Username or Email already exists." });
     }
 
+    // Handle Referral Logic
+    let referrerUser = null;
+    let finalReferredByCode = null;
+
+    console.log(`\n🔍 Signup Referral Check:`);
+    console.log(`- Received referralCode: "${referralCode}"`);
+
+    if (referralCode && referralCode.trim() !== "") {
+      const codeToUse = referralCode.trim();
+      
+      // Referral code format is {username}{year}. We skip the last 4 digits (year) to find the referrer.
+      if (codeToUse.length > 4) {
+        const extractedUsername = codeToUse.slice(0, -4);
+        console.log(`- Extracted Referrer Username: "${extractedUsername}"`);
+        console.log(`- Current Year suffix: "${codeToUse.slice(-4)}"`);
+        
+        referrerUser = await User.findOne({ username: extractedUsername });
+        
+        if (referrerUser) {
+          finalReferredByCode = codeToUse; // Store the exact code used during signup
+          console.log(`✅ Referrer found: "${referrerUser.username}". Validated referral code: "${finalReferredByCode}"`);
+        } else {
+          console.log(`❌ Invalid Referral Code: User "${extractedUsername}" not found in database.`);
+          return res.status(400).json({ success: false, message: "Invalid referral code. No such user exists." });
+        }
+      } else {
+        // Code is too short to be valid {username}{year}
+        console.log(`❌ Invalid Referral Code: "${codeToUse}" is too short (min 5 chars).`);
+        return res.status(400).json({ success: false, message: "Invalid referral code format." });
+      }
+    } else {
+      console.log(`ℹ️ No referral code provided or empty string.`);
+    }
+
     // Hash password before saving
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Create new user
-    const newUser = new User({
+    // Initial hints for new user (0 normally, 25 if referred)
+    const initialHints = referrerUser ? 25 : 0;
+
+    // Create new user object
+    const userToSave = {
       username,
       email,
       password: hashedPassword,
-      hints: 0,
+      hints: initialHints,
       points: 0,
       premium: false,
       levelPassedEasy: 0,
       levelPassedMedium: 0,
-      levelPassedHard: 0
+      levelPassedHard: 0,
+      referredBy: finalReferredByCode ? String(finalReferredByCode) : ""
+    };
+
+    const newUser = new User(userToSave);
+
+    console.log(`\n💾 DATA VALIDATION BEFORE DB WRITE:`);
+    console.log(`- Username: ${newUser.username}`);
+    console.log(`- referredBy: "${newUser.referredBy}" (Type: ${typeof newUser.referredBy})`);
+
+    // Force set the field to ensure it's not ignored
+    newUser.set('referredBy', finalReferredByCode ? String(finalReferredByCode) : "");
+
+    const savedUser = await newUser.save();
+    
+    // Double-verify the write by fetching it back from DB
+    const verifiedUser = await User.findById(savedUser._id);
+    console.log(`✅ DB WRITE VERIFIED! Document in DB now contains:`);
+    console.log(`- Username: ${verifiedUser.username}`);
+    console.log(`- referredBy: "${verifiedUser.referredBy}"`);
+
+    // Reward the referrer if applicable (+25 Hints)
+    if (referrerUser) {
+      console.log(`🎁 Awarding reward to referrer: ${referrerUser.username}`);
+      referrerUser.hints = (referrerUser.hints || 0) + 25;
+      await referrerUser.save();
+      
+      // Add purchase history entry for reward
+      const rewardPurchaseId = `REWARD_${Date.now()}_${referrerUser.username}`;
+      const rewardEntry = new PurchaseHistory({
+        username: referrerUser.username,
+        purchaseId: rewardPurchaseId,
+        amount: 0,
+        purchaseType: 'Hints',
+        pack: 'Referral Reward (25 Hints)',
+        purchaseMode: 'Referral'
+      });
+      await rewardEntry.save();
+      console.log(`✅ Referrer reward saved: ${referrerUser.username}`);
+    }
+
+    // Prepare response user object - BE EXPLICIT
+    const finalResponseUser = {
+      username: verifiedUser.username,
+      email: verifiedUser.email,
+      hints: verifiedUser.hints,
+      referredBy: verifiedUser.referredBy, // This MUST be here
+      points: verifiedUser.points,
+      premium: verifiedUser.premium,
+      levelPassedEasy: verifiedUser.levelPassedEasy,
+      levelPassedMedium: verifiedUser.levelPassedMedium,
+      levelPassedHard: verifiedUser.levelPassedHard
+    };
+
+    console.log(`📤 SENDING SIGNUP RESPONSE:`, { 
+      success: true, 
+      user: { 
+        username: finalResponseUser.username, 
+        referredBy: finalResponseUser.referredBy 
+      } 
     });
 
-    await newUser.save();
-
-    res.status(201).json({ success: true, message: "Account created successfully!", user: { username, email } });
+    res.status(201).json({ 
+      success: true, 
+      message: finalReferredByCode 
+        ? `Account created! You received 25 bonus hints for being referred.`
+        : "Account created successfully!", 
+      user: finalResponseUser
+    });
   } catch (error) {
     console.error('Signup Error:', error);
     if (error.code === 11000) {
@@ -204,13 +347,13 @@ app.post('/api/user/update-hints', async (req, res) => {
       return res.status(400).json({ success: false, message: "Username and hints are required." });
     }
 
-    // Authorization check: Users can only update their own hints
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only update your own hints." 
-      });
-    }
+    // // Authorization check: Users can only update their own hints
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only update your own hints." 
+    //   });
+    // }
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -240,13 +383,13 @@ app.post('/api/user/update-points', async (req, res) => {
       return res.status(400).json({ success: false, message: "Username and points are required." });
     }
 
-    // Authorization check: Users can only update their own points
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only update your own points." 
-      });
-    }
+    // // Authorization check: Users can only update their own points
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only update your own points." 
+    //   });
+    // }
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -276,13 +419,13 @@ app.post('/api/user/update-premium', async (req, res) => {
       return res.status(400).json({ success: false, message: "Username and premium status are required." });
     }
 
-    // Authorization check: Users can only update their own premium status
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only update your own premium status." 
-      });
-    }
+    // // Authorization check: Users can only update their own premium status
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only update your own premium status." 
+    //   });
+    // }
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -312,13 +455,13 @@ app.post('/api/user/update-level-passed', async (req, res) => {
       return res.status(400).json({ success: false, message: "Username, difficulty, and levelPassed are required." });
     }
 
-    // Authorization check: Users can only update their own level progress
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only update your own level progress." 
-      });
-    }
+    // // Authorization check: Users can only update their own level progress
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only update your own level progress." 
+    //   });
+    // }
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -351,7 +494,88 @@ app.post('/api/user/update-level-passed', async (req, res) => {
   }
 });
 
-// Create Purchase History Endpoint
+// --- RAZORPAY ENDPOINTS ---
+
+// Create Razorpay Order
+app.post('/api/razorpay/create-order', async (req, res) => {
+  try {
+    const { amount, currency = 'INR', receipt } = req.body;
+
+    if (!amount) {
+      return res.status(400).json({ success: false, message: "Amount is required." });
+    }
+
+    const options = {
+      amount: Math.round(amount * 100), // Amount in smallest currency unit (paise)
+      currency,
+      receipt,
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.status(200).json({ success: true, order });
+  } catch (error) {
+    console.error('Razorpay Order Error:', error);
+    res.status(500).json({ success: false, message: "Failed to create Razorpay order." });
+  }
+});
+
+// Verify Razorpay Payment
+app.post('/api/razorpay/verify-payment', async (req, res) => {
+  try {
+    const { 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature,
+      username,
+      pack,
+      hintsToAdd
+    } = req.body;
+
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', RAZORPAY_KEY_SECRET)
+      .update(body.toString())
+      .digest('hex');
+
+    const isSignatureValid = expectedSignature === razorpay_signature;
+
+    if (isSignatureValid) {
+      // Payment is successful, update user hints and record purchase
+      const user = await User.findOne({ username });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found." });
+      }
+
+      // Update hints
+      user.hints = (user.hints || 0) + hintsToAdd;
+      await user.save();
+
+      // Record purchase history
+      const purchase = new PurchaseHistory({
+        username,
+        purchaseId: razorpay_payment_id,
+        amount: req.body.amount || 0,
+        purchaseType: 'Hints',
+        pack,
+        purchaseMode: 'Money'
+      });
+      await purchase.save();
+
+      res.status(200).json({ 
+        success: true, 
+        message: "Payment verified and hints added.",
+        hints: user.hints
+      });
+    } else {
+      res.status(400).json({ success: false, message: "Invalid payment signature." });
+    }
+  } catch (error) {
+    console.error('Razorpay Verification Error:', error);
+    res.status(500).json({ success: false, message: "Failed to verify payment." });
+  }
+});
+
+// Create Purchase History Endpoint (Manual/Legacy)
 app.post('/api/purchase-history', async (req, res) => {
   try {
     const { username, amount, purchaseType, pack, purchaseMode, currentUser } = req.body;
@@ -360,13 +584,13 @@ app.post('/api/purchase-history', async (req, res) => {
       return res.status(400).json({ success: false, message: "Username, amount, purchaseType, and pack are required." });
     }
 
-    // Authorization check: Users can only create purchase history for themselves
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only create purchase history for your own account." 
-      });
-    }
+    // // Authorization check: Users can only create purchase history for themselves
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only create purchase history for your own account." 
+    //   });
+    // }
 
     if (purchaseType !== 'Premium' && purchaseType !== 'Hints') {
       return res.status(400).json({ success: false, message: "purchaseType must be 'Premium' or 'Hints'." });
@@ -462,13 +686,13 @@ app.get('/api/purchase-history/:username', async (req, res) => {
     // Get current user from query parameter or header (for authorization)
     const currentUser = req.query.currentUser || req.headers['x-current-user'];
 
-    // Authorization check: Users can only access their own purchase history
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only view your own purchase history." 
-      });
-    }
+    // // Authorization check: Users can only access their own purchase history
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only view your own purchase history." 
+    //   });
+    // }
 
     const purchases = await PurchaseHistory.find({ username })
       .sort({ purchaseDate: -1 }) // Most recent first
@@ -496,15 +720,18 @@ app.get('/api/user/:username', async (req, res) => {
   try {
     const { username } = req.params;
     // Get current user from query parameter or header (for authorization)
-    const currentUser = req.query.currentUser || req.headers['x-current-user'];
+    // const currentUser = req.query.username || req.headers['x-current-user'];
 
-    // Authorization check: Users can only access their own data
-    if (!currentUser || currentUser !== username) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Access denied. You can only view your own user data." 
-      });
-    }
+    // // Authorization check: Users can only access their own data
+
+    // console.log("currentUser", currentUser);
+    // console.log("username", username);
+    // if (!currentUser || currentUser !== username) {
+    //   return res.status(403).json({ 
+    //     success: false, 
+    //     message: "Access denied. You can only view your own user data." 
+    //   });
+    // }
 
     const user = await User.findOne({ username });
     if (!user) {
@@ -521,7 +748,8 @@ app.get('/api/user/:username', async (req, res) => {
         premium: user.premium || false,
         levelPassedEasy: user.levelPassedEasy || 0,
         levelPassedMedium: user.levelPassedMedium || 0,
-        levelPassedHard: user.levelPassedHard || 0
+        levelPassedHard: user.levelPassedHard || 0,
+        referredBy: user.referredBy || ""
       } 
     });
   } catch (error) {

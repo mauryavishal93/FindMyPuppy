@@ -14,9 +14,20 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Auto-detect referral code from URL
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setReferralCode(ref);
+      setIsSignup(true); // Automatically switch to signup if a referral code is present
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +52,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
     try {
       let response;
       if (isSignup) {
-        response = await db.signup(loginName, email, password);
+        response = await db.signup(loginName, email, password, referralCode.trim() || undefined);
       } else {
         response = await db.login(loginName, password);
       }
@@ -63,7 +74,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
   };
 
   return (
-    <div className="mobile-main-content flex flex-col h-full items-center justify-center p-6 pt-[calc(env(safe-area-inset-top,44px)+24px)] bg-gradient-to-br from-pink-100 via-white to-blue-100 relative overflow-hidden transition-colors duration-500">
+    <div className="mobile-main-content flex flex-col items-center justify-center p-6 bg-gradient-to-br from-pink-100 via-white to-blue-100 relative overflow-hidden transition-colors duration-500">
       {/* Creative Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[30%] bg-pink-200/40 blur-[80px] rounded-full animate-pulse"></div>
@@ -134,18 +145,32 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
               </div>
             )}
 
-            <div className="relative">
-              <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input 
-                type="password" 
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all text-base font-bold text-slate-700 bg-white/50"
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <i className="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input 
+                  type="password" 
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all text-base font-bold text-slate-700 bg-white/50"
+                  disabled={isLoading}
+                />
+              </div>
+
+              {isSignup && (
+                <div className="relative animate-fade-in">
+                  <i className="fas fa-ticket-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input 
+                    type="text" 
+                    placeholder="Referral Code (Optional)"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-brand focus:ring-4 focus:ring-brand/10 focus:outline-none transition-all text-base font-bold text-slate-700 bg-white/50"
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
             </div>
-          </div>
 
           {error && (
             <div className="text-red-500 text-xs font-bold bg-red-50 py-2 px-3 rounded-lg border border-red-100 flex items-center gap-2 animate-pulse">

@@ -7,6 +7,7 @@ import { InfoModal } from './components/modals/InfoModal';
 import { ThemeModal } from './components/modals/ThemeModal';
 import { PaymentModal } from './components/modals/PaymentModal';
 import { PurchaseHistoryModal } from './components/modals/PurchaseHistoryModal';
+import { ReferFriendModal } from './components/modals/ReferFriendModal';
 import { Button } from './components/ui/Button';
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
@@ -36,8 +37,11 @@ export default function App() {
   // Purchase History Modal State
   const [showPurchaseHistoryModal, setShowPurchaseHistoryModal] = useState(false);
 
+  // Refer a Friend Modal State
+  const [showReferModal, setShowReferModal] = useState(false);
+
   // Track last processed payment ID to avoid duplicate history entries
-  const lastProcessedPaymentIdRef = useRef<number | null>(null);
+  const lastProcessedPaymentIdRef = useRef<string | null>(null);
 
   // Price Offer State
   const [priceOffer, setPriceOffer] = useState<PriceOffer | null>(null);
@@ -137,7 +141,9 @@ export default function App() {
           return {
             ...prev,
             playerName: user.username, // Ensure casing matches DB
+            email: user.email,
             totalScore: user.points || 0,
+            points: user.points || 0,
             premiumHints: user.hints || 0,
             clearedLevels: newClearedLevels
             // Preserve theme as it might be local pref or we could sync it if DB supported it
@@ -149,7 +155,7 @@ export default function App() {
     }
   }, []);
 
-  const handlePaymentSuccess = useCallback((hints: number, paymentId: number, amount: number) => {
+  const handlePaymentSuccess = useCallback((hints: number, paymentId: string, amount: number) => {
     // Deduplicate by paymentId: if we've already processed this, ignore
     if (lastProcessedPaymentIdRef.current === paymentId) {
       return;
@@ -193,7 +199,9 @@ export default function App() {
   } = usePayment({
     onPaymentSuccess: handlePaymentSuccess,
     playSfx: (type) => playSfx(type, isMuted),
-    priceOffer: priceOffer
+    priceOffer: priceOffer,
+    playerName: progress.playerName || 'Player',
+    playerEmail: progress.email || '' 
   });
 
   const handleOutOfHints = useCallback(() => {
@@ -537,7 +545,7 @@ export default function App() {
       }
     }
 
-    const onPopState = (e: PopStateEvent) => {
+    const onPopState = () => {
       // If the back button was pressed and we are in a sub-screen/modal,
       // intercept it and run our custom back logic.
       if (!isBaseScreen) {
@@ -550,15 +558,16 @@ export default function App() {
   }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, handleBack]);
 
   return (
-    <div className="mobile-app-container h-screen w-screen bg-slate-200 flex items-center justify-center overflow-hidden font-sans select-none relative">
+    <div className="mobile-app-container">
       
-      {/* PC Background (blurred pattern) */}
-      <div className="absolute inset-0 z-0 bg-slate-300 opacity-50 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-200 via-slate-200 to-slate-300">
-         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.2\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}></div>
+      {/* PC Background Decorations (Web Only) */}
+      <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden hidden sm:block">
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500 via-slate-900 to-black"></div>
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.2\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }}></div>
       </div>
 
-      {/* Phone Frame Container */}
-      <div className="mobile-phone-frame w-full h-full sm:w-[400px] sm:h-[850px] sm:max-h-[90vh] bg-slate-50 relative sm:rounded-[2.5rem] sm:border-[8px] sm:border-slate-800 sm:shadow-2xl overflow-hidden z-10 flex flex-col">
+      {/* Physical Phone Frame Container */}
+      <div className={`mobile-phone-frame shadow-2xl ${activeTheme.background} transition-colors duration-500`}>
          
         {view === 'LOGIN' && (
           <LoginView 
@@ -582,6 +591,7 @@ export default function App() {
             onOpenInfoModal={() => setShowInfoModal(true)}
             onOpenHintShop={openHintShop}
             onOpenPurchaseHistory={() => setShowPurchaseHistoryModal(true)}
+            onOpenReferModal={() => setShowReferModal(true)}
             onLogout={handleLogout}
             priceOffer={priceOffer}
           />
@@ -720,6 +730,15 @@ export default function App() {
             onClose={() => setShowPurchaseHistoryModal(false)}
             username={progress.playerName}
             activeTheme={activeTheme}
+          />
+        )}
+
+        {showReferModal && (
+          <ReferFriendModal
+            isOpen={showReferModal}
+            onClose={() => setShowReferModal(false)}
+            activeTheme={activeTheme}
+            playerName={progress.playerName}
           />
         )}
 

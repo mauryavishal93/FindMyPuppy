@@ -8,7 +8,7 @@
 // For local development/testing, you can temporarily change this to:
 // - Android Emulator: "http://10.0.2.2:5174" (10.0.2.2 is the Android emulator's alias for host machine's localhost)
 // - Physical Device: your computer's local IP address (e.g., "http://192.168.1.100:5174")
-const API_BASE_URL = "https://findmypuppydb.onrender.com";
+const API_BASE_URL = "http://localhost:5170";
 
 export interface User {
   username: string;
@@ -19,6 +19,7 @@ export interface User {
   levelPassedEasy?: number;
   levelPassedMedium?: number;
   levelPassedHard?: number;
+  referredBy?: string | null;
 }
 
 export interface PurchaseHistory {
@@ -65,14 +66,14 @@ export const db = {
     }
   },
 
-  signup: async (username: string, email: string, password: string): Promise<AuthResponse> => {
+  signup: async (username: string, email: string, password: string, referralCode?: string): Promise<AuthResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, referralCode }),
       });
 
       const data = await response.json();
