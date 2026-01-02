@@ -47,6 +47,24 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
     },
+    build: {
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('react') || id.includes('react-dom')) {
+                return 'vendor-react';
+              }
+              if (id.includes('@capacitor')) {
+                return 'vendor-capacitor';
+              }
+              return 'vendor-others';
+            }
+          },
+        },
+      },
+    },
     server: {
       host: true,
       allowedHosts: true,
