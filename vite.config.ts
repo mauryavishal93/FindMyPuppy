@@ -25,13 +25,13 @@ export default defineConfig(({ mode }) => {
           display: 'standalone',
           icons: [
             {
-              src: 'https://raw.githubusercontent.com/mauryavishal93/FindMyPuppy/main/apk/release/icon.png',
+              src: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any maskable'
             },
             {
-              src: 'https://raw.githubusercontent.com/mauryavishal93/FindMyPuppy/main/apk/release/icon.png',
+              src: 'https://cdn-icons-png.flaticon.com/512/616/616408.png',
               sizes: '512x512',
               type: 'image/png'
             }
@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Forward all requests starting with /api to the Express server
         '/api': {
-          target: 'http://localhost:5170',
+          target: 'http://localhost:5774',
           changeOrigin: true,
           secure: false,
         },

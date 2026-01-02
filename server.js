@@ -13,9 +13,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 5774;
+// Professional SRE Rule: Always allow the environment to override the PORT
+const PORT = process.env.PORT || 5774;
 
-// Razorpay Configuration (Add your keys here later)
+// Razorpay Configuration (Use Environment Variables for Production)
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RyzZQD56IABhEH';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'Ny5tgTW7aCJMhAizWWGvOSDZ';
 
@@ -38,9 +39,8 @@ if (isProduction) {
 }
 
 // MongoDB Connection
-// Connecting to 'findmypuppy' cluster, 'findmypuppy' database, 'user' collection
-const MONGO_URI = "mongodb+srv://vimaurya24_db_user:jrPF6GqaTX9H40s1@findmypuppy.q6hlrak.mongodb.net/findmypuppy?appName=findmypuppy";
-const COLLECTION_NAME = "user"; // As requested
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://vimaurya24_db_user:jrPF6GqaTX9H40s1@findmypuppy.q6hlrak.mongodb.net/findmypuppy?appName=findmypuppy";
+const COLLECTION_NAME = "user"; 
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas successfully!'))
@@ -648,13 +648,13 @@ app.post('/api/purchase-history', async (req, res) => {
       },
       {
         $setOnInsert: {
-          username,
-          purchaseId,
-          amount,
-          purchaseType,
-          pack,
+      username,
+      purchaseId,
+      amount,
+      purchaseType,
+      pack,
           purchaseMode: safePurchaseMode,
-          purchaseDate: new Date()
+      purchaseDate: new Date()
         }
       },
       {
@@ -879,34 +879,34 @@ app.listen(PORT, () => {
     });
   } else {
     // Start the frontend dev server ONLY in development
-    console.log('📦 Starting frontend dev server...');
-    const viteProcess = spawn('npm', ['run', 'dev'], {
-      cwd: __dirname,
-      stdio: 'inherit',
-      shell: true
-    });
-    
-    viteProcess.on('error', (error) => {
-      console.error('❌ Failed to start frontend dev server:', error);
-    });
-    
-    viteProcess.on('exit', (code) => {
-      if (code !== 0) {
-        console.error(`❌ Frontend dev server exited with code ${code}`);
-      }
-    });
-    
-    // Handle graceful shutdown
-    process.on('SIGINT', () => {
-      console.log('\n🛑 Shutting down servers...');
-      viteProcess.kill();
-      process.exit(0);
-    });
-    
-    process.on('SIGTERM', () => {
-      console.log('\n🛑 Shutting down servers...');
-      viteProcess.kill();
-      process.exit(0);
-    });
+  console.log('📦 Starting frontend dev server...');
+  const viteProcess = spawn('npm', ['run', 'dev'], {
+    cwd: __dirname,
+    stdio: 'inherit',
+    shell: true
+  });
+  
+  viteProcess.on('error', (error) => {
+    console.error('❌ Failed to start frontend dev server:', error);
+  });
+  
+  viteProcess.on('exit', (code) => {
+    if (code !== 0) {
+      console.error(`❌ Frontend dev server exited with code ${code}`);
+    }
+  });
+  
+  // Handle graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down servers...');
+    viteProcess.kill();
+    process.exit(0);
+  });
+  
+  process.on('SIGTERM', () => {
+    console.log('\n🛑 Shutting down servers...');
+    viteProcess.kill();
+    process.exit(0);
+  });
   }
 });
