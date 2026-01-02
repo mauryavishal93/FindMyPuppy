@@ -30,6 +30,13 @@ console.log(`💳 Razorpay Initialized with Key ID: ${RAZORPAY_KEY_ID.substring(
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from the 'dist' directory in production
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction) {
+  const distPath = join(__dirname, 'dist');
+  app.use(express.static(distPath));
+}
+
 // MongoDB Connection
 // Connecting to 'findmypuppy' cluster, 'findmypuppy' database, 'user' collection
 const MONGO_URI = "mongodb+srv://vimaurya24_db_user:jrPF6GqaTX9H40s1@findmypuppy.q6hlrak.mongodb.net/findmypuppy?appName=findmypuppy";
@@ -694,7 +701,11 @@ app.get('/api/purchase-history/:username', async (req, res) => {
     //   });
     // }
 
-    const purchases = await PurchaseHistory.find({ username })
+    // Only fetch purchases where mode is Money or Referral (exclude Points)
+    const purchases = await PurchaseHistory.find({ 
+      username,
+      purchaseMode: { $in: ['Money', 'Referral'] }
+    })
       .sort({ purchaseDate: -1 }) // Most recent first
       .exec();
 
@@ -856,36 +867,46 @@ app.post('/api/price-offer/migrate', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Backend Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Backend Server running on http://localhost:${PORT} (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'})`);
   
-  // Start the frontend dev server
-  console.log('📦 Starting frontend dev server...');
-  const viteProcess = spawn('npm', ['run', 'dev'], {
-    cwd: __dirname,
-    stdio: 'inherit',
-    shell: true
-  });
-  
-  viteProcess.on('error', (error) => {
-    console.error('❌ Failed to start frontend dev server:', error);
-  });
-  
-  viteProcess.on('exit', (code) => {
-    if (code !== 0) {
-      console.error(`❌ Frontend dev server exited with code ${code}`);
-    }
-  });
-  
-  // Handle graceful shutdown
-  process.on('SIGINT', () => {
-    console.log('\n🛑 Shutting down servers...');
-    viteProcess.kill();
-    process.exit(0);
-  });
-  
-  process.on('SIGTERM', () => {
-    console.log('\n🛑 Shutting down servers...');
-    viteProcess.kill();
-    process.exit(0);
-  });
+  if (isProduction) {
+    // In production, for any request that doesn't match a static file or API route,
+    // serve index.html to support client-side routing (SPA)
+    app.get('*', (req, res) => {
+      // Don't intercept API calls that might have reached here due to errors
+      if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
+      res.sendFile(join(__dirname, 'dist', 'index.html'));
+    });
+  } else {
+    // Start the frontend dev server ONLY in development
+    console.log('📦 Starting frontend dev server...');
+    const viteProcess = spawn('npm', ['run', 'dev'], {
+      cwd: __dirname,
+      stdio: 'inherit',
+      shell: true
+    });
+    
+    viteProcess.on('error', (error) => {
+      console.error('❌ Failed to start frontend dev server:', error);
+    });
+    
+    viteProcess.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(`❌ Frontend dev server exited with code ${code}`);
+      }
+    });
+    
+    // Handle graceful shutdown
+    process.on('SIGINT', () => {
+      console.log('\n🛑 Shutting down servers...');
+      viteProcess.kill();
+      process.exit(0);
+    });
+    
+    process.on('SIGTERM', () => {
+      console.log('\n🛑 Shutting down servers...');
+      viteProcess.kill();
+      process.exit(0);
+    });
+  }
 });
