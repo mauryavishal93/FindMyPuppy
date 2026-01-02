@@ -572,7 +572,6 @@ export default function App() {
           <HomeView
             progress={progress}
             activeTheme={activeTheme}
-            selectedDifficulty={selectedDifficulty}
             onSelectDifficulty={(diff) => {
               setSelectedDifficulty(diff);
               setView('LEVEL_SELECT');

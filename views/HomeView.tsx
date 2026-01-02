@@ -11,7 +11,6 @@ import { PriceOffer } from '../services/db';
 interface HomeViewProps {
   progress: UserProgress;
   activeTheme: ThemeConfig;
-  selectedDifficulty: Difficulty;
   onSelectDifficulty: (diff: Difficulty) => void;
   onToggleMute: () => void;
   isMuted: boolean;
@@ -26,7 +25,6 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({
   progress,
   activeTheme,
-  selectedDifficulty,
   onSelectDifficulty,
   onToggleMute,
   isMuted,
@@ -51,7 +49,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {renderThemeBackground(activeTheme.id)}
       </div>
 
-      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md px-4 py-2 shadow-sm flex justify-between items-center z-[100] sticky top-0 border-b shrink-0 h-16 relative`}>
+      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md px-4 shadow-sm flex justify-between z-[100] sticky top-0 border-b shrink-0 relative transition-all duration-500`}>
         <div className="flex items-center gap-2 relative">
           <button
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
