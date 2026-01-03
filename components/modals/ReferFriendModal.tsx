@@ -114,7 +114,7 @@ Let's see who can find the puppies faster! 🐶🌍`;
         await Share.share({
           title: shareData.title,
           text: shareData.text,
-          url: shareData.url,
+          //url: shareData.url,
           dialogTitle: 'Share with Friends'
         });
         return;
