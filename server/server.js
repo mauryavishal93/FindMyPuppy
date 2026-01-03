@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 // Professional SRE Rule: Always allow the environment to override the PORT
-const PORT = process.env.PORT || 5774;
+const PORT = process.env.PORT || 5775;
 
 // Razorpay Configuration (Use Environment Variables for Production)
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RyzZQD56IABhEH';
@@ -146,24 +146,30 @@ mongoose.connection.once('open', async () => {
   
   // Migration: Ensure all existing users have the 'referredBy' field
   try {
-    // 1. Add field if missing
-    await User.updateMany(
-      { referredBy: { $exists: false } },
-      { $set: { referredBy: "" } }
-    );
-    
-    // 2. Convert empty strings to null for better clarity
+    // 1. Add referredBy only where it is missing, null, or empty
     const result = await User.updateMany(
-      { referredBy: null },
-      { $set: { referredBy: "" } }
+      {
+        $or: [
+          { referredBy: { $exists: false } },
+          { referredBy: null },
+          { referredBy: "" }
+        ]
+      },
+      {
+        $set: { referredBy: "" }
+      }
     );
     
     if (result.modifiedCount > 0) {
-      console.log(`✅ Database Migration: Cleaned up 'referredBy' field for ${result.modifiedCount} users.`);
+      console.log(
+        `✅ Database Migration: Updated 'referredBy' for ${result.modifiedCount} users`
+      );
+    } else {
+      console.log("ℹ️ No records needed migration");
     }
   } catch (error) {
-    console.error('⚠️ Migration Error:', error);
-  }
+    console.error("⚠️ Migration Error:", error);
+  }  
 });
 
 // --- ROUTES ---
@@ -247,7 +253,10 @@ app.post('/api/signup', async (req, res) => {
         console.log(`- Extracted Referrer Username: "${extractedUsername}"`);
         console.log(`- Current Year suffix: "${codeToUse.slice(-4)}"`);
         
-        referrerUser = await User.findOne({ username: extractedUsername });
+        // Case-insensitive search for referrer to be robust
+        referrerUser = await User.findOne({ 
+          username: { $regex: new RegExp(`^${extractedUsername}$`, 'i') } 
+        });
         
         if (referrerUser) {
           finalReferredByCode = codeToUse; // Store the exact code used during signup
