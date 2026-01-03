@@ -159,7 +159,7 @@ mongoose.connection.once('open', async () => {
         $set: { referredBy: "" }
       }
     );
-    
+
     if (result.modifiedCount > 0) {
       console.log(
         `✅ Database Migration: Updated 'referredBy' for ${result.modifiedCount} users`
