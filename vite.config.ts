@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Forward all requests starting with /api to the Express server
         '/api': {
-          target: 'http://localhost:5174',
+          target: 'http://localhost:5774',
           changeOrigin: true,
           secure: false,
         },

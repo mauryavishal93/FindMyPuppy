@@ -3,12 +3,15 @@
 // ------------------------------------------------------------------
 
 // API Base URL Configuration:
-// Production backend server - all API calls will be made to this server
-// For local development/testing, you can temporarily change this to:
-// - Android Emulator: "http://10.0.2.2:5174" (10.0.2.2 is the Android emulator's alias for host machine's localhost)
-// - Physical Device: your computer's local IP address (e.g., "http://192.168.1.100:5174")
-const API_BASE_URL = "https://findmypuppydb.onrender.com";
-//const API_BASE_URL = "http://localhost:5173";
+// - For production: Use the production server URL
+// - For local development: Use empty string to leverage Vite proxy (recommended)
+//   OR use "http://localhost:5774" for direct backend connection
+// - For Android Emulator: "http://10.0.2.2:5774"
+// - For Physical Device: your computer's local IP (e.g., "http://192.168.1.100:5774")
+
+// Use production server for DB writes, or empty string to use Vite proxy in development
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+                            (import.meta.env.DEV ? "" : "https://findmypuppydb.onrender.com");
 
 export interface User {
   username: string;
