@@ -15,7 +15,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 // Professional SRE Rule: Always allow the environment to override the PORT
-const PORT = process.env.PORT || 5775;
+const PORT = process.env.PORT || 5774;
 
 // Razorpay Configuration (Use Environment Variables for Production)
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RyzZQD56IABhEH';
