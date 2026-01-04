@@ -8,8 +8,8 @@
 // For local development/testing, you can temporarily change this to:
 // - Android Emulator: "http://10.0.2.2:5174" (10.0.2.2 is the Android emulator's alias for host machine's localhost)
 // - Physical Device: your computer's local IP address (e.g., "http://192.168.1.100:5174")
-const API_BASE_URL = "https://findmypuppydb.onrender.com";
-//const API_BASE_URL = "http://localhost:5174";
+//const API_BASE_URL = "https://findmypuppydb.onrender.com";
+const API_BASE_URL = "http://localhost:5173";
 
 export interface User {
   username: string;
@@ -256,6 +256,27 @@ export const db = {
     } catch (error) {
       console.error("DB Get Price Offer Error:", error);
       return { success: false, message: "Connection error." };
+    }
+  },
+
+  signInWithGoogle: async (idToken: string, referralCode?: string): Promise<AuthResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken, referralCode }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Google sign in failed" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Google Sign In Error:", error);
+      return { success: false, message: "Connection error. Check your internet." };
     }
   }
 };

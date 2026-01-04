@@ -1,4 +1,5 @@
 
+import dotenv from 'dotenv';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -8,6 +9,10 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
+
+// Load environment variables from .env file
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,6 +31,16 @@ const razorpay = new Razorpay({
 });
 
 console.log(`💳 Razorpay Initialized with Key ID: ${RAZORPAY_KEY_ID.substring(0, 8)}...`);
+
+// Google OAuth Configuration
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+
+if (googleClient) {
+  console.log(`🔐 Google OAuth Initialized with Client ID: ${GOOGLE_CLIENT_ID.substring(0, 20)}...`);
+} else {
+  console.warn('⚠️ Google OAuth not configured. Set GOOGLE_CLIENT_ID environment variable.');
+}
 
 // Middleware
 app.use(cors());
@@ -50,7 +65,9 @@ mongoose.connect(MONGO_URI)
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false }, // Optional for OAuth users
+  googleId: { type: String, unique: true, sparse: true }, // Google OAuth ID
+  authProvider: { type: String, enum: ['local', 'google'], default: 'local' }, // Track auth method
   hints: { type: Number, default: 0 }, // Total hints bought with money or points
   points: { type: Number, default: 0 }, // Points earned/used (separate from score)
   premium: { type: Boolean, default: false }, // Premium subscription status
@@ -167,6 +184,19 @@ app.post('/api/login', async (req, res) => {
     
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found. Please sign up." });
+    }
+
+    // Skip password check for OAuth users
+    if (user.authProvider === 'google') {
+      return res.status(401).json({ 
+        success: false, 
+        message: "This account uses Google sign-in. Please use 'Sign in with Google'." 
+      });
+    }
+
+    // Validate password for local auth users
+    if (!user.password) {
+      return res.status(401).json({ success: false, message: "Invalid authentication method." });
     }
 
     // Compare password with hashed password
@@ -342,6 +372,159 @@ app.post('/api/signup', async (req, res) => {
       return res.status(409).json({ success: false, message: "Username or Email already exists." });
     }
     res.status(500).json({ success: false, message: "Server error during signup." });
+  }
+});
+
+// Google OAuth Sign In Endpoint
+app.post('/api/auth/google/signin', async (req, res) => {
+  try {
+    const { idToken, referralCode } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ success: false, message: "Google ID token is required." });
+    }
+
+    if (!googleClient) {
+      return res.status(500).json({ success: false, message: "Google OAuth not configured on server." });
+    }
+
+    // Verify the Google ID token
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return res.status(401).json({ success: false, message: "Invalid Google token." });
+    }
+
+    const { sub: googleId, email, name, picture } = payload;
+
+    // Check if user exists with this Google ID
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+      // User doesn't exist - check if email exists (might be a different auth method)
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(409).json({ 
+          success: false, 
+          message: "An account with this email already exists. Please use the regular login." 
+        });
+      }
+
+      // Create new user with Google OAuth
+      // Generate username from name or email
+      const baseUsername = name?.replace(/\s+/g, '').toLowerCase() || email.split('@')[0];
+      let username = baseUsername;
+      let counter = 1;
+
+      // Ensure username is unique
+      while (await User.findOne({ username })) {
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      // Handle Referral Logic (same as regular signup)
+      let referrerUser = null;
+      let finalReferredByCode = null;
+
+      if (referralCode && referralCode.trim() !== "") {
+        const codeToUse = referralCode.trim();
+        if (codeToUse.length > 4) {
+          const extractedUsername = codeToUse.slice(0, -4);
+          referrerUser = await User.findOne({ 
+            username: { $regex: new RegExp(`^${extractedUsername}$`, 'i') } 
+          });
+          
+          if (referrerUser) {
+            finalReferredByCode = codeToUse;
+            console.log(`✅ Google OAuth Referrer found: "${referrerUser.username}"`);
+          }
+        }
+      }
+
+      const initialHints = referrerUser ? 25 : 0;
+
+      user = new User({
+        username,
+        email,
+        googleId,
+        authProvider: 'google',
+        hints: initialHints,
+        points: 0,
+        premium: false,
+        levelPassedEasy: 0,
+        levelPassedMedium: 0,
+        levelPassedHard: 0,
+        referredBy: finalReferredByCode ? String(finalReferredByCode) : ""
+      });
+
+      await user.save();
+
+      // Reward the referrer if applicable
+      if (referrerUser) {
+        referrerUser.hints = (referrerUser.hints || 0) + 25;
+        await referrerUser.save();
+        
+        const rewardPurchaseId = `REWARD_${Date.now()}_${referrerUser.username}`;
+        const rewardEntry = new PurchaseHistory({
+          username: referrerUser.username,
+          purchaseId: rewardPurchaseId,
+          amount: 0,
+          purchaseType: 'Hints',
+          pack: 'Referral Reward (25 Hints)',
+          purchaseMode: 'Referral'
+        });
+        await rewardEntry.save();
+      }
+
+      // Update last login
+      user.lastLogin = new Date();
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: finalReferredByCode 
+          ? "Account created with Google! You received 25 bonus hints for being referred."
+          : "Account created with Google successfully!",
+        user: {
+          username: user.username,
+          email: user.email,
+          hints: user.hints || 0,
+          points: user.points || 0,
+          premium: user.premium || false,
+          levelPassedEasy: user.levelPassedEasy || 0,
+          levelPassedMedium: user.levelPassedMedium || 0,
+          levelPassedHard: user.levelPassedHard || 0,
+          referredBy: user.referredBy || ""
+        }
+      });
+    }
+
+    // Existing user - just sign in
+    user.lastLogin = new Date();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Sign in with Google successful!",
+      user: {
+        username: user.username,
+        email: user.email,
+        hints: user.hints || 0,
+        points: user.points || 0,
+        premium: user.premium || false,
+        levelPassedEasy: user.levelPassedEasy || 0,
+        levelPassedMedium: user.levelPassedMedium || 0,
+        levelPassedHard: user.levelPassedHard || 0,
+        referredBy: user.referredBy || ""
+      }
+    });
+  } catch (error) {
+    console.error('Google OAuth Sign In Error:', error);
+    res.status(500).json({ success: false, message: "Server error during Google sign in." });
   }
 });
 

@@ -1,8 +1,23 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GameLogo } from '../components/GameLogo';
 import { Button } from '../components/ui/Button';
 import { db } from '../services/db';
+
+// Google OAuth types
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: (callback?: (notification: any) => void) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+        };
+      };
+    };
+  }
+}
 
 interface LoginViewProps {
   loginName: string;
@@ -18,6 +33,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [googleClientIdConfigured, setGoogleClientIdConfigured] = useState(false);
+  const googleSignInButtonRef = useRef<HTMLDivElement>(null);
+  const googleSignUpButtonRef = useRef<HTMLDivElement>(null);
 
   // Auto-detect referral code from URL
   React.useEffect(() => {
@@ -28,6 +46,99 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
       setIsSignup(true); // Automatically switch to signup if a referral code is present
     }
   }, []);
+
+  // Handle Google OAuth callback
+  const handleGoogleSignIn = React.useCallback(async (response: any) => {
+    setIsLoading(true);
+    setError(null);
+    setSuccessMsg(null);
+
+    try {
+      const result = await db.signInWithGoogle(response.credential, referralCode.trim() || undefined);
+      
+      if (result.success && result.user?.username) {
+        const username = result.user.username;
+        setSuccessMsg(result.message || "Success!");
+        // Set login name (both state and will be passed via onLogin)
+        setLoginName(username);
+        // Call onLogin immediately - handleLogin will use the username from state/ref
+        setTimeout(() => {
+          onLogin();
+        }, 500);
+      } else {
+        setError(result.message || "Google sign in failed");
+        setIsLoading(false);
+      }
+    } catch (e) {
+      setError("An unexpected error occurred");
+      setIsLoading(false);
+    }
+  }, [referralCode, onLogin, setLoginName]);
+
+  // Initialize Google OAuth
+  useEffect(() => {
+    const initializeGoogleSignIn = () => {
+      if (!window.google?.accounts?.id) return;
+
+      // Google Client ID - Replace with your actual Google OAuth Client ID
+      // This should be set as an environment variable or in a config file
+      const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+      
+      if (!GOOGLE_CLIENT_ID) {
+        console.warn('Google OAuth Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
+        setGoogleClientIdConfigured(false);
+        return;
+      }
+
+      setGoogleClientIdConfigured(true);
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleSignIn,
+      });
+
+      // Clear existing buttons
+      if (googleSignInButtonRef.current) {
+        googleSignInButtonRef.current.innerHTML = '';
+      }
+      if (googleSignUpButtonRef.current) {
+        googleSignUpButtonRef.current.innerHTML = '';
+      }
+
+      // Render appropriate button based on mode
+      if (!isSignup && googleSignInButtonRef.current) {
+        window.google.accounts.id.renderButton(googleSignInButtonRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'signin_with',
+          width: '100%',
+        });
+      } else if (isSignup && googleSignUpButtonRef.current) {
+        window.google.accounts.id.renderButton(googleSignUpButtonRef.current, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'large',
+          text: 'signup_with',
+          width: '100%',
+        });
+      }
+    };
+
+    // Wait for Google script to load
+    if (window.google?.accounts?.id) {
+      initializeGoogleSignIn();
+    } else {
+      const checkGoogle = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          clearInterval(checkGoogle);
+          initializeGoogleSignIn();
+        }
+      }, 100);
+
+      return () => clearInterval(checkGoogle);
+    }
+  }, [isSignup, handleGoogleSignIn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,6 +310,34 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
             )}
           </Button>
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center my-4">
+          <div className="flex-1 border-t border-slate-300"></div>
+          <span className="px-4 text-xs text-slate-500 font-medium">OR</span>
+          <div className="flex-1 border-t border-slate-300"></div>
+        </div>
+
+        {/* Google Sign In/Up Buttons - Both divs always in DOM, visibility controlled by CSS */}
+        <div className="w-full">
+          {googleClientIdConfigured ? (
+            <>
+              <div 
+                ref={googleSignInButtonRef} 
+                className={`w-full flex justify-center ${isSignup ? 'hidden' : ''}`}
+              ></div>
+              <div 
+                ref={googleSignUpButtonRef} 
+                className={`w-full flex justify-center ${!isSignup ? 'hidden' : ''}`}
+              ></div>
+            </>
+          ) : (
+            <div className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 text-center">
+              <i className="fab fa-google mr-2"></i>
+              Google Sign In/Up not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="absolute bottom-4 w-full text-center pointer-events-none z-10">

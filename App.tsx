@@ -24,6 +24,7 @@ export default function App() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
+  const loginNameRef = useRef('');
   const [isMuted, setIsMuted] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
@@ -256,8 +257,10 @@ export default function App() {
   }, [progress]);
 
   const handleLogin = async () => {
-    if (!loginName.trim()) return;
-    const username = loginName.trim();
+    // Use ref value first (updated immediately), fallback to state (for regular login)
+    const usernameToUse = loginNameRef.current.trim() || loginName.trim();
+    if (!usernameToUse) return;
+    const username = usernameToUse;
     
     // Set view immediately for better UX
     setView('HOME');
@@ -572,7 +575,10 @@ export default function App() {
         {view === 'LOGIN' && (
           <LoginView 
             loginName={loginName}
-            setLoginName={setLoginName}
+            setLoginName={(name) => {
+              loginNameRef.current = name;
+              setLoginName(name);
+            }}
             onLogin={handleLogin}
           />
         )}
