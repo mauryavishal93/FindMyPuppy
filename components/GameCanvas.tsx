@@ -12,6 +12,7 @@ interface GameCanvasProps {
   difficulty: Difficulty;
   showHints: boolean;
   onImageLoaded?: () => void;
+  onWrongClick?: () => void;
 }
 
 // Base map size
@@ -24,7 +25,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   isLoading,
   difficulty,
   showHints,
-  onImageLoaded
+  onImageLoaded,
+  onWrongClick
 }) => {
   // Loading States: 'generating' (AI), 'loading' (Images), 'fading' (Transition), 'complete' (Game On)
   const [loadingState, setLoadingState] = useState<'generating' | 'loading' | 'fading' | 'complete'>('generating');
@@ -506,6 +508,50 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
            }}
         >
           <div 
+            onClick={(e) => {
+              // Only handle wrong clicks when game is fully loaded and hints are not showing
+              if (loadingState !== 'complete' || showHints || !onWrongClick) return;
+              
+              // Get click position relative to the scaled background div
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickX = (e.clientX - rect.left) / zoom;
+              const clickY = (e.clientY - rect.top) / zoom;
+              
+              // Convert to percentage coordinates (0-100)
+              const clickXPercent = (clickX / MAP_SIZE) * 100;
+              const clickYPercent = (clickY / MAP_SIZE) * 100;
+              
+              // Check if click is within any unfound puppy's bounds
+              // Note: Clicks on found puppies are handled by the puppy's onClick which stops propagation
+              const clickedOnPuppy = puppies.some(puppy => {
+                if (puppy.isFound) return false; // Don't check found puppies
+                
+                const baseSize = Math.max(30, puppy.scale * 120);
+                const puppyX = (puppy.x / 100) * MAP_SIZE;
+                const puppyY = (puppy.y / 100) * MAP_SIZE;
+                
+                // Calculate bounds (puppy is centered at x%, y%)
+                const halfSize = baseSize / 2;
+                const left = puppyX - halfSize;
+                const right = puppyX + halfSize;
+                const top = puppyY - halfSize;
+                const bottom = puppyY + halfSize;
+                
+                // Check if click is within bounds (with some tolerance for easier clicking)
+                const tolerance = baseSize * 0.3; // 30% tolerance
+                return (
+                  clickX >= left - tolerance &&
+                  clickX <= right + tolerance &&
+                  clickY >= top - tolerance &&
+                  clickY <= bottom + tolerance
+                );
+              });
+              
+              // If not clicked on any puppy, it's a wrong click
+              if (!clickedOnPuppy) {
+                onWrongClick();
+              }
+            }}
             style={{ 
               width: `${MAP_SIZE}px`,
               height: `${MAP_SIZE}px`,
@@ -516,6 +562,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               backgroundImage: loadError ? `url("${FALLBACK_BG}")` : `url("${backgroundImage}")`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
+              cursor: loadingState === 'complete' && !showHints ? 'pointer' : 'default',
             }}
           >
             {loadError && (
