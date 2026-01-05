@@ -48,11 +48,24 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
 
           {/* How to Play - Step by Step */}
           <div className="bg-blue-50 rounded-2xl p-5 border-2 border-blue-100">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-3">
               <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
                 <i className="fas fa-play text-white"></i>
               </div>
               <h4 className="text-lg font-black text-slate-800">How to Play</h4>
+            </div>
+            
+            {/* YouTube Video Link - Below Title */}
+            <div className="mb-4 flex justify-center">
+              <a
+                href="https://www.youtube.com/watch?v=_aBm0CZDCPo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg transition-all hover:scale-105 active:scale-95"
+              >
+                <i className="fab fa-youtube text-[10px]"></i>
+                <span>Watch Video Trailer</span>
+              </a>
             </div>
             
             <div className="space-y-4">
