@@ -22,6 +22,8 @@ interface GameViewProps {
   onUseHint: () => void;
   onToggleMute: () => void;
   onBack: () => void;
+  onWrongClick: () => void;
+  wrongAttempts: number;
 }
 
 export const GameView: React.FC<GameViewProps> = ({
@@ -39,7 +41,9 @@ export const GameView: React.FC<GameViewProps> = ({
   onImageLoaded,
   onUseHint,
   onToggleMute,
-  onBack
+  onBack,
+  onWrongClick,
+  wrongAttempts
 }) => {
   // Timer Color Logic
   let timerColorClass = 'bg-slate-800 text-white';
@@ -85,13 +89,44 @@ export const GameView: React.FC<GameViewProps> = ({
           difficulty={selectedDifficulty}
           showHints={showHints}
           onImageLoaded={onImageLoaded}
+          onWrongClick={onWrongClick}
         />
         
         {/* HUD Elements */}
-        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex flex-col gap-2 items-end pointer-events-none">
+        {/* Puppies Count - Right Top */}
+        <div className="absolute top-2 right-2 sm:top-4 sm:right-4 pointer-events-none">
           <div className="bg-slate-900/80 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-mono text-brand-light border border-slate-700 flex items-center gap-2 shadow-lg">
             <i className="fas fa-paw text-[10px] sm:text-xs"></i>
             <span className="font-bold">{gameState.puppies.filter(p => p.isFound).length} / {gameState.puppies.length}</span>
+          </div>
+        </div>
+        
+        {/* Wrong Attempts Indicator - Left Top (aligned with puppies count) */}
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 pointer-events-none">
+          <div className="bg-red-900/80 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold text-white border border-red-700 flex items-center gap-2 shadow-lg">
+            {/* Creative Puppy Icons showing remaining attempts */}
+            <div className="flex items-center gap-1">
+              {[1, 2, 3].map((attempt) => (
+                <i 
+                  key={attempt}
+                  className={`fas fa-dog text-[10px] sm:text-xs transition-all duration-300 ${
+                    attempt > (3 - wrongAttempts) 
+                      ? 'text-red-300/30 scale-75 opacity-50' 
+                      : wrongAttempts >= 2 
+                        ? 'text-red-300 animate-pulse' 
+                        : wrongAttempts === 1 
+                          ? 'text-yellow-300' 
+                          : 'text-white'
+                  }`}
+                ></i>
+              ))}
+            </div>
+            <span className="flex items-center gap-1">
+              <span className="text-[10px] sm:text-xs opacity-80">Left</span>
+              <span className={`${wrongAttempts >= 2 ? 'text-red-300 animate-pulse' : wrongAttempts === 1 ? 'text-yellow-300' : 'text-white'}`}>
+                {3 - wrongAttempts}
+              </span>
+            </span>
           </div>
         </div>
         

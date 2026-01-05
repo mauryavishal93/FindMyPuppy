@@ -20,7 +20,7 @@ import { useAudio } from './hooks/useAudio';
 import { db, PriceOffer } from './services/db';
 
 export default function App() {
-  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER'>('LOGIN');
+  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST'>('LOGIN');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
@@ -28,6 +28,7 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(false);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
+  const [wrongAttempts, setWrongAttempts] = useState<number>(0);
   
   // Info Modal State
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -75,6 +76,18 @@ export default function App() {
     setIsTimerRunning(false);
     playSfx('fail', isMuted);
     setView('GAME_OVER');
+  }, [playSfx, isMuted]);
+
+  const handleWrongClick = useCallback(() => {
+    playSfx('fail', isMuted);
+    setWrongAttempts(prev => {
+      const newAttempts = prev + 1;
+      if (newAttempts >= 3) {
+        setIsTimerRunning(false);
+        setView('GAME_LOST');
+      }
+      return newAttempts;
+    });
   }, [playSfx, isMuted]);
 
   const { timeLeft, setTimeLeft, formatTime, resetTimer } = useTimer({
@@ -310,6 +323,7 @@ export default function App() {
     // Stop timer first to prevent it from continuing
     setIsTimerRunning(false);
     resetHints();
+    setWrongAttempts(0); // Reset wrong attempts for new level
     
     const result = await initLevel(level, diff);
     
@@ -616,7 +630,7 @@ export default function App() {
         )}
 
         {/* Render Game Underneath Modals for better UX */}
-        {(view === 'GAME' || view === 'WIN' || view === 'GAME_OVER') && (
+        {(view === 'GAME' || view === 'WIN' || view === 'GAME_OVER' || view === 'GAME_LOST') && (
           <GameView
             gameState={gameState}
             selectedDifficulty={selectedDifficulty}
@@ -633,6 +647,8 @@ export default function App() {
             onUseHint={handleUseHint}
             onToggleMute={toggleMute}
             onBack={handleBack}
+            onWrongClick={handleWrongClick}
+            wrongAttempts={wrongAttempts}
           />
         )}
 
@@ -700,6 +716,61 @@ export default function App() {
                 <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
                   Give Up
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'GAME_LOST' && (
+          <div className="absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 border-red-200 overflow-hidden">
+              {/* Animated Background Pattern */}
+              <div className="absolute inset-0 opacity-5">
+                {[...Array(30)].map((_, i) => (
+                  <div key={i} className="absolute animate-pulse" style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    fontSize: `${10 + Math.random() * 20}px`,
+                    transform: `rotate(${Math.random() * 360}deg)`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${1 + Math.random() * 2}s`
+                  }}>
+                    <i className="fas fa-times text-red-500"></i>
+                  </div>
+                ))}
+              </div>
+
+              <div className="relative z-10 flex flex-col items-center">
+                {/* Crying Icon - Top Center */}
+                <div className="w-28 h-28 bg-gradient-to-br from-red-400 to-rose-600 rounded-full flex items-center justify-center shadow-2xl border-4 border-white animate-bounce-short mb-6">
+                  <i className="fas fa-sad-tear text-6xl text-white drop-shadow-lg"></i>
+                </div>
+                
+                {/* Text Content Below Icon */}
+                <h2 className="text-4xl font-black text-slate-800 mb-3 bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                  Oops! You Lost!
+                </h2>
+                
+                <div className="mb-6 space-y-2 w-full">
+                  <p className="text-slate-600 font-bold text-lg">
+                    🐾 Too Many Wrong Guesses! 🐾
+                  </p>
+                  <p className="text-slate-500 text-sm font-medium">
+                    Those sneaky puppies are still hiding! You tapped 3 wrong spots.
+                  </p>
+                  <p className="text-slate-400 text-xs italic mt-3">
+                    "The best detectives take their time and look carefully!"
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 w-full">
+                  <Button onClick={handleRetry} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg shadow-lg shadow-blue-200 hover:shadow-xl transition-all">
+                    <i className="fas fa-redo mr-2"></i> Try Again
+                  </Button>
+                  <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
+                    <i className="fas fa-map mr-2"></i> Back to Map
+                  </button>
+                </div>
               </div>
             </div>
           </div>
