@@ -2,6 +2,8 @@
 import React from 'react';
 import { Difficulty, ThemeType } from '../types';
 import { renderThemeBackground } from '../utils/themeBackground';
+import { AdBanner } from './AdBanner';
+import { GOOGLE_AD_CLIENT_ID, GOOGLE_AD_SLOT_LEVEL_SELECT } from '../constants/ads';
 
 interface LevelSelectorProps {
   difficulty: Difficulty;
@@ -127,7 +129,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-transparent z-10 relative hide-scrollbar">
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 pb-20">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 pb-4">
           {levels.map((level) => {
             const levelKey = `${difficulty}_${level}`;
             const isCleared = clearedLevels[levelKey];
@@ -193,6 +195,15 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
               </button>
             );
           })}
+        </div>
+        
+        {/* Ad Banner - Bottom of Level Select */}
+        <div className="sticky bottom-0 w-full flex justify-center items-center bg-white/20 backdrop-blur-md border-t border-white/30 py-2 mt-4 z-20">
+          <AdBanner 
+            dataAdClient={GOOGLE_AD_CLIENT_ID}
+            dataAdSlot={GOOGLE_AD_SLOT_LEVEL_SELECT}
+            className="w-full max-w-[320px]" 
+          />
         </div>
       </div>
     </div>

@@ -9,6 +9,8 @@ import { PaymentModal } from './components/modals/PaymentModal';
 import { PaymentResultModal } from './components/modals/PaymentResultModal';
 import { PurchaseHistoryModal } from './components/modals/PurchaseHistoryModal';
 import { ReferFriendModal } from './components/modals/ReferFriendModal';
+import { AdBanner } from './components/AdBanner';
+import { GOOGLE_AD_CLIENT_ID, GOOGLE_AD_SLOT_GAME_RESULT } from './constants/ads';
 import { Button } from './components/ui/Button';
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
@@ -684,6 +686,15 @@ export default function App() {
                   Back to Map
                 </button>
               </div>
+              
+              {/* Ad Banner - Bottom of Win Screen */}
+              <div className="mt-6 pt-4 border-t border-slate-200">
+                <AdBanner 
+                  dataAdClient={GOOGLE_AD_CLIENT_ID}
+                  dataAdSlot={GOOGLE_AD_SLOT_GAME_RESULT}
+                  className="w-full" 
+                />
+              </div>
             </div>
             
             {/* Confetti */}
@@ -719,6 +730,15 @@ export default function App() {
                 <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
                   Give Up
                 </button>
+              </div>
+              
+              {/* Ad Banner - Bottom of Game Over Screen */}
+              <div className="mt-6 pt-4 border-t border-slate-200">
+                <AdBanner 
+                  dataAdClient={GOOGLE_AD_CLIENT_ID}
+                  dataAdSlot={GOOGLE_AD_SLOT_GAME_RESULT}
+                  className="w-full" 
+                />
               </div>
             </div>
           </div>
@@ -773,6 +793,15 @@ export default function App() {
                   <button onClick={() => setView('LEVEL_SELECT')} className="text-slate-400 font-bold hover:text-slate-600 transition-colors py-2">
                     <i className="fas fa-map mr-2"></i> Back to Map
                   </button>
+                </div>
+                
+                {/* Ad Banner - Bottom of Game Lost Screen */}
+                <div className="mt-6 pt-4 border-t border-slate-200 w-full">
+                  <AdBanner 
+                    dataAdClient={GOOGLE_AD_CLIENT_ID}
+                    dataAdSlot={GOOGLE_AD_SLOT_GAME_RESULT}
+                    className="w-full" 
+                  />
                 </div>
               </div>
             </div>
