@@ -11,16 +11,12 @@
 // Use environment variables for production, fallback to your AdSense client ID
 export const GOOGLE_AD_CLIENT_ID = import.meta.env.VITE_GOOGLE_AD_CLIENT_ID || "ca-pub-7001992574186232";
 
-// ⚠️ IMPORTANT: Replace these with your ACTUAL AdSense Ad Slot IDs
-// Get them from: https://www.google.com/adsense/new/u/0/pub-7001992574186232/ads
-// Steps:
-// 1. Go to AdSense dashboard → Ads → By ad unit
-// 2. Click "Create ad unit" for each placement (Home, Level Select, Game Result)
-// 3. Copy the Ad Unit ID (just the numbers, e.g., "1234567890")
-// 4. Add them to your .env file or replace the defaults below
-export const GOOGLE_AD_SLOT_HOME = import.meta.env.VITE_GOOGLE_AD_SLOT_HOME || "";
-export const GOOGLE_AD_SLOT_LEVEL_SELECT = import.meta.env.VITE_GOOGLE_AD_SLOT_LEVEL_SELECT || "";
-export const GOOGLE_AD_SLOT_GAME_RESULT = import.meta.env.VITE_GOOGLE_AD_SLOT_GAME_RESULT || "";
+// Ad Slot IDs - Use environment variables or defaults
+// You can create separate ad units for each placement, or use the same slot ID for all
+// To use different slots, create ad units in AdSense and set them in .env file
+export const GOOGLE_AD_SLOT_HOME = import.meta.env.VITE_GOOGLE_AD_SLOT_HOME || "3813845166";
+export const GOOGLE_AD_SLOT_LEVEL_SELECT = import.meta.env.VITE_GOOGLE_AD_SLOT_LEVEL_SELECT || "3813845166";
+export const GOOGLE_AD_SLOT_GAME_RESULT = import.meta.env.VITE_GOOGLE_AD_SLOT_GAME_RESULT || "3813845166";
 
 // Ad Configuration
 export const AD_CONFIG = {
