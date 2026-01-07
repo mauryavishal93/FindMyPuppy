@@ -121,10 +121,10 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
                 </div>
                 <div className="flex-1">
                   <h5 className="font-bold text-slate-800 mb-1 flex items-center gap-2">
-                    <i className="fas fa-exclamation-triangle text-orange-500"></i> Watch Your Attempts!
+                    <i className="fas fa-heart text-red-500"></i> Watch Your Lifes!
                   </h5>
                   <p className="text-sm text-slate-600 leading-relaxed">
-                    <strong>You have 3 wrong attempts!</strong> If you tap 3 places where no puppy is hiding, the game ends. Look at the top-left corner to see your remaining attempts (🐕 icons).
+                    <strong>You have 3 lifes!</strong> If you tap 3 places where no puppy is hiding, the game ends. Look at the top-left corner to see your remaining lifes (🐕 icons).
                   </p>
                 </div>
               </div>
@@ -344,8 +344,8 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
                   <span><strong>Hints:</strong> Tap the lightbulb button to reveal 1-2 puppies</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <i className="fas fa-dog text-red-500 mt-1"></i>
-                  <span><strong>Attempts:</strong> Watch the top-left - you have 3 wrong attempts before game over!</span>
+                  <i className="fas fa-heart text-red-500 mt-1"></i>
+                  <span><strong>Lifes:</strong> Watch the top-left - you have 3 lifes before game over!</span>
                 </div>
               </div>
             </div>

@@ -122,7 +122,7 @@ export const GameView: React.FC<GameViewProps> = ({
               ))}
             </div>
             <span className="flex items-center gap-1">
-              <span className="text-[10px] sm:text-xs opacity-80">Left</span>
+              <span className="text-[10px] sm:text-xs opacity-80 uppercase tracking-tighter">Lifes</span>
               <span className={`${wrongAttempts >= 2 ? 'text-red-300 animate-pulse' : wrongAttempts === 1 ? 'text-yellow-300' : 'text-white'}`}>
                 {3 - wrongAttempts}
               </span>
