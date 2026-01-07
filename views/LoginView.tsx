@@ -54,6 +54,35 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
     setSuccessMsg(null);
 
     try {
+      // Handle error notifications from Google OAuth
+      if (response && response.error) {
+        const errorObj = response.error;
+        let errorMessage = "Google sign-in failed. Please try again.";
+        
+        if (typeof errorObj === 'string') {
+          errorMessage = errorObj;
+        } else if (errorObj.message) {
+          errorMessage = errorObj.message;
+        } else if (errorObj.type) {
+          errorMessage = `Google sign-in error: ${errorObj.type}`;
+        } else if (typeof errorObj === 'object') {
+          errorMessage = errorObj.toString?.() || JSON.stringify(errorObj);
+        }
+        
+        console.error("Google OAuth Error:", errorObj);
+        setError(errorMessage);
+        setIsLoading(false);
+        return;
+      }
+
+      // Validate response structure
+      if (!response || !response.credential) {
+        const errorMsg = "Invalid Google response. Please try again.";
+        setError(errorMsg);
+        setIsLoading(false);
+        return;
+      }
+
       const result = await db.signInWithGoogle(response.credential, referralCode.trim() || undefined);
       
       if (result.success && result.user?.username) {
@@ -66,11 +95,28 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
           onLogin();
         }, 500);
       } else {
-        setError(result.message || "Google sign in failed");
+        // Extract error message properly
+        const errorMsg = result.message || "Google sign in failed";
+        setError(typeof errorMsg === 'string' ? errorMsg : "Google sign-in failed. Please try again.");
         setIsLoading(false);
       }
-    } catch (e) {
-      setError("An unexpected error occurred");
+    } catch (e: any) {
+      // Properly extract error message from error object
+      let errorMessage = "An unexpected error occurred";
+      if (e) {
+        if (typeof e === 'string') {
+          errorMessage = e;
+        } else if (e.message) {
+          errorMessage = e.message;
+        } else if (e.error) {
+          errorMessage = typeof e.error === 'string' ? e.error : (e.error.message || "Google sign-in error");
+        } else if (typeof e === 'object') {
+          // Try to extract meaningful error message
+          errorMessage = e.toString?.() || JSON.stringify(e);
+        }
+      }
+      console.error("Google Sign In Error:", e);
+      setError(errorMessage);
       setIsLoading(false);
     }
   }, [referralCode, onLogin, setLoginName]);

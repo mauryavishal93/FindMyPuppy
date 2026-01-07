@@ -6,6 +6,7 @@ import { LevelSelector } from './components/LevelSelector';
 import { InfoModal } from './components/modals/InfoModal';
 import { ThemeModal } from './components/modals/ThemeModal';
 import { PaymentModal } from './components/modals/PaymentModal';
+import { PaymentResultModal } from './components/modals/PaymentResultModal';
 import { PurchaseHistoryModal } from './components/modals/PurchaseHistoryModal';
 import { ReferFriendModal } from './components/modals/ReferFriendModal';
 import { Button } from './components/ui/Button';
@@ -206,10 +207,12 @@ export default function App() {
     paymentStatus,
     showPaymentModal,
     paymentModalConfig,
+    paymentResult,
     handlePayment,
     handleCancelPayment,
     openPaymentModal,
-    closePaymentModal
+    closePaymentModal,
+    closePaymentResult
   } = usePayment({
     onPaymentSuccess: handlePaymentSuccess,
     playSfx: (type) => playSfx(type, isMuted),
@@ -799,6 +802,15 @@ export default function App() {
             title={paymentModalConfig.title}
             description={paymentModalConfig.description}
             priceOffer={priceOffer}
+          />
+        )}
+
+        {paymentResult.type && (
+          <PaymentResultModal
+            result={paymentResult.type}
+            message={paymentResult.message}
+            errorCode={paymentResult.errorCode}
+            onClose={closePaymentResult}
           />
         )}
 
