@@ -79,21 +79,20 @@ export const AdBanner: React.FC<AdBannerProps> = ({
     }
 
     // Validate ad slot ID - check for placeholder values
-    if (!dataAdSlot || 
-        dataAdSlot.trim() === '' ||
-        dataAdSlot.includes('your-') ||
+    if (!dataAdSlot || dataAdSlot.trim() === '') {
+      // Silently return if slot ID is not configured (don't show error, just don't load ads)
+      console.log('[AdBanner] Ad Slot ID not configured, skipping ad load');
+      return;
+    }
+
+    if (dataAdSlot.includes('your-') ||
         dataAdSlot.includes('slot-id') ||
         dataAdSlot === '1234567890' ||
         dataAdSlot === '1234567891' ||
         dataAdSlot === '1234567892') {
-      console.error('[AdBanner] ERROR: Invalid or placeholder Ad Slot ID:', dataAdSlot);
-      console.error('[AdBanner] Please create ad units in AdSense and get real slot IDs');
-      console.error('[AdBanner] Visit: https://www.google.com/adsense/new/u/0/pub-7001992574186232/ads');
-      console.error('[AdBanner] Steps:');
-      console.error('[AdBanner] 1. Go to AdSense → Ads → By ad unit');
-      console.error('[AdBanner] 2. Click "Create ad unit"');
-      console.error('[AdBanner] 3. Copy the Ad Unit ID (just the numbers)');
-      console.error('[AdBanner] 4. Add to .env file: VITE_GOOGLE_AD_SLOT_HOME=your-actual-slot-id');
+      console.warn('[AdBanner] Placeholder Ad Slot ID detected:', dataAdSlot);
+      console.warn('[AdBanner] Please create ad units in AdSense and get real slot IDs');
+      console.warn('[AdBanner] Visit: https://www.google.com/adsense/new/u/0/pub-7001992574186232/ads');
       setAdError(true);
       return;
     }
