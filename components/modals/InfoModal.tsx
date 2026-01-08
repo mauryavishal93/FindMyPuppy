@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { PrivacyPolicyModal } from './PrivacyPolicyModal';
 
 interface InfoModalProps {
   onClose: () => void;
 }
 
-export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
+export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+
+  return (
   <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 px-4 animate-fade-in overflow-hidden">
     <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl relative max-h-[calc(90vh-2rem)] flex flex-col border-4 border-white overflow-hidden">
       {/* Header - Fixed with Gradient */}
@@ -395,6 +399,27 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
             </div>
           </div>
         
+          {/* Privacy Policy Link */}
+          <div className="bg-slate-50 rounded-xl p-4 border-2 border-slate-200 mt-4">
+            <button
+              onClick={() => setShowPrivacyPolicy(true)}
+              className="w-full flex items-center justify-center gap-2 text-slate-700 hover:text-slate-900 transition-colors font-bold mb-2"
+            >
+              <i className="fas fa-shield-alt text-indigo-500"></i>
+              <span className="text-sm">Privacy Policy</span>
+              <i className="fas fa-external-link-alt text-xs text-slate-400"></i>
+            </button>
+            <a
+              href="/privacy-policy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 text-slate-600 hover:text-slate-800 transition-colors text-xs"
+            >
+              <i className="fas fa-link text-blue-500"></i>
+              <span>View Privacy Policy (External Link)</span>
+            </a>
+          </div>
+
           {/* Copyright Footer */}
           <div className="pt-2 text-center">
             <div className="w-16 h-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent rounded-full mx-auto mb-3"></div>
@@ -407,6 +432,12 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
           </div>
         </div>
       </div>
+
+      {/* Privacy Policy Modal */}
+      {showPrivacyPolicy && (
+        <PrivacyPolicyModal onClose={() => setShowPrivacyPolicy(false)} />
+      )}
     </div>
   </div>
-);
+  );
+};

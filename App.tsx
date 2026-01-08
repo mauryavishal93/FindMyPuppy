@@ -678,7 +678,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 mb-4">
                 <Button onClick={nextLevel} className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white text-lg shadow-emerald-200">
                   Next Level <i className="fas fa-arrow-right ml-2"></i>
                 </Button>
@@ -688,7 +688,7 @@ export default function App() {
               </div>
               
               {/* Ad Banner - Bottom of Win Screen */}
-              <div className="mt-6 pt-4 border-t border-slate-200">
+              <div className="mt-4 pt-4 border-t border-slate-200">
                 <AdBanner 
                   dataAdClient={GOOGLE_AD_CLIENT_ID}
                   dataAdSlot={GOOGLE_AD_SLOT_GAME_RESULT}
@@ -723,7 +723,7 @@ export default function App() {
               <h2 className="text-3xl font-black text-slate-800 mt-10 mb-2">Time's Up!</h2>
               <p className="text-slate-500 font-medium mb-6">Those puppies were too good at hiding.</p>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 mb-4">
                 <Button onClick={handleRetry} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg shadow-blue-200">
                   <i className="fas fa-redo mr-2"></i> Try Again
                 </Button>
@@ -733,7 +733,7 @@ export default function App() {
               </div>
               
               {/* Ad Banner - Bottom of Game Over Screen */}
-              <div className="mt-6 pt-4 border-t border-slate-200">
+              <div className="mt-4 pt-4 border-t border-slate-200">
                 <AdBanner 
                   dataAdClient={GOOGLE_AD_CLIENT_ID}
                   dataAdSlot={GOOGLE_AD_SLOT_GAME_RESULT}
@@ -786,7 +786,7 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-3 w-full">
+                <div className="flex flex-col gap-3 w-full mb-4">
                   <Button onClick={handleRetry} className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-lg shadow-lg shadow-blue-200 hover:shadow-xl transition-all">
                     <i className="fas fa-redo mr-2"></i> Try Again
                   </Button>
@@ -796,7 +796,7 @@ export default function App() {
                 </div>
                 
                 {/* Ad Banner - Bottom of Game Lost Screen */}
-                <div className="mt-6 pt-4 border-t border-slate-200 w-full">
+                <div className="mt-4 pt-4 border-t border-slate-200 w-full">
                   <AdBanner 
                     dataAdClient={GOOGLE_AD_CLIENT_ID}
                     dataAdSlot={GOOGLE_AD_SLOT_GAME_RESULT}
