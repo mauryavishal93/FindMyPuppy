@@ -9,6 +9,8 @@ import { PaymentModal } from './components/modals/PaymentModal';
 import { PaymentResultModal } from './components/modals/PaymentResultModal';
 import { PurchaseHistoryModal } from './components/modals/PurchaseHistoryModal';
 import { ReferFriendModal } from './components/modals/ReferFriendModal';
+import { ForgotPasswordModal } from './components/modals/ForgotPasswordModal';
+import { ResetPasswordModal } from './components/modals/ResetPasswordModal';
 import { Button } from './components/ui/Button';
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
@@ -42,6 +44,13 @@ export default function App() {
 
   // Refer a Friend Modal State
   const [showReferModal, setShowReferModal] = useState(false);
+
+  // Forgot Password Modal State
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
+  
+  // Reset Password Modal State
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [resetPasswordToken, setResetPasswordToken] = useState<string | null>(null);
 
   // Track last processed payment ID to avoid duplicate history entries
   const lastProcessedPaymentIdRef = useRef<string | null>(null);
@@ -252,6 +261,18 @@ export default function App() {
   useEffect(() => {
     fetchPriceOffer();
   }, [view, fetchPriceOffer]);
+
+  // Check for reset password token in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token && view === 'LOGIN') {
+      setResetPasswordToken(token);
+      setShowResetPasswordModal(true);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [view]);
 
   // Restore session: if a playerName is present, stay logged in and sync data
   useEffect(() => {
@@ -597,6 +618,7 @@ export default function App() {
               setLoginName(name);
             }}
             onLogin={handleLogin}
+            onForgotPassword={() => setShowForgotPasswordModal(true)}
           />
         )}
 
@@ -828,6 +850,31 @@ export default function App() {
             onClose={() => setShowReferModal(false)}
             activeTheme={activeTheme}
             playerName={progress.playerName}
+          />
+        )}
+
+        {showForgotPasswordModal && (
+          <ForgotPasswordModal
+            isOpen={showForgotPasswordModal}
+            onClose={() => setShowForgotPasswordModal(false)}
+            activeTheme={activeTheme}
+          />
+        )}
+
+        {showResetPasswordModal && resetPasswordToken && (
+          <ResetPasswordModal
+            isOpen={showResetPasswordModal}
+            onClose={() => {
+              setShowResetPasswordModal(false);
+              setResetPasswordToken(null);
+            }}
+            activeTheme={activeTheme}
+            token={resetPasswordToken}
+            onSuccess={() => {
+              setShowResetPasswordModal(false);
+              setResetPasswordToken(null);
+              setView('LOGIN');
+            }}
           />
         )}
 
