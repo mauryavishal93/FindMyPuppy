@@ -165,11 +165,13 @@
         flex-shrink: 0;
         width: 100%;
         padding-bottom: env(safe-area-inset-bottom, 0px);
-        min-height: calc(50px + env(safe-area-inset-bottom, 0px));
+        min-height: calc(20px + env(safe-area-inset-bottom, 0px));
+        max-height: calc(30px + env(safe-area-inset-bottom, 0px));
         display: flex;
         justify-content: center;
         align-items: center;
         box-sizing: border-box;
+        overflow: hidden;
       }
 
       /* Animations */
@@ -201,6 +203,9 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7001992574186232"
+     crossorigin="anonymous"></script>
 </head>
   <body class="bg-slate-50 text-slate-900 overflow-hidden select-none touch-manipulation">
     <div id="root"></div>
