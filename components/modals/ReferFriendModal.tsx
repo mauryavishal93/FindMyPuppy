@@ -104,8 +104,8 @@ Let's see who can find the puppies faster! 🐶🌍`;
   const handleShare = async () => {
     const shareData = {
       title: 'Find My Puppy Referral',
-      text: referralMessage,
-      url: referralLink 
+      text: referralMessage
+      // url removed - link is already included in referralMessage text
     };
 
     try {
@@ -114,7 +114,6 @@ Let's see who can find the puppies faster! 🐶🌍`;
         await Share.share({
           title: shareData.title,
           text: shareData.text,
-          //url: shareData.url,
           dialogTitle: 'Share with Friends'
         });
         return;

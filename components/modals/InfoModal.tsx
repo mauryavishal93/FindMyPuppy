@@ -41,7 +41,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
                 <h4 className="text-xl font-black text-slate-800">Welcome to FindMyPuppy!</h4>
               </div>
               <p className="text-slate-700 text-sm font-medium leading-relaxed">
-                Embark on an epic adventure through <strong className="text-brand-dark">AI-generated magical worlds</strong> and rescue adorable puppies hiding in plain sight! Each scene is uniquely crafted, making every level a fresh challenge.
+                Embark on an epic adventure through <strong className="text-brand-dark">magical worlds</strong> and rescue adorable puppies hiding in plain sight! Each scene is uniquely crafted, making every level a fresh challenge.
               </p>
             </div>
           </div>
@@ -359,7 +359,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
             <div className="space-y-2 text-xs text-slate-700">
               <div className="flex items-start gap-2">
                 <i className="fas fa-layer-group text-indigo-500 mt-1"></i>
-                <span><strong>100 Levels:</strong> Progress through 100 unique levels, each with AI-generated scenes!</span>
+                <span><strong>100 Levels:</strong> Progress through 100 unique levels, each with beautifully crafted scenes!</span>
               </div>
               <div className="flex items-start gap-2">
                 <i className="fas fa-palette text-indigo-500 mt-1"></i>
