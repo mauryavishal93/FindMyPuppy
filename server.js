@@ -51,6 +51,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) {
   const distPath = join(__dirname, 'dist');
   app.use(express.static(distPath));
+} else {
+  // In development, serve static files from 'public' directory
+  const publicPath = join(__dirname, 'public');
+  app.use(express.static(publicPath));
 }
 
 // MongoDB Connection
@@ -1049,6 +1053,15 @@ app.post('/api/price-offer/migrate', async (req, res) => {
   }
 });
 
+// Serve privacy policy page (accessible in both dev and production)
+app.get('/privacy-policy.html', (req, res) => {
+  if (isProduction) {
+    res.sendFile(join(__dirname, 'dist', 'privacy-policy.html'));
+  } else {
+    res.sendFile(join(__dirname, 'public', 'privacy-policy.html'));
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Backend Server running on http://localhost:${PORT} (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'})`);
   
@@ -1058,6 +1071,8 @@ app.listen(PORT, () => {
     app.get('*', (req, res) => {
       // Don't intercept API calls that might have reached here due to errors
       if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API endpoint not found' });
+      // Don't intercept privacy policy (already handled above)
+      if (req.path === '/privacy-policy.html') return res.status(404).json({ error: 'Privacy policy not found' });
       res.sendFile(join(__dirname, 'dist', 'index.html'));
     });
   } else {
