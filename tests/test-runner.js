@@ -4,7 +4,7 @@
  * Test Coverage: Functional, Non-Functional, Security, Edge Cases
  */
 
-const BASE_URL = process.env.TEST_API_URL || 'http://localhost:5174';
+const BASE_URL = process.env.TEST_API_URL || 'http://localhost:5774';
 const TEST_USERNAME = process.env.TEST_USERNAME || 'loser';
 const TEST_PASSWORD = process.env.TEST_PASSWORD || 'loser';
 const testResults = [];
@@ -573,7 +573,7 @@ async function testSecurity() {
   
   // TC-SEC-001: CORS Headers
   const { status: status1, headers: headers1, executionTime: time1 } = await makeRequest('GET', '/api/health');
-  const corsHeader = headers1.get('access-control-allow-origin');
+  const corsHeader = headers1?.get ? headers1.get('access-control-allow-origin') : (headers1?.['access-control-allow-origin'] || headers1?.['Access-Control-Allow-Origin']);
   if (corsHeader) {
     addTestResult('Security', 'TC-SEC-001', 'CORS Configuration', 'PASS', 
       `CORS header present: ${corsHeader}`, time1);

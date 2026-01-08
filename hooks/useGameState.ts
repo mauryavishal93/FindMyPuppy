@@ -146,7 +146,7 @@ export const useGameState = () => {
     // Get the textual theme for this level
     const theme = await generateLevelTheme(level, diff);
     
-    // Generate the image on the fly using Gemini (with timestamp for uniqueness)
+    // Select background image from predefined list (with timestamp for variation)
     const timestamp = Date.now();
     const bgImage = await generateLevelImage(theme, level, timestamp);
 

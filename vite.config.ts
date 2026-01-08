@@ -44,9 +44,6 @@ export default defineConfig(({ mode }) => {
         }
       })
     ],
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-    },
     build: {
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
