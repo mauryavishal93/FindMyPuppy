@@ -328,7 +328,7 @@ export const AdBanner: React.FC<AdBannerProps> = ({
   if (adError) {
     return (
       <div 
-        className={`mobile-ad-section ad-banner-container bg-slate-100/50 backdrop-blur-sm border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden min-h-[50px] ${className}`}
+        className={`mobile-ad-section ad-banner-container bg-slate-100/50 backdrop-blur-sm border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden min-h-[20px] max-h-[30px] ${className}`}
         style={style}
       >
         <div className="text-center p-2">
@@ -365,9 +365,12 @@ export const AdBanner: React.FC<AdBannerProps> = ({
         className="adsbygoogle"
         style={{
           display: 'block',
-          minHeight: '50px',
+          minHeight: style?.minHeight || '20px',
+          maxHeight: style?.maxHeight || '30px',
+          height: style?.height || 'auto',
           width: '100%',
           maxWidth: '100%',
+          overflow: 'hidden',
           ...style
         }}
         data-ad-client={dataAdClient}
