@@ -405,6 +405,29 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
               Made with ❤️ for puppy lovers everywhere
             </p>
           </div>
+          
+          {/* Privacy Policy Link */}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 text-slate-600">
+                <i className="fas fa-shield-alt text-indigo-500"></i>
+                <span className="text-sm font-bold">Privacy & Legal</span>
+              </div>
+              <a
+                href="/privacy-policy.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 border border-indigo-200 shadow-sm"
+              >
+                <i className="fas fa-file-contract text-xs"></i>
+                <span>Privacy Policy</span>
+                <i className="fas fa-external-link-alt text-[10px]"></i>
+              </a>
+              <p className="text-[10px] text-slate-500 text-center max-w-xs">
+                COPPA Compliant • GDPR & CCPA Compliant
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
