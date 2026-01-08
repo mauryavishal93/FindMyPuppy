@@ -60,14 +60,14 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
-      selectedTheme: 'sunny' as ThemeType
+      selectedTheme: 'night' as ThemeType
     };
     return saved ? { ...defaultProgress, ...JSON.parse(saved) } : defaultProgress;
   });
 
-  // Ensure we always have a valid theme, fallback to 'sunny' if invalid
-  const selectedTheme = progress.selectedTheme || 'sunny';
-  const activeTheme = THEME_CONFIGS[selectedTheme as ThemeType] || THEME_CONFIGS['sunny'];
+  // Ensure we always have a valid theme, fallback to 'night' if invalid
+  const selectedTheme = progress.selectedTheme || 'night';
+  const activeTheme = THEME_CONFIGS[selectedTheme as ThemeType] || THEME_CONFIGS['night'];
 
   // Custom Hooks
   const { ambientAudioRef, playSfx } = useAudio({ view, isMuted });
@@ -305,7 +305,7 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
-      selectedTheme: 'sunny' as ThemeType
+      selectedTheme: 'night' as ThemeType
     });
     localStorage.removeItem('findMyPuppy_progress');
     setLoginName('');
@@ -628,7 +628,7 @@ export default function App() {
             onBack={handleBack}
             isMuted={isMuted}
             onToggleMute={toggleMute}
-            currentTheme={progress.selectedTheme || 'sunny'}
+            currentTheme={progress.selectedTheme || 'night'}
           />
         )}
 
@@ -783,7 +783,7 @@ export default function App() {
           <ThemeModal 
             onClose={() => setShowThemeModal(false)}
             onSelect={handleThemeChange}
-            currentTheme={progress.selectedTheme || 'sunny'}
+            currentTheme={progress.selectedTheme || 'night'}
           />
         )}
 

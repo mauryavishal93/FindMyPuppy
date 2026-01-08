@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Difficulty, UserProgress, ThemeConfig } from '../types';
 import { DifficultyCard } from '../components/ui/DifficultyCard';
 import { GameLogo } from '../components/GameLogo';
-import { AdBanner } from '../components/AdBanner';
-import { GOOGLE_AD_CLIENT_ID, GOOGLE_AD_SLOT_ID } from '../constants/ads';
 import { renderThemeBackground } from '../utils/themeBackground';
 import { UserDropdown } from '../components/ui/UserDropdown';
 import { PriceOffer } from '../services/db';
@@ -165,15 +163,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       </main>
-
-      {/* Ad Banner - Sticky Footer */}
-      <div className="mobile-ad-section shrink-0 z-20 w-full flex justify-center items-center bg-white/20 backdrop-blur-md border-t border-white/30 py-2">
-         <AdBanner 
-            dataAdClient={GOOGLE_AD_CLIENT_ID}
-            dataAdSlot={GOOGLE_AD_SLOT_ID}
-            className="w-[320px] max-w-full" 
-         />
-      </div>
     </div>
   );
 };
