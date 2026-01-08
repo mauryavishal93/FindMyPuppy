@@ -23,9 +23,10 @@ interface LoginViewProps {
   loginName: string;
   setLoginName: (name: string) => void;
   onLogin: () => void;
+  onForgotPassword?: () => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, onLogin }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, onLogin, onForgotPassword }) => {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -356,6 +357,20 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
             )}
           </Button>
         </form>
+
+        {/* Forgot Password Link - Only show on Login tab */}
+        {!isSignup && onForgotPassword && (
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-xs text-brand-dark hover:text-brand font-bold transition-colors"
+            >
+              <i className="fas fa-key mr-1"></i>
+              Forgot Password?
+            </button>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="flex items-center my-4">
