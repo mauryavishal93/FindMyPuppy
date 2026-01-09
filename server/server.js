@@ -82,7 +82,7 @@ mongoose.connect(MONGO_URI)
 // Schema Definition
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, index: true }, // Indexed for faster lookups
   password: { type: String, required: false }, // Optional for OAuth users
   googleId: { type: String, unique: true, sparse: true }, // Google OAuth ID
   authProvider: { type: String, enum: ['local', 'google'], default: 'local' }, // Track auth method
@@ -101,6 +101,9 @@ const userSchema = new mongoose.Schema({
 
 // Ensure strict is false for this model just in case
 userSchema.set('strict', false);
+
+// Create index on email field for optimized queries (if not already exists)
+userSchema.index({ email: 1 });
 
 // Clear model cache to ensure latest schema is used
 if (mongoose.models['User']) {
@@ -509,22 +512,35 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(400).json({ success: false, message: "Email is required." });
     }
 
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
+    // Normalize email (lowercase and trim)
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Optimized database query: Use lean() for faster queries and select only needed fields
+    // Index on email field ensures fast lookup (O(log n) instead of O(n))
+    const queryStartTime = Date.now();
+    const user = await User.findOne({ email: normalizedEmail })
+      .select('email username authProvider password resetPasswordToken resetPasswordExpires')
+      .lean() // Use lean() for faster queries (returns plain JS object instead of Mongoose document)
+      .maxTimeMS(5000); // Set query timeout to 5 seconds for better performance monitoring
     
-    // Always return success message (security best practice - don't reveal if email exists)
+    const queryTime = Date.now() - queryStartTime;
+    if (queryTime > 100) { // Log slow queries (>100ms)
+      console.log(`[PERFORMANCE] Email lookup took ${queryTime}ms for: ${normalizedEmail}`);
+    }
+    
+    // Check if email exists in database
     if (!user) {
-      return res.status(200).json({ 
-        success: true, 
-        message: "If an account with that email exists, a password reset link has been sent." 
+      return res.status(404).json({ 
+        success: false, 
+        message: "This email is not registered. Please check your email address or sign up for a new account." 
       });
     }
 
     // Check if user has local auth (not OAuth only)
     if (user.authProvider === 'google' && !user.password) {
-      return res.status(200).json({ 
-        success: true, 
-        message: "If an account with that email exists, a password reset link has been sent." 
+      return res.status(400).json({ 
+        success: false, 
+        message: "This account uses Google sign-in. Please use 'Sign in with Google' to access your account." 
       });
     }
 
@@ -533,10 +549,16 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetTokenExpiry = new Date();
     resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // Token expires in 1 hour
 
-    // Save token to user
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetTokenExpiry;
-    await user.save();
+    // Save token to user using findOneAndUpdate for efficiency (atomic operation)
+    // This is faster than fetching, modifying, and saving
+    await User.findOneAndUpdate(
+      { email: normalizedEmail },
+      { 
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetTokenExpiry
+      },
+      { new: false } // We don't need the updated document
+    );
 
     // Create reset URL
     const resetUrl = `${process.env.FRONTEND_URL || 'http://findmypuppy.onrender.com'}/reset-password?token=${resetToken}`;
