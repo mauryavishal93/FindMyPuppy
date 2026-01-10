@@ -466,6 +466,19 @@ const createTransporter = () => {
       // Gmail App Passwords: Standard configuration
       tls: {
         rejectUnauthorized: false // Allow self-signed certificates (useful for development)
+      },
+      // Connection timeout settings for Render/production environments
+      connectionTimeout: 60000, // 60 seconds to establish connection
+      socketTimeout: 60000, // 60 seconds for socket operations
+      greetingTimeout: 30000, // 30 seconds for SMTP greeting
+      // Connection pooling for better reliability
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 3,
+      // Retry configuration
+      retry: {
+        attempts: 2,
+        delay: 2000
       }
     };
 
@@ -482,35 +495,58 @@ const createTransporter = () => {
 
     const transporter = nodemailer.createTransport(emailConfig);
     
-    // Verify transporter connection on startup (non-blocking)
-    // Note: Verification failure won't prevent emails from being sent
-    transporter.verify((error, success) => {
-      if (error) {
-        console.error('❌ Email service verification failed:');
-        console.error(`   Error: ${error.message}`);
-        if (error.responseCode === 535 || error.responseCode === '535') {
-          console.error('   🔐 Authentication Error:');
-          console.error('      - Make sure you are using an App Password (not your regular Gmail password)');
-          console.error('      - Ensure 2-Factor Authentication is enabled on your Google account');
-          console.error('      - Generate a new App Password at: https://myaccount.google.com/apppasswords');
-          console.error('      - Check that SMTP_USER and SMTP_PASS environment variables are set correctly');
-          console.error('      - Verify the password has no extra spaces (it should be trimmed automatically)');
+    // Skip verification if SKIP_EMAIL_VERIFY is set (useful for production when Gmail blocks connections)
+    const skipVerification = process.env.SKIP_EMAIL_VERIFY === 'true' || 
+                              (process.env.RENDER === 'true' && process.env.SKIP_EMAIL_VERIFY !== 'false');
+    
+    if (skipVerification) {
+      console.log('⚠️  Email verification skipped (SKIP_EMAIL_VERIFY=true or Render detected)');
+      console.log('   Email transporter created. Verification will happen on first email send.');
+      console.log('   This is recommended when Gmail SMTP blocks connections from cloud platforms.');
+    } else {
+      // Verify transporter connection on startup (non-blocking with timeout)
+      // Note: Verification failure won't prevent emails from being sent
+      const verifyTimeout = setTimeout(() => {
+        console.warn('⏱️  Email verification is taking too long, skipping...');
+        console.warn('   Email transporter created. Verification will happen on first email send.');
+        console.warn('   If this happens frequently, set SKIP_EMAIL_VERIFY=true in environment variables.');
+      }, 10000); // 10 second timeout for verification
+      
+      transporter.verify((error, success) => {
+        clearTimeout(verifyTimeout);
+        if (error) {
+          console.error('❌ Email service verification failed:');
+          console.error(`   Error: ${error.message}`);
+          if (error.responseCode === 535 || error.responseCode === '535') {
+            console.error('   🔐 Authentication Error:');
+            console.error('      - Make sure you are using an App Password (not your regular Gmail password)');
+            console.error('      - Ensure 2-Factor Authentication is enabled on your Google account');
+            console.error('      - Generate a new App Password at: https://myaccount.google.com/apppasswords');
+            console.error('      - Check that SMTP_USER and SMTP_PASS environment variables are set correctly');
+            console.error('      - Verify the password has no extra spaces (it should be trimmed automatically)');
+          } else if (error.message && error.message.includes('timeout')) {
+            console.error('   ⏱️  Connection Timeout:');
+            console.error('      - Gmail SMTP may be blocking connections from this IP address');
+            console.error('      - This is common on cloud platforms like Render');
+            console.error('      - Set SKIP_EMAIL_VERIFY=true to skip verification (emails will still work)');
+            console.error('      - Consider using a different email service (SendGrid, Mailgun, etc.)');
+          } else {
+            console.error('   Please check your SMTP credentials in environment variables.');
+          }
+          if (error.command) {
+            console.error(`   Command: ${error.command}`);
+          }
+          if (error.response) {
+            console.error(`   Response: ${error.response}`);
+          }
+          console.warn('⚠️  Email transporter created but verification failed. Emails may still work, but please verify your credentials.');
         } else {
-          console.error('   Please check your SMTP credentials in environment variables.');
+          console.log('✅ Email service verified and ready');
+          console.log(`   SMTP Host: ${smtpHost}:${smtpPort}`);
+          console.log(`   From Email: ${smtpUser}`);
         }
-        if (error.command) {
-          console.error(`   Command: ${error.command}`);
-        }
-        if (error.response) {
-          console.error(`   Response: ${error.response}`);
-        }
-        console.warn('⚠️  Email transporter created but verification failed. Emails may still work, but please verify your credentials.');
-      } else {
-        console.log('✅ Email service verified and ready');
-        console.log(`   SMTP Host: ${smtpHost}:${smtpPort}`);
-        console.log(`   From Email: ${smtpUser}`);
-      }
-    });
+      });
+    }
     
     return transporter;
   }
@@ -656,10 +692,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       console.error('   This should not happen if environment variables are set correctly');
       console.error('   Check Render logs for email service initialization errors');
       console.log(`🔗 Fallback: Password reset link for ${user.email}: ${resetUrl}`);
-      return res.status(500).json({ 
+      console.log('📤 [FORGOT-PASSWORD] Returning 500 error response to client...');
+      const errorResponse = { 
         success: false, 
         message: "Email service is temporarily unavailable. Please try again later or contact support." 
-      });
+      };
+      console.log('📤 [FORGOT-PASSWORD] Error response:', JSON.stringify(errorResponse));
+      return res.status(500).json(errorResponse);
     }
 
     const fromEmail = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
@@ -833,39 +872,48 @@ Find My Puppy | Where Adventure Meets Fun 🎮
         `
       };
 
-      try {
-        console.log(`📤 [FORGOT-PASSWORD] Attempting to send password reset email to ${user.email}...`);
-        console.log(`   Mail options prepared: from="${fromEmail}", to="${user.email}"`);
-        
-        // Verify transporter is still valid before sending
-        if (!emailTransporter || typeof emailTransporter.sendMail !== 'function') {
-          throw new Error('Email transporter is not properly initialized');
-        }
-        
-        // Add timeout to prevent hanging
-        const sendStartTime = Date.now();
-        const sendPromise = emailTransporter.sendMail(mailOptions);
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Email send timeout after 30 seconds')), 30000)
-        );
-        
-        const info = await Promise.race([sendPromise, timeoutPromise]);
-        const sendDuration = Date.now() - sendStartTime;
-        console.log(`   Email send completed in ${sendDuration}ms`);
-        
-        console.log(`✅ Password reset email sent successfully!`);
-        console.log(`   Message ID: ${info.messageId || 'N/A'}`);
-        console.log(`   To: ${user.email}`);
-        console.log(`   From: ${fromEmail}`);
-        console.log(`   Response: ${info.response || 'Email accepted by server'}`);
-        console.log(`   Envelope: ${JSON.stringify(info.envelope || {})}`);
-        
-        // Additional production logging
-        if (process.env.RENDER || process.env.NODE_ENV === 'production') {
-          console.log(`   [PRODUCTION] Email sent at: ${new Date().toISOString()}`);
-          console.log(`   [PRODUCTION] Reset URL: ${resetUrl.substring(0, 50)}...`);
-        }
-      } catch (emailError) {
+      // Send email asynchronously (non-blocking) to prevent request timeout
+      // This allows password reset to work even if email service is unavailable
+      const sendEmailAsync = async () => {
+        try {
+          console.log(`📤 [FORGOT-PASSWORD] Attempting to send password reset email to ${user.email}...`);
+          console.log(`   Mail options prepared: from="${fromEmail}", to="${user.email}"`);
+          
+          // Verify transporter is still valid before sending
+          if (!emailTransporter || typeof emailTransporter.sendMail !== 'function') {
+            throw new Error('Email transporter is not properly initialized');
+          }
+          
+          // Add timeout to prevent hanging
+          // Use longer timeout for production/Render (60s) vs development (30s)
+          const isProduction = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+          const sendTimeout = isProduction ? 60000 : 30000; // 60s for production, 30s for dev
+          const sendStartTime = Date.now();
+          
+          console.log(`   [EMAIL-SEND] Timeout set to ${sendTimeout}ms (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'})`);
+          
+          const sendPromise = emailTransporter.sendMail(mailOptions);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Email send timeout after ${sendTimeout/1000} seconds`)), sendTimeout)
+          );
+          
+          const info = await Promise.race([sendPromise, timeoutPromise]);
+          const sendDuration = Date.now() - sendStartTime;
+          console.log(`   Email send completed in ${sendDuration}ms`);
+          
+          console.log(`✅ Password reset email sent successfully!`);
+          console.log(`   Message ID: ${info.messageId || 'N/A'}`);
+          console.log(`   To: ${user.email}`);
+          console.log(`   From: ${fromEmail}`);
+          console.log(`   Response: ${info.response || 'Email accepted by server'}`);
+          console.log(`   Envelope: ${JSON.stringify(info.envelope || {})}`);
+          
+          // Additional production logging
+          if (process.env.RENDER || process.env.NODE_ENV === 'production') {
+            console.log(`   [PRODUCTION] Email sent at: ${new Date().toISOString()}`);
+            console.log(`   [PRODUCTION] Reset URL: ${resetUrl.substring(0, 50)}...`);
+          }
+        } catch (emailError) {
         console.error('\n❌ ========== EMAIL SEND ERROR ==========');
         console.error(`[FORGOT-PASSWORD] Failed to send password reset email`);
         console.error(`   Timestamp: ${new Date().toISOString()}`);
@@ -902,50 +950,42 @@ Find My Puppy | Where Adventure Meets Fun 🎮
           console.error('      - Check network connectivity from Render');
           console.error('      - Verify SMTP_HOST and SMTP_PORT are correct');
           console.error('      - Gmail SMTP might be blocking connections from Render');
+        } else if (emailError.message && emailError.message.includes('timeout')) {
+          console.error('   ⏱️  Timeout Issue Detected:');
+          console.error('      - Gmail SMTP may be blocking connections from Render IP addresses');
+          console.error('      - Try using port 465 with SMTP_SECURE=true instead of 587');
+          console.error('      - Consider using a different email service (SendGrid, Mailgun, etc.)');
+          console.error('      - Check Render firewall/network restrictions');
+          console.error('      - Gmail may require "Less secure app access" or App Passwords');
         }
         
-        // Log the reset URL as fallback for manual testing
-        console.error(`🔗 Fallback: Password reset link for ${user.email}:`);
+        // Log the reset URL prominently for manual retrieval if email fails
+        console.error(`🔗 [FORGOT-PASSWORD] IMPORTANT: Reset URL (use this if email fails):`);
         console.error(`   ${resetUrl}`);
         console.error('❌ ===========================================\n');
         
-        // Determine user-friendly error message based on error type
-        let userMessage = "Failed to send password reset email. Please try again later or contact support.";
-        let errorType = "UNKNOWN";
-        
-        if (emailError.code === 'EAUTH' || emailError.responseCode === 535) {
-          errorType = "AUTHENTICATION_ERROR";
-          userMessage = "Email service authentication failed. Please contact support.";
-        } else if (emailError.code === 'ETIMEDOUT' || emailError.code === 'ECONNECTION') {
-          errorType = "CONNECTION_ERROR";
-          userMessage = "Unable to connect to email service. Please try again in a few moments.";
-        } else if (emailError.message && emailError.message.includes('timeout')) {
-          errorType = "TIMEOUT_ERROR";
-          userMessage = "Email service timed out. Please try again.";
-        } else if (emailError.code) {
-          errorType = emailError.code;
+        // Don't throw - just log the error since email is sent asynchronously
+        // The reset token is already saved, so password reset will still work
+        console.error('   ⚠️  Email failed but reset token is valid. User can still reset password using the link above.');
         }
-        
-        // Return error to user with helpful information (without exposing sensitive details)
-        return res.status(500).json({ 
-          success: false, 
-          message: userMessage,
-          errorType: errorType,
-          // Include error code for debugging (safe to expose)
-          errorCode: emailError.code || null,
-          // In development, include more details
-          ...(process.env.NODE_ENV !== 'production' && {
-            errorMessage: emailError.message,
-            smtpResponseCode: emailError.responseCode || null
-          })
-        });
-      }
+      };
 
-    // Success response
-    res.status(200).json({ 
-      success: true, 
-      message: "Password reset link has been sent to your email address." 
-    });
+      // Start email sending asynchronously (don't await - fire and forget)
+      // This prevents blocking the response even if email service is slow/unavailable
+      sendEmailAsync().catch(err => {
+        console.error('[FORGOT-PASSWORD] Unhandled error in async email send:', err);
+      });
+
+      // Always return success to user (security best practice - don't reveal if email was sent)
+      // The reset token is saved in the database, so password reset will work
+      // If email fails, the reset URL is logged in server logs for manual retrieval
+      console.log(`✅ [FORGOT-PASSWORD] Password reset token generated and saved for ${user.email}`);
+      console.log(`🔗 [FORGOT-PASSWORD] Reset URL (also in logs): ${resetUrl}`);
+      
+      res.status(200).json({ 
+        success: true, 
+        message: "If an account with that email exists, a password reset link has been sent." 
+      });
   } catch (error) {
     console.error('\n❌ ========== FORGOT PASSWORD ENDPOINT ERROR ==========');
     console.error('[FORGOT-PASSWORD] Unhandled error in forgot-password endpoint');
