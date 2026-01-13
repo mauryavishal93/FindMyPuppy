@@ -61,25 +61,26 @@ export const DailyCheckInButton: React.FC<DailyCheckInButtonProps> = ({
       onClick={onClick}
       disabled={!config.enabled || loading}
       className={`
-        relative w-full p-4 rounded-2xl shadow-lg transition-all
+        relative w-full p-2.5 rounded-xl shadow-md transition-all
         bg-gradient-to-r ${config.gradient}
         border-2 ${config.border}
+        min-h-[56px]
         ${config.enabled && !loading 
-          ? 'hover:shadow-xl hover:-translate-y-1 active:scale-95 cursor-pointer' 
+          ? 'hover:shadow-lg hover:-translate-y-0.5 active:scale-95 cursor-pointer' 
           : 'opacity-60 cursor-not-allowed'
         }
         ${loading ? 'animate-pulse' : ''}
       `}
     >
       <div className="flex items-center justify-between text-white">
-        <div className="flex items-center gap-3">
-          <div className="text-3xl">{config.icon}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-xl">{config.icon}</div>
           <div className="flex flex-col items-start">
-            <span className="text-lg font-black leading-none drop-shadow-sm">
+            <span className="text-sm font-black leading-none drop-shadow-sm">
               {config.label}
             </span>
             {hintStreak > 0 && (
-              <span className="text-xs font-medium mt-1 opacity-90">
+              <span className="text-[10px] font-medium mt-0.5 opacity-90">
                 Streak: {hintStreak} hints
               </span>
             )}
@@ -87,14 +88,14 @@ export const DailyCheckInButton: React.FC<DailyCheckInButtonProps> = ({
         </div>
         {loading && (
           <div className="animate-spin">
-            <i className="fas fa-spinner text-xl"></i>
+            <i className="fas fa-spinner text-base"></i>
           </div>
         )}
       </div>
       
       {state === 'completed' && (
-        <div className="absolute top-2 right-2 text-xs font-bold bg-white/30 px-2 py-1 rounded-full backdrop-blur-sm">
-          Completed
+        <div className="absolute top-1 right-1 text-[10px] font-bold bg-white/30 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+          Done
         </div>
       )}
     </button>
