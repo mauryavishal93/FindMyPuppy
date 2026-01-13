@@ -14,8 +14,12 @@ interface GameViewProps {
   formatTime: (seconds: number) => string;
   showHints: boolean;
   freeHintsRemaining: number;
+  dailyStreakHintsRemaining: number;
+  totalHintsRemaining: number;
+  currentHintType: 'free' | 'streak' | 'total' | 'none';
+  currentHintCount: number;
+  hasHints: boolean;
   hasPremiumHints: boolean;
-  premiumHints: number;
   isMuted: boolean;
   onPuppyFound: (id: string) => void;
   onImageLoaded: () => void;
@@ -34,8 +38,12 @@ export const GameView: React.FC<GameViewProps> = ({
   formatTime,
   showHints,
   freeHintsRemaining,
+  dailyStreakHintsRemaining,
+  totalHintsRemaining,
+  currentHintType,
+  currentHintCount,
+  hasHints,
   hasPremiumHints,
-  premiumHints,
   isMuted,
   onPuppyFound,
   onImageLoaded,
@@ -142,9 +150,9 @@ export const GameView: React.FC<GameViewProps> = ({
            >
              <i className={`fas fa-lightbulb text-xl sm:text-2xl ${showHints ? 'text-white animate-pulse' : 'text-yellow-400'}`}></i>
              
-             {/* Badge for remaining hints */}
+             {/* Badge for remaining hints - shows current available hint count */}
              <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center border border-white">
-                {freeHintsRemaining > 0 ? freeHintsRemaining : (hasPremiumHints ? premiumHints : '+')}
+                {hasHints ? currentHintCount : '+'}
              </div>
            </button>
         </div>
