@@ -23,6 +23,9 @@ export interface User {
   levelPassedMedium?: number;
   levelPassedHard?: number;
   referredBy?: string | null;
+  hintStreak?: number; // Daily check-in streak hints (from DB hintStreak field)
+  lastPlayedDate?: string | null;
+  currentMissionDay?: number;
 }
 
 export interface PurchaseHistory {
@@ -107,6 +110,27 @@ export const db = {
       return data;
     } catch (error) {
       console.error("DB Update Hints Error:", error);
+      return { success: false, message: "Connection error." };
+    }
+  },
+
+  updateHintStreak: async (username: string, hintStreak: number): Promise<{ success: boolean; message?: string; hintStreak?: number }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/update-hint-streak`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, hintStreak }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to update hint streak" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Update Hint Streak Error:", error);
       return { success: false, message: "Connection error." };
     }
   },
@@ -320,6 +344,88 @@ export const db = {
       return data;
     } catch (error) {
       console.error("DB Reset Password Error:", error);
+      return { success: false, message: "Connection error. Check your internet." };
+    }
+  },
+
+  getDailyCheckInStatus: async (username: string): Promise<{ 
+    success: boolean; 
+    message?: string; 
+    lastPlayedDate?: string | null;
+    currentMissionDay?: number;
+    hintStreak?: number;
+    totalHints?: number;
+    today?: string;
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/daily-checkin/status/${username}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to get daily check-in status" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Get Daily Check-In Status Error:", error);
+      return { success: false, message: "Connection error. Check your internet." };
+    }
+  },
+
+  markDailyCheckInStarted: async (username: string): Promise<{ 
+    success: boolean; 
+    message?: string; 
+    lastPlayedDate?: string;
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/daily-checkin/start`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to mark daily check-in as started" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Mark Daily Check-In Started Error:", error);
+      return { success: false, message: "Connection error. Check your internet." };
+    }
+  },
+
+  completeDailyCheckIn: async (username: string): Promise<{ 
+    success: boolean; 
+    message?: string; 
+    lastPlayedDate?: string;
+    currentMissionDay?: number;
+    hintStreak?: number;
+    totalHints?: number;
+    hintsEarned?: number;
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/daily-checkin/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to complete daily check-in" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Complete Daily Check-In Error:", error);
       return { success: false, message: "Connection error. Check your internet." };
     }
   }

@@ -5,6 +5,9 @@ import { GameLogo } from '../components/GameLogo';
 import { renderThemeBackground } from '../utils/themeBackground';
 import { UserDropdown } from '../components/ui/UserDropdown';
 import { PriceOffer } from '../services/db';
+import { useDailyCheckIn } from '../hooks/useDailyCheckIn';
+import { DailyCheckInButton } from '../components/DailyCheckInButton';
+import { DailyCheckInGame } from '../components/DailyCheckInGame';
 
 interface HomeViewProps {
   progress: UserProgress;
@@ -19,6 +22,7 @@ interface HomeViewProps {
   onOpenReferModal: () => void;
   onLogout: () => void;
   priceOffer: PriceOffer | null;
+  onHintsUpdated?: (newHints: number) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -33,7 +37,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenPurchaseHistory,
   onOpenReferModal,
   onLogout,
-  priceOffer
+  priceOffer,
+  onHintsUpdated
 }) => {
   // Use price offer values if available, otherwise fallback to defaults
   const marketPrice = priceOffer?.marketPrice || 99;
@@ -41,6 +46,54 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const hintCount = priceOffer?.hintCount || 100;
   const hasOffer = marketPrice !== offerPrice;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [showDailyGame, setShowDailyGame] = useState(false);
+
+  // Daily Check-In Hook
+  const {
+    checkInData,
+    state,
+    loading: checkInLoading,
+    markAsStarted,
+    completeCheckIn,
+    hintStreak,
+    loadStatus
+  } = useDailyCheckIn({
+    username: progress.playerName || null,
+    onStreakHintsUpdated: (newStreakHints) => {
+      // Update progress with daily streak hints (NOT total hints)
+      setProgress(prev => ({ ...prev, dailyStreakHints: newStreakHints }));
+    }
+  });
+
+  const handleDailyCheckInClick = () => {
+    if (state === 'ready' || state === 'missed') {
+      setShowDailyGame(true);
+    }
+  };
+
+  const handleDailyCheckInGameStarted = async () => {
+    // Mark as played when game starts (one chance per day)
+    // Don't reload status immediately - wait until game is finished
+    // This prevents the modal from closing prematurely
+    await markAsStarted();
+  };
+
+  const handleDailyCheckInComplete = async () => {
+    // Called on both success and failure - marks as complete
+    const success = await completeCheckIn();
+    // Hints are already updated via the hook's onStreakHintsUpdated callback
+    return success;
+  };
+
+  const handleDailyCheckInGameFinished = () => {
+    // Close the game modal first
+    setShowDailyGame(false);
+    // Reload status after closing to update button state
+    // This ensures the button shows "Come Back Tomorrow!" after playing
+    setTimeout(() => {
+      loadStatus();
+    }, 300);
+  };
   return (
     <div className={`flex flex-col h-full ${activeTheme.background} relative overflow-hidden transition-colors duration-500`}>
       
@@ -107,6 +160,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
           
           <div className="space-y-3 perspective-1000">
+            {/* Daily Check-In Button */}
+            {progress.playerName && (
+              <DailyCheckInButton
+                state={state}
+                loading={checkInLoading}
+                onClick={handleDailyCheckInClick}
+                activeTheme={activeTheme}
+                hintStreak={hintStreak}
+              />
+            )}
+
             <DifficultyCard 
               difficulty={Difficulty.EASY} 
               points={5} 
@@ -163,6 +227,25 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       </main>
+
+      {/* Daily Check-In Game Modal */}
+      {/* Keep modal open even if state changes - only close when game finishes or user clicks close */}
+      {showDailyGame && (
+        <DailyCheckInGame
+          missionDay={checkInData?.currentMissionDay || 1}
+          onComplete={handleDailyCheckInComplete}
+          onGameStarted={handleDailyCheckInGameStarted}
+          onGameFinished={handleDailyCheckInGameFinished}
+          onClose={() => {
+            setShowDailyGame(false);
+            // Reload status after closing to update button state
+            setTimeout(() => {
+              loadStatus();
+            }, 300);
+          }}
+          activeTheme={activeTheme}
+        />
+      )}
     </div>
   );
 };

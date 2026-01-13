@@ -33,6 +33,7 @@ export interface UserProgress {
   totalScore: number;
   unlockedDifficulties: Difficulty[];
   premiumHints: number;
+  dailyStreakHints: number; // Daily check-in streak hints (separate from total hints)
   selectedTheme?: ThemeType;
 }
 

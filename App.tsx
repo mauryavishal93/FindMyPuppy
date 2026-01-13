@@ -69,6 +69,7 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
+      dailyStreakHints: 0, // Daily check-in streak hints
       selectedTheme: 'night' as ThemeType
     };
     return saved ? { ...defaultProgress, ...JSON.parse(saved) } : defaultProgress;
@@ -169,6 +170,7 @@ export default function App() {
             totalScore: user.points || 0,
             points: user.points || 0,
             premiumHints: user.hints || 0,
+            dailyStreakHints: user.hintStreak || 0, // Load hintStreak from DB as dailyStreakHints (used as hint count in game)
             clearedLevels: newClearedLevels
             // Preserve theme as it might be local pref or we could sync it if DB supported it
           };
@@ -242,12 +244,21 @@ export default function App() {
     handleUseHint,
     resetHints,
     freeHintsRemaining,
+    dailyStreakHintsRemaining,
+    totalHintsRemaining,
+    currentHintType,
+    currentHintCount,
+    hasHints,
     hasPremiumHints
   } = useHints({
     progress,
     setProgress,
     playSfx: (type) => playSfx(type, isMuted),
-    onOutOfHints: handleOutOfHints
+    onOutOfHints: handleOutOfHints,
+    onHintStreakUpdated: (newStreak) => {
+      // Update progress when streak hints are used
+      setProgress(prev => ({ ...prev, dailyStreakHints: newStreak }));
+    }
   });
 
   // --- EFFECTS ---
@@ -326,6 +337,7 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
+      dailyStreakHints: 0,
       selectedTheme: 'night' as ThemeType
     });
     localStorage.removeItem('findMyPuppy_progress');
@@ -639,6 +651,15 @@ export default function App() {
             onOpenReferModal={() => setShowReferModal(true)}
             onLogout={handleLogout}
             priceOffer={priceOffer}
+            onHintsUpdated={(newHints) => {
+              setProgress(prev => ({ ...prev, premiumHints: newHints }));
+              // Also sync to database
+              if (progress.playerName) {
+                db.updateHints(progress.playerName, newHints).catch(err => {
+                  console.error('Failed to update hints in database:', err);
+                });
+              }
+            }}
           />
         )}
         
@@ -664,8 +685,12 @@ export default function App() {
             formatTime={formatTime}
             showHints={showHints}
             freeHintsRemaining={freeHintsRemaining}
+            dailyStreakHintsRemaining={dailyStreakHintsRemaining}
+            totalHintsRemaining={totalHintsRemaining}
+            currentHintType={currentHintType}
+            currentHintCount={currentHintCount}
+            hasHints={hasHints}
             hasPremiumHints={hasPremiumHints}
-            premiumHints={progress.premiumHints || 0}
             isMuted={isMuted}
             onPuppyFound={handlePuppyFound}
             onImageLoaded={handleImageLoaded}

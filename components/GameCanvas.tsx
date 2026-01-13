@@ -43,6 +43,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   // Track if initial scroll position has been set
   const initialScrollSetRef = useRef(false);
   
+  // Track wrong click positions to show cross icons
+  const [wrongClicks, setWrongClicks] = useState<Array<{ id: string; x: number; y: number }>>([]);
+  
   // Track the last loaded background to prevent re-triggering loading on game updates (like finding a puppy)
   const prevBgRef = useRef<string | null>(null);
   
@@ -517,6 +520,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
               const clickX = (e.clientX - rect.left) / zoom;
               const clickY = (e.clientY - rect.top) / zoom;
               
+              // Show cross icon at wrong click position
+              const wrongClickId = `wrong-${Date.now()}-${Math.random()}`;
+              setWrongClicks(prev => [...prev, { id: wrongClickId, x: clickX, y: clickY }]);
+              
+              // Auto-remove cross icon after 800ms
+              setTimeout(() => {
+                setWrongClicks(prev => prev.filter(wc => wc.id !== wrongClickId));
+              }, 800);
+              
               // Convert to percentage coordinates (0-100)
               const clickXPercent = (clickX / MAP_SIZE) * 100;
               const clickYPercent = (clickY / MAP_SIZE) * 100;
@@ -574,6 +586,73 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
                  </div>
               </div>
             )}
+            
+            {/* Wrong Click Cross Icons */}
+            {wrongClicks.map((wrongClick) => (
+              <div
+                key={wrongClick.id}
+                className="absolute pointer-events-none z-50"
+                style={{
+                  left: `${wrongClick.x}px`,
+                  top: `${wrongClick.y}px`,
+                  transform: 'translate(-50%, -50%)',
+                  animation: 'wrongClickFade 0.8s ease-out forwards'
+                }}
+              >
+                <div className="relative">
+                  {/* Cross Icon */}
+                  <i className="fas fa-times text-red-500 text-4xl drop-shadow-lg" 
+                     style={{
+                       textShadow: '0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.5)',
+                       filter: 'drop-shadow(0 0 8px rgba(239, 68, 68, 0.6))'
+                     }}
+                  ></i>
+                  {/* Outer ring for better visibility */}
+                  <div 
+                    className="absolute inset-0 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-red-500/30"
+                    style={{
+                      animation: 'wrongClickRing 0.8s ease-out forwards'
+                    }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+            
+            {/* CSS Animation for wrong click cross */}
+            <style>{`
+              @keyframes wrongClickFade {
+                0% {
+                  opacity: 0;
+                  transform: translate(-50%, -50%) scale(0.5);
+                }
+                20% {
+                  opacity: 1;
+                  transform: translate(-50%, -50%) scale(1.2);
+                }
+                80% {
+                  opacity: 1;
+                  transform: translate(-50%, -50%) scale(1);
+                }
+                100% {
+                  opacity: 0;
+                  transform: translate(-50%, -50%) scale(0.8);
+                }
+              }
+              @keyframes wrongClickRing {
+                0% {
+                  opacity: 0.8;
+                  transform: translate(-50%, -50%) scale(0.5);
+                }
+                50% {
+                  opacity: 0.4;
+                  transform: translate(-50%, -50%) scale(1.5);
+                }
+                100% {
+                  opacity: 0;
+                  transform: translate(-50%, -50%) scale(2);
+                }
+              }
+            `}</style>
             
             {/* Puppy Layer */}
             {puppies.map((puppy) => {
