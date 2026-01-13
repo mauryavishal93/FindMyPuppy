@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface InfoModalProps {
   onClose: () => void;
+  onOpenExplorerGuide?: () => void;
 }
 
-export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
+export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGuide }) => {
+  const [showGuidePreview, setShowGuidePreview] = useState(false);
+
+  return (
   <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 px-4 animate-fade-in overflow-hidden">
     <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl relative max-h-[calc(90vh-2rem)] flex flex-col border-4 border-white overflow-hidden">
       {/* Header - Fixed with Gradient */}
@@ -43,6 +47,93 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
               <p className="text-slate-700 text-sm font-medium leading-relaxed">
                 Embark on an epic adventure through <strong className="text-brand-dark">magical worlds</strong> and rescue adorable puppies hiding in plain sight! Each scene is uniquely crafted, making every level a fresh challenge.
               </p>
+            </div>
+          </div>
+
+          {/* Explorer Guide Feature - Similar to Daily Check-In */}
+          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-5 border-2 border-white/30 relative overflow-hidden shadow-2xl">
+            {/* Animated Background Pattern */}
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 left-0 w-24 h-24 bg-white rounded-full -translate-x-12 -translate-y-12 animate-pulse"></div>
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full translate-x-16 translate-y-16 animate-pulse" style={{ animationDelay: '1s' }}></div>
+            </div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
+                  <i className="fas fa-compass text-white text-2xl"></i>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-black text-white mb-1">🗺️ Explorer's Guide</h4>
+                  <p className="text-white/90 text-xs font-medium">Interactive Tutorial & Tips</p>
+                </div>
+              </div>
+              
+              <p className="text-white/95 text-sm mb-4 leading-relaxed font-medium">
+                New to the game? Start your adventure with our <strong className="text-yellow-200">interactive Explorer's Guide</strong>! Learn all the tricks, master the controls, and become a puppy-finding expert! 🎓
+              </p>
+
+              {/* Guide Preview Cards */}
+              {showGuidePreview && (
+                <div className="mb-4 space-y-2 animate-fade-in">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                    <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                      <i className="fas fa-check-circle text-yellow-300"></i>
+                      <span>Step-by-step interactive tutorial</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                    <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                      <i className="fas fa-check-circle text-yellow-300"></i>
+                      <span>Master zoom, pan, and tap controls</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                    <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                      <i className="fas fa-check-circle text-yellow-300"></i>
+                      <span>Pro tips for finding hidden puppies</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                    <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                      <i className="fas fa-check-circle text-yellow-300"></i>
+                      <span>Hint system explained in detail</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    if (onOpenExplorerGuide) {
+                      onOpenExplorerGuide();
+                      onClose();
+                    } else {
+                      setShowGuidePreview(!showGuidePreview);
+                    }
+                  }}
+                  className="flex-1 bg-white text-indigo-600 px-4 py-3 rounded-xl font-black text-sm shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 border-2 border-white/50"
+                >
+                  <i className="fas fa-play-circle"></i>
+                  <span>Start Guide</span>
+                </button>
+                <button
+                  onClick={() => setShowGuidePreview(!showGuidePreview)}
+                  className="bg-white/20 backdrop-blur-sm text-white px-4 py-3 rounded-xl font-bold text-sm hover:bg-white/30 active:scale-95 transition-all border border-white/30 flex items-center justify-center"
+                >
+                  <i className={`fas ${showGuidePreview ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                </button>
+              </div>
+
+              {/* Badge/Indicator */}
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <div className="bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full text-xs font-black shadow-md flex items-center gap-1.5">
+                  <i className="fas fa-star"></i>
+                  <span>Recommended for Beginners</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -432,4 +523,5 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => (
       </div>
     </div>
   </div>
-);
+  );
+};
