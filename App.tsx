@@ -4,6 +4,7 @@ import { Difficulty, UserProgress, ThemeType } from './types';
 import { THEME_CONFIGS } from './constants/themeConfig';
 import { LevelSelector } from './components/LevelSelector';
 import { InfoModal } from './components/modals/InfoModal';
+import { ExplorerGuide } from './components/ExplorerGuide';
 import { ThemeModal } from './components/modals/ThemeModal';
 import { PaymentModal } from './components/modals/PaymentModal';
 import { PaymentResultModal } from './components/modals/PaymentResultModal';
@@ -28,13 +29,27 @@ export default function App() {
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
   const loginNameRef = useRef('');
-  const [isMuted, setIsMuted] = useState(false);
+  // Separate audio controls
+  const [backgroundMusicEnabled, setBackgroundMusicEnabled] = useState(() => {
+    const saved = localStorage.getItem('findMyPuppy_backgroundMusic');
+    return saved ? JSON.parse(saved) : true;
+  });
+  const [soundEffectsEnabled, setSoundEffectsEnabled] = useState(() => {
+    const saved = localStorage.getItem('findMyPuppy_soundEffects');
+    return saved ? JSON.parse(saved) : true;
+  });
+  
+  // Legacy isMuted for backward compatibility (both disabled = muted)
+  const isMuted = !backgroundMusicEnabled && !soundEffectsEnabled;
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timeLimit, setTimeLimit] = useState<number | null>(null);
   const [wrongAttempts, setWrongAttempts] = useState<number>(0);
   
   // Info Modal State
   const [showInfoModal, setShowInfoModal] = useState(false);
+  
+  // Explorer Guide State
+  const [showExplorerGuide, setShowExplorerGuide] = useState(false);
   
   // Theme Modal State
   const [showThemeModal, setShowThemeModal] = useState(false);
@@ -80,17 +95,17 @@ export default function App() {
   const activeTheme = THEME_CONFIGS[selectedTheme as ThemeType] || THEME_CONFIGS['night'];
 
   // Custom Hooks
-  const { ambientAudioRef, playSfx } = useAudio({ view, isMuted });
+  const { ambientAudioRef, playSfx } = useAudio({ view, backgroundMusicEnabled, soundEffectsEnabled });
   const { gameState, initLevel, updatePuppy } = useGameState();
   
   const handleGameOver = useCallback(() => {
     setIsTimerRunning(false);
-    playSfx('fail', isMuted);
+    playSfx('fail', soundEffectsEnabled);
     setView('GAME_OVER');
-  }, [playSfx, isMuted]);
+  }, [playSfx, soundEffectsEnabled]);
 
   const handleWrongClick = useCallback(() => {
-    playSfx('fail', isMuted);
+    playSfx('fail', soundEffectsEnabled);
     setWrongAttempts(prev => {
       const newAttempts = prev + 1;
       if (newAttempts >= 3) {
@@ -99,7 +114,7 @@ export default function App() {
       }
       return newAttempts;
     });
-  }, [playSfx, isMuted]);
+  }, [playSfx, soundEffectsEnabled]);
 
   const { timeLeft, setTimeLeft, formatTime, resetTimer } = useTimer({
     timeLimit,
@@ -226,7 +241,7 @@ export default function App() {
     closePaymentResult
   } = usePayment({
     onPaymentSuccess: handlePaymentSuccess,
-    playSfx: (type) => playSfx(type, isMuted),
+    playSfx: (type) => playSfx(type, soundEffectsEnabled),
     priceOffer: priceOffer,
     playerName: progress.playerName || 'Player',
     playerEmail: progress.email || '' 
@@ -253,7 +268,7 @@ export default function App() {
   } = useHints({
     progress,
     setProgress,
-    playSfx: (type) => playSfx(type, isMuted),
+    playSfx: (type) => playSfx(type, soundEffectsEnabled),
     onOutOfHints: handleOutOfHints,
     onHintStreakUpdated: (newStreak) => {
       // Update progress when streak hints are used
@@ -343,7 +358,8 @@ export default function App() {
     localStorage.removeItem('findMyPuppy_progress');
     setLoginName('');
     setView('LOGIN');
-    setIsMuted(false);
+        setBackgroundMusicEnabled(true);
+        setSoundEffectsEnabled(true);
     if (ambientAudioRef.current) {
       ambientAudioRef.current.pause();
       ambientAudioRef.current.currentTime = 0;
@@ -386,7 +402,7 @@ export default function App() {
   };
 
   const handleLevelClear = useCallback(async () => {
-    playSfx('clear', isMuted);
+    playSfx('clear', soundEffectsEnabled);
     const levelKey = `${selectedDifficulty}_${currentLevelId}`;
     const isFirstClear = !progress.clearedLevels[levelKey];
     let pointsAwarded = 0;
@@ -439,10 +455,10 @@ export default function App() {
     });
 
     setView('WIN');
-  }, [playSfx, isMuted, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName]);
+  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName]);
 
   const handlePuppyFound = useCallback((id: string) => {
-    playSfx('found', isMuted);
+    playSfx('found', soundEffectsEnabled);
 
     // Calculate updated puppies before state update
     const updatedPuppies = gameState.puppies.map(p => 
@@ -458,7 +474,7 @@ export default function App() {
       setIsTimerRunning(false);
       setTimeout(() => handleLevelClear(), 800);
     }
-  }, [playSfx, isMuted, updatePuppy, gameState.puppies, handleLevelClear]);
+  }, [playSfx, soundEffectsEnabled, updatePuppy, gameState.puppies, handleLevelClear]);
   
   const handleRetry = () => {
     handleInitLevel(currentLevelId, selectedDifficulty);
@@ -487,7 +503,7 @@ export default function App() {
 
   const handlePayWithPoints = () => {
     if (progress.totalScore >= 10) {
-      playSfx('pay', isMuted);
+      playSfx('pay', soundEffectsEnabled);
       setProgress(prev => {
         const newTotalScore = prev.totalScore - 10;
         const newHints = (prev.premiumHints || 0) + 2;
@@ -534,7 +550,27 @@ export default function App() {
      setIsTimerRunning(true);
   }, []);
 
-  const toggleMute = () => setIsMuted(prev => !prev);
+  // Toggle functions for audio controls
+  const toggleBackgroundMusic = () => {
+    const newValue = !backgroundMusicEnabled;
+    setBackgroundMusicEnabled(newValue);
+    localStorage.setItem('findMyPuppy_backgroundMusic', JSON.stringify(newValue));
+  };
+  
+  const toggleSoundEffects = () => {
+    const newValue = !soundEffectsEnabled;
+    setSoundEffectsEnabled(newValue);
+    localStorage.setItem('findMyPuppy_soundEffects', JSON.stringify(newValue));
+  };
+  
+  // Legacy toggle for backward compatibility
+  const toggleMute = () => {
+    const newValue = !isMuted;
+    setBackgroundMusicEnabled(newValue);
+    setSoundEffectsEnabled(newValue);
+    localStorage.setItem('findMyPuppy_backgroundMusic', JSON.stringify(newValue));
+    localStorage.setItem('findMyPuppy_soundEffects', JSON.stringify(newValue));
+  };
 
   const handleBack = useCallback(() => {
     // 1. If any modal is open, close it and ensure we are on HOME (Select Difficulty)
@@ -644,6 +680,10 @@ export default function App() {
             }}
             onToggleMute={toggleMute}
             isMuted={isMuted}
+            backgroundMusicEnabled={backgroundMusicEnabled}
+            soundEffectsEnabled={soundEffectsEnabled}
+            onToggleBackgroundMusic={toggleBackgroundMusic}
+            onToggleSoundEffects={toggleSoundEffects}
             onOpenThemeModal={() => setShowThemeModal(true)}
             onOpenInfoModal={() => setShowInfoModal(true)}
             onOpenHintShop={openHintShop}
@@ -835,7 +875,17 @@ export default function App() {
         )}
 
         {showInfoModal && (
-          <InfoModal onClose={() => setShowInfoModal(false)} />
+          <InfoModal 
+            onClose={() => setShowInfoModal(false)}
+            onOpenExplorerGuide={() => setShowExplorerGuide(true)}
+          />
+        )}
+
+        {showExplorerGuide && (
+          <ExplorerGuide
+            activeTheme={activeTheme}
+            onClose={() => setShowExplorerGuide(false)}
+          />
         )}
 
         {showPaymentModal && (

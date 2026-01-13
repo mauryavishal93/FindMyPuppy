@@ -16,35 +16,41 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
   onClick, 
   description 
 }) => {
-  // Get puppy emoji and unique design based on difficulty
+  // Get puppy emoji and unique design based on difficulty with creative puppy-themed icons
   const getCardConfig = () => {
     switch (difficulty) {
       case 'Easy':
         return {
-          emoji: '🐕',
-          bgEmoji: '🐕',
+          emoji: '🐕', // Happy puppy
+          bgEmoji: '🌳', // Tree/outdoor theme
           shape: 'rounded-2xl', // Soft rounded
           borderStyle: 'border-2 border-white/40',
-          icon: '🌱',
-          pattern: 'diagonal'
+          icon: '🌱', // Growing/beginner
+          pattern: 'diagonal',
+          puppyIcon: '🐕‍🦺', // Puppy with vest - safe/easy
+          decorative: '🌸' // Flowers - peaceful
         };
       case 'Medium':
         return {
-          emoji: '🐶',
-          bgEmoji: '🐶',
+          emoji: '🐶', // Energetic puppy
+          bgEmoji: '🏃', // Running theme
           shape: 'rounded-xl', // Medium rounded
           borderStyle: 'border-2 border-white/50 border-dashed',
-          icon: '⚡',
-          pattern: 'circular'
+          icon: '⚡', // Energy
+          pattern: 'circular',
+          puppyIcon: '🎾', // Ball - active play
+          decorative: '⭐' // Stars - achievement
         };
       case 'Hard':
         return {
-          emoji: '🐾',
-          bgEmoji: '🔥',
+          emoji: '🐺', // Wolf-like challenge
+          bgEmoji: '🔥', // Fire/intense
           shape: 'rounded-lg', // Sharp corners
           borderStyle: 'border-2 border-white/60',
-          icon: '💪',
-          pattern: 'zigzag'
+          icon: '💪', // Strength
+          pattern: 'zigzag',
+          puppyIcon: '🦴', // Bone - challenge reward
+          decorative: '⚡' // Lightning - intense
         };
       default:
         return {
@@ -53,7 +59,9 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
           shape: 'rounded-2xl',
           borderStyle: 'border-2 border-white/40',
           icon: '🌱',
-          pattern: 'diagonal'
+          pattern: 'diagonal',
+          puppyIcon: '🐕‍🦺',
+          decorative: '🌸'
         };
     }
   };
@@ -63,7 +71,10 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
   return (
     <div 
       onClick={onClick}
-      className={`${color} text-white p-2.5 ${config.shape} shadow-md cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between min-h-[56px] w-full hover:shadow-xl hover:-translate-y-1 active:scale-95 ${config.borderStyle} hover:border-white/70`}
+      className={`${color} text-white p-3 ${config.shape} shadow-2xl cursor-pointer transition-all relative overflow-hidden group flex flex-col items-center justify-center aspect-square w-full hover:shadow-3xl hover:scale-110 active:scale-95 ${config.borderStyle} hover:border-white/80`}
+      style={{
+        boxShadow: '0 8px 20px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3)',
+      }}
     >
       {/* Unique Background Pattern based on difficulty */}
       {config.pattern === 'diagonal' && (
@@ -85,7 +96,7 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
       )}
 
       {/* Animated Background Emoji - Different sizes per difficulty */}
-      <div className={`absolute -left-1 -bottom-1 opacity-20 ${difficulty === 'Easy' ? 'text-4xl' : difficulty === 'Medium' ? 'text-5xl' : 'text-6xl'} group-hover:scale-110 group-hover:rotate-12 transition-all duration-500`}>
+      <div className={`absolute -left-1 -bottom-1 opacity-15 ${difficulty === 'Easy' ? 'text-3xl' : difficulty === 'Medium' ? 'text-4xl' : 'text-5xl'} group-hover:scale-110 group-hover:rotate-12 transition-all duration-500`}>
         {config.bgEmoji}
       </div>
       
@@ -94,41 +105,49 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
       
       {/* Unique Decorative Elements per difficulty */}
       {difficulty === 'Easy' && (
-        <div className="absolute top-0.5 right-0.5 text-base opacity-25 group-hover:opacity-35 transition-opacity">
+        <div className="absolute top-1 right-1 text-sm opacity-25 group-hover:opacity-35 transition-opacity">
           🌿
         </div>
       )}
       {difficulty === 'Medium' && (
-        <div className="absolute top-0.5 right-0.5 text-base opacity-25 group-hover:opacity-35 transition-opacity">
+        <div className="absolute top-1 right-1 text-sm opacity-25 group-hover:opacity-35 transition-opacity">
           ⚡
         </div>
       )}
       {difficulty === 'Hard' && (
-        <div className="absolute top-0.5 right-0.5 text-base opacity-25 group-hover:opacity-35 transition-opacity">
+        <div className="absolute top-1 right-1 text-sm opacity-25 group-hover:opacity-35 transition-opacity">
           💥
         </div>
       )}
       
-      <div className="z-10 flex flex-col pl-1.5 flex-1">
-        <h3 className="text-base font-black leading-none drop-shadow-md flex items-center gap-1.5">
-          <span className="text-lg">{config.emoji}</span>
-          <span>{difficulty}</span>
-        </h3>
-        <p className="text-white/95 text-[10px] font-semibold mt-0.5 flex items-center gap-1">
-          <span>{config.icon}</span>
-          <span>{description}</span>
-        </p>
-      </div>
-
-      <div className="z-10 flex flex-col items-end pr-1.5">
-        <div className="flex items-center gap-1 bg-white/30 backdrop-blur-md px-2 py-1 rounded-lg shadow-md border border-white/40">
-          <span className="text-sm">⭐</span>
-          <span className="font-black text-sm">{points}</span>
+      {/* Main Content - Centered - Enhanced */}
+      <div className="z-10 flex flex-col items-center justify-center text-center">
+        {/* Creative Puppy Icon - Large with Animation */}
+        <div className="text-5xl mb-2 drop-shadow-2xl transform group-hover:scale-125 group-hover:rotate-12 transition-all animate-bounce" style={{ animationDuration: '2.5s' }}>
+          {config.puppyIcon}
         </div>
-        <span className="text-[9px] mt-0.5 opacity-95 uppercase font-bold tracking-wider drop-shadow-sm flex items-center gap-0.5">
-          <span>🏆</span>
-          <span>Pts</span>
-        </span>
+        
+        {/* Difficulty Name - Enhanced */}
+        <h3 className="text-lg font-black leading-none drop-shadow-2xl mb-1.5 bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent">
+          {difficulty}
+        </h3>
+        
+        {/* Decorative Element - Animated */}
+        <div className="text-xl mb-1.5 opacity-90 animate-pulse">{config.decorative}</div>
+        
+        {/* Description - Enhanced */}
+        <p className="text-white/95 text-xs font-bold flex items-center justify-center gap-1.5 mb-2">
+          <span className="text-sm">{config.icon}</span>
+          <span>{description}</span>
+          <span className="text-xs opacity-80">🎮</span>
+        </p>
+
+        {/* Points Badge - Enhanced */}
+        <div className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-xl border-2 border-white/50 transform group-hover:scale-110 transition-transform">
+          <span className="text-base animate-pulse">⭐</span>
+          <span className="font-black text-base">{points}</span>
+          <span className="text-xs opacity-80">🏆</span>
+        </div>
       </div>
     </div>
   );
