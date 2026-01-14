@@ -700,6 +700,11 @@ export default function App() {
                 });
               }
             }}
+            onStreakHintsUpdated={(newStreakHints) => {
+              // Update daily streak hints (from daily check-in) - used as hint count in game
+              console.log('[APP] Updating daily streak hints (from daily check-in):', newStreakHints);
+              setProgress(prev => ({ ...prev, dailyStreakHints: newStreakHints }));
+            }}
           />
         )}
         

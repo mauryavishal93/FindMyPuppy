@@ -27,6 +27,7 @@ interface HomeViewProps {
   onLogout: () => void;
   priceOffer: PriceOffer | null;
   onHintsUpdated?: (newHints: number) => void;
+  onStreakHintsUpdated?: (newStreakHints: number) => void; // Callback for daily streak hints
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -46,7 +47,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenReferModal,
   onLogout,
   priceOffer,
-  onHintsUpdated
+  onHintsUpdated,
+  onStreakHintsUpdated
 }) => {
   // Use price offer values if available, otherwise fallback to defaults
   const marketPrice = priceOffer?.marketPrice || 99;
@@ -112,10 +114,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
   } = useDailyCheckIn({
     username: progress.playerName || null,
     onStreakHintsUpdated: (newStreakHints) => {
-      // Update progress with daily streak hints (NOT total hints)
-      // Note: This callback is handled by the parent component via onHintsUpdated
-      if (onHintsUpdated) {
-        onHintsUpdated(newStreakHints);
+      // Update progress with daily streak hints (from daily check-in)
+      // This updates progress.dailyStreakHints which is used as hint count in game
+      if (onStreakHintsUpdated) {
+        onStreakHintsUpdated(newStreakHints);
       }
     }
   });

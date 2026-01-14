@@ -133,40 +133,46 @@ export const useHints = ({ progress, setProgress, playSfx, onOutOfHints, onHintS
   // IMPORTANT: dailyStreakHints comes from DB field: hintStreak
   // This value should be loaded when user logs in and used as hint count in game
   const freeHintsRemaining = Math.max(0, 2 - hintsUsedInLevel);
-  const dailyStreakHintsRemaining = progress.dailyStreakHints ?? 0; // This is loaded from DB hintStreak field
+  const dailyStreakHintsRemaining = progress.dailyStreakHints ?? 0; // This is loaded from DB hintStreak field - daily check-in earned hints
   const totalHintsRemaining = progress.premiumHints ?? 0;
   
-  // Verify hintStreak is available
+  // Verify hintStreak is available (daily check-in earned hints)
   if (progress.dailyStreakHints !== undefined && progress.dailyStreakHints > 0) {
-    console.log('[HINTS INIT] hintStreak loaded as dailyStreakHints:', progress.dailyStreakHints);
+    console.log('[HINTS INIT] Daily check-in hints (hintStreak) loaded:', progress.dailyStreakHints);
   }
   
   // Determine which hint type is currently available (based on priority)
-  // This MUST follow the same priority as handleUseHint
-  // Badge shows: Free count (2→1) → Daily streak count (from hintStreak) → Total hint count
+  // PRIORITY ORDER (MUST MATCH handleUseHint):
+  // 1. Free Hints (2 per game) - Use first, badge shows: 2 → 1
+  // 2. Daily Streak Hints (from daily check-in hintStreak) - Use second, badge shows daily hint count
+  // 3. Total Hints (premium hints from shop) - Use last, badge shows total hint count
   let currentHintType: 'free' | 'streak' | 'total' | 'none' = 'none';
   let currentHintCount = 0;
   
   // Priority 1: Free hints (if available) - badge shows: 2, then 1
+  // After free hints are exhausted (freeHintsRemaining === 0), badge will show daily streak hints
   if (freeHintsRemaining > 0) {
     currentHintType = 'free';
     currentHintCount = freeHintsRemaining; // Will be 2, then 1
+    console.log('[HINTS BADGE] Showing FREE hints:', currentHintCount, '(Daily streak hints available next:', dailyStreakHintsRemaining, ')');
   } 
-  // Priority 2: Daily streak hints from hintStreak (only if free hints are exhausted)
-  // Badge shows the actual count from hintStreak field (this is the hint count available)
+  // Priority 2: Daily streak hints from daily check-in (hintStreak field) - ONLY after free hints exhausted
+  // Badge shows the actual count from hintStreak field - this is the daily earned hints available
   else if (dailyStreakHintsRemaining > 0) {
     currentHintType = 'streak';
-    currentHintCount = dailyStreakHintsRemaining; // Shows hintStreak count from DB - this is the hint count
+    currentHintCount = dailyStreakHintsRemaining; // Shows hintStreak count from DB - daily check-in earned hints
+    console.log('[HINTS BADGE] ✅ Showing DAILY STREAK hints (from daily check-in):', currentHintCount, '(Total hints available next:', totalHintsRemaining, ')');
   } 
   // Priority 3: Total hints (only if both free and daily streak are exhausted)
-  // Badge shows total hint count
+  // Badge shows total hint count (premium hints from shop)
   else if (totalHintsRemaining > 0) {
     currentHintType = 'total';
     currentHintCount = totalHintsRemaining; // Shows actual total hint count
+    console.log('[HINTS BADGE] Showing TOTAL hints:', currentHintCount);
   }
   
-  // Debug logging to verify display logic and badge count
-  console.log('[HINTS BADGE] Free:', freeHintsRemaining, 'Streak (hintStreak):', dailyStreakHintsRemaining, 'Total:', totalHintsRemaining, '→ Badge showing:', currentHintType, 'Count:', currentHintCount);
+  // Summary log for debugging
+  console.log('[HINTS BADGE SUMMARY] Free:', freeHintsRemaining, '| Daily Streak (hintStreak):', dailyStreakHintsRemaining, '| Total:', totalHintsRemaining, '→ Badge:', currentHintType, '=', currentHintCount);
 
   return {
     hintsUsedInLevel,
