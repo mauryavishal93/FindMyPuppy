@@ -8,6 +8,7 @@ import { PriceOffer } from '../services/db';
 import { useDailyCheckIn } from '../hooks/useDailyCheckIn';
 import { DailyCheckInButton } from '../components/DailyCheckInButton';
 import { PuppyFeeding } from '../components/PuppyFeeding';
+import { LeaderboardModal } from '../components/modals/LeaderboardModal';
 
 interface HomeViewProps {
   progress: UserProgress;
@@ -61,6 +62,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [isMusicDropdownOpen, setIsMusicDropdownOpen] = useState(false);
   const [showPuppyFeeding, setShowPuppyFeeding] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   
   const difficulties = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD];
 
@@ -271,10 +273,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
             )}
           </div>
 
-          <div className={`backdrop-blur-sm px-2 py-1 rounded-full font-bold flex items-center gap-1 border border-white/80 shadow-sm ${activeTheme.cardBg} ${activeTheme.accent} hover:scale-105 transition-transform`}>
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            className={`backdrop-blur-sm px-2 py-1 rounded-full font-bold flex items-center gap-1 border border-white/80 shadow-sm ${activeTheme.cardBg} ${activeTheme.accent} hover:scale-105 transition-transform cursor-pointer`}
+          >
             <span className="text-sm">🏆</span>
             <span className="text-xs">{progress.totalScore}</span>
-          </div>
+          </button>
         </div>
       </header>
       
@@ -567,6 +572,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
             streak={checkInData.checkInStreak}
           />
         )}
+
+      {/* Leaderboard Modal */}
+      <LeaderboardModal
+        isOpen={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+        activeTheme={activeTheme}
+        currentUsername={progress.playerName}
+      />
     </div>
   );
 };

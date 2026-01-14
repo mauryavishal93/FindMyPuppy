@@ -5,6 +5,7 @@ import { THEME_CONFIGS } from './constants/themeConfig';
 import { LevelSelector } from './components/LevelSelector';
 import { InfoModal } from './components/modals/InfoModal';
 import { ExplorerGuide } from './components/ExplorerGuide';
+import { LeaderboardModal } from './components/modals/LeaderboardModal';
 import { ThemeModal } from './components/modals/ThemeModal';
 import { PaymentModal } from './components/modals/PaymentModal';
 import { PaymentResultModal } from './components/modals/PaymentResultModal';
@@ -50,6 +51,9 @@ export default function App() {
   
   // Explorer Guide State
   const [showExplorerGuide, setShowExplorerGuide] = useState(false);
+
+  // Leaderboard Modal State
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   
   // Theme Modal State
   const [showThemeModal, setShowThemeModal] = useState(false);
@@ -566,8 +570,9 @@ export default function App() {
 
   const handleBack = useCallback(() => {
     // 1. If any modal is open, close it and ensure we are on HOME (Select Difficulty)
-    if (showInfoModal || showThemeModal || showPurchaseHistoryModal || showPaymentModal) {
+    if (showInfoModal || showThemeModal || showPurchaseHistoryModal || showPaymentModal || showLeaderboard) {
       setShowInfoModal(false);
+      setShowLeaderboard(false);
       setShowThemeModal(false);
       setShowPurchaseHistoryModal(false);
       closePaymentModal();
@@ -616,7 +621,7 @@ export default function App() {
     const isBaseScreen = (view === 'LOGIN' || view === 'HOME') && 
                          !showInfoModal && !showThemeModal && 
                          !showPurchaseHistoryModal && !showPaymentModal && 
-                         !showQuitConfirm;
+                         !showQuitConfirm && !showLeaderboard;
 
     if (!isBaseScreen) {
       // If we are not on a base screen, ensure there is a history entry to "pop"
@@ -636,7 +641,7 @@ export default function App() {
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, handleBack]);
+  }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, showLeaderboard, handleBack]);
 
   return (
     <div className="mobile-app-container">
@@ -878,6 +883,19 @@ export default function App() {
           <InfoModal 
             onClose={() => setShowInfoModal(false)}
             onOpenExplorerGuide={() => setShowExplorerGuide(true)}
+            onOpenLeaderboard={() => {
+              setShowInfoModal(false);
+              setShowLeaderboard(true);
+            }}
+          />
+        )}
+
+        {showLeaderboard && (
+          <LeaderboardModal
+            isOpen={showLeaderboard}
+            onClose={() => setShowLeaderboard(false)}
+            activeTheme={THEME_CONFIGS[progress.selectedTheme || 'night']}
+            currentUsername={progress.playerName}
           />
         )}
 

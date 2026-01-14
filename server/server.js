@@ -1910,7 +1910,35 @@ app.get('/api/purchase-history/:username', async (req, res) => {
   }
 });
 
-// Get User Data Endpoint
+// Leaderboard endpoint - Get top 10 users by points (excluding zero points)
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const topUsers = await User.find({ points: { $gt: 0 } })
+      .select('username points')
+      .sort({ points: -1 }) // Sort by points descending
+      .limit(10) // Top 10 only
+      .lean();
+
+    // Add rank to each user
+    const leaderboard = topUsers.map((user, index) => ({
+      username: user.username,
+      rank: index + 1,
+      points: user.points || 0
+    }));
+
+    res.json({
+      success: true,
+      leaderboard: leaderboard
+    });
+  } catch (error) {
+    console.error('Error fetching leaderboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch leaderboard'
+    });
+  }
+});
+
 app.get('/api/user/:username', async (req, res) => {
   try {
     const { username } = req.params;
