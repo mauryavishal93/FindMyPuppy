@@ -84,7 +84,6 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
-      dailyStreakHints: 0, // Daily check-in streak hints
       selectedTheme: 'night' as ThemeType
     };
     return saved ? { ...defaultProgress, ...JSON.parse(saved) } : defaultProgress;
@@ -185,7 +184,6 @@ export default function App() {
             totalScore: user.points || 0,
             points: user.points || 0,
             premiumHints: user.hints || 0,
-            dailyStreakHints: user.hintStreak || 0, // Load hintStreak from DB as dailyStreakHints (used as hint count in game)
             clearedLevels: newClearedLevels
             // Preserve theme as it might be local pref or we could sync it if DB supported it
           };
@@ -259,7 +257,6 @@ export default function App() {
     handleUseHint,
     resetHints,
     freeHintsRemaining,
-    dailyStreakHintsRemaining,
     totalHintsRemaining,
     currentHintType,
     currentHintCount,
@@ -269,11 +266,7 @@ export default function App() {
     progress,
     setProgress,
     playSfx: (type) => playSfx(type, soundEffectsEnabled),
-    onOutOfHints: handleOutOfHints,
-    onHintStreakUpdated: (newStreak) => {
-      // Update progress when streak hints are used
-      setProgress(prev => ({ ...prev, dailyStreakHints: newStreak }));
-    }
+    onOutOfHints: handleOutOfHints
   });
 
   // --- EFFECTS ---
@@ -352,7 +345,6 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
-      dailyStreakHints: 0,
       selectedTheme: 'night' as ThemeType
     });
     localStorage.removeItem('findMyPuppy_progress');
@@ -700,10 +692,14 @@ export default function App() {
                 });
               }
             }}
-            onStreakHintsUpdated={(newStreakHints) => {
-              // Update daily streak hints (from daily check-in) - used as hint count in game
-              console.log('[APP] Updating daily streak hints (from daily check-in):', newStreakHints);
-              setProgress(prev => ({ ...prev, dailyStreakHints: newStreakHints }));
+            onPointsUpdated={(newPoints) => {
+              setProgress(prev => ({ ...prev, totalScore: newPoints, points: newPoints }));
+              // Sync points to database
+              if (progress.playerName) {
+                db.updatePoints(progress.playerName, newPoints).catch(err => {
+                  console.error('Failed to update points in database:', err);
+                });
+              }
             }}
           />
         )}
@@ -730,7 +726,6 @@ export default function App() {
             formatTime={formatTime}
             showHints={showHints}
             freeHintsRemaining={freeHintsRemaining}
-            dailyStreakHintsRemaining={dailyStreakHintsRemaining}
             totalHintsRemaining={totalHintsRemaining}
             currentHintType={currentHintType}
             currentHintCount={currentHintCount}

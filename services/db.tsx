@@ -23,9 +23,6 @@ export interface User {
   levelPassedMedium?: number;
   levelPassedHard?: number;
   referredBy?: string | null;
-  hintStreak?: number; // Daily check-in streak hints (from DB hintStreak field)
-  lastPlayedDate?: string | null;
-  currentMissionDay?: number;
 }
 
 export interface PurchaseHistory {
@@ -114,26 +111,6 @@ export const db = {
     }
   },
 
-  updateHintStreak: async (username: string, hintStreak: number): Promise<{ success: boolean; message?: string; hintStreak?: number }> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user/update-hint-streak`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, hintStreak }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to update hint streak" };
-      }
-      return data;
-    } catch (error) {
-      console.error("DB Update Hint Streak Error:", error);
-      return { success: false, message: "Connection error." };
-    }
-  },
 
   updatePoints: async (username: string, points: number): Promise<{ success: boolean; message?: string; points?: number }> => {
     try {
@@ -348,14 +325,15 @@ export const db = {
     }
   },
 
-  getDailyCheckInStatus: async (username: string): Promise<{ 
-    success: boolean; 
-    message?: string; 
-    lastPlayedDate?: string | null;
-    currentMissionDay?: number;
-    hintStreak?: number;
-    totalHints?: number;
-    today?: string;
+  getDailyCheckInStatus: async (username: string): Promise<{
+    success: boolean;
+    message?: string;
+    lastCheckInDate?: string | null;
+    checkInStreak?: number;
+    totalCheckIns?: number;
+    hasCheckedInToday?: boolean;
+    puppyAge?: number;
+    puppySize?: number;
   }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/daily-checkin/status/${username}`, {
@@ -376,39 +354,19 @@ export const db = {
     }
   },
 
-  markDailyCheckInStarted: async (username: string): Promise<{ 
-    success: boolean; 
-    message?: string; 
-    lastPlayedDate?: string;
-  }> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/daily-checkin/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to mark daily check-in as started" };
-      }
-      return data;
-    } catch (error) {
-      console.error("DB Mark Daily Check-In Started Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
-    }
-  },
-
-  completeDailyCheckIn: async (username: string): Promise<{ 
-    success: boolean; 
-    message?: string; 
-    lastPlayedDate?: string;
-    currentMissionDay?: number;
-    hintStreak?: number;
-    totalHints?: number;
+  completeDailyCheckIn: async (
+    username: string
+  ): Promise<{
+    success: boolean;
+    message?: string;
     hintsEarned?: number;
+    pointsEarned?: number;
+    totalHints?: number;
+    totalPoints?: number;
+    puppyAge?: number;
+    puppySize?: number;
+    checkInStreak?: number;
+    milestone?: '7days' | '30days' | '1year' | null;
   }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/daily-checkin/complete`, {
@@ -428,5 +386,6 @@ export const db = {
       console.error("DB Complete Daily Check-In Error:", error);
       return { success: false, message: "Connection error. Check your internet." };
     }
-  }
+  },
+
 };
