@@ -72,9 +72,9 @@ export const GameView: React.FC<GameViewProps> = ({
                   {formatTime(timeLeft)}
                </div>
            )}
-           <div className="flex flex-col items-end">
-              <span className="font-bold text-brand-light uppercase text-[9px] sm:text-[10px] tracking-widest">{selectedDifficulty} MODE</span>
-              <span className="text-[10px] sm:text-xs text-slate-400 max-w-[100px] truncate text-center opacity-80">Level {currentLevelId}</span>
+           <div className="bg-slate-800/80 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold text-brand-light border border-slate-700 flex flex-col items-center shadow-lg min-w-[80px] sm:min-w-[100px]">
+              <span className="uppercase text-[9px] sm:text-[10px] tracking-widest">{selectedDifficulty} MODE</span>
+              <span className="text-[10px] sm:text-xs text-slate-400 opacity-80">Level {currentLevelId}</span>
            </div>
         </div>
         
