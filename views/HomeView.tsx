@@ -315,7 +315,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <main className="mobile-main-content flex-1 px-3 py-2 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
         <div className="w-full max-w-sm flex flex-col h-full">
           {/* Welcome Card with Puppy Theme - Enhanced Kid-Friendly Design */}
-          <div className={`flex flex-col items-center text-center p-3 rounded-2xl backdrop-blur-md shadow-2xl border-2 relative overflow-hidden ${activeTheme.cardBg} transform hover:scale-[1.02] transition-all duration-300 mb-2`}
+          <div className={`flex flex-col items-center text-center p-3 rounded-2xl backdrop-blur-md shadow-2xl border-2 relative overflow-hidden w-full ${activeTheme.cardBg} transform hover:scale-[1.02] transition-all duration-300 mb-2`}
             style={{
               boxShadow: '0 8px 24px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.3)',
             }}
@@ -372,9 +372,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
           )}
 
           {/* Difficulty Carousel - Single Card with Navigation */}
-          <div className="flex flex-col items-center justify-center mb-0.5">
+          <div className="flex flex-col items-center justify-center mb-0.5 w-full">
             <div 
-              className="relative w-full max-w-[280px]"
+              className="relative w-full"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
