@@ -13,7 +13,7 @@ You need to add **ALL possible origins** where your app can run to Google Cloud 
 1. Visit: https://console.cloud.google.com/
 2. Select your project: **findmypuppy**
 3. Navigate to: **APIs & Services** → **Credentials**
-4. Click on your OAuth 2.0 Client ID: `977430971765-k7csafri1sidju96oikgr74ab0l9j4kn.apps.googleusercontent.com`
+4. Click on your OAuth 2.0 Client ID (the one you created for this project)
 5. Click **Edit** (pencil icon)
 
 ### Step 2: Add ALL JavaScript Origins
