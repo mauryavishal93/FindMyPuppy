@@ -388,4 +388,28 @@ export const db = {
     }
   },
 
+  getLeaderboard: async (): Promise<{
+    success: boolean;
+    message?: string;
+    leaderboard?: Array<{ username: string; rank: number; points: number }>;
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/leaderboard`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return { success: false, message: data.message || "Failed to fetch leaderboard" };
+      }
+      return data;
+    } catch (error) {
+      console.error("DB Get Leaderboard Error:", error);
+      return { success: false, message: "Connection error. Check your internet." };
+    }
+  },
+
 };
