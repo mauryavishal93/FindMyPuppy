@@ -7,6 +7,8 @@ interface DifficultyCardProps {
   color: string;
   onClick: () => void;
   description: string;
+  completedLevels?: number;
+  totalLevels?: number;
 }
 
 export const DifficultyCard: React.FC<DifficultyCardProps> = ({ 
@@ -14,7 +16,8 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
   points, 
   color, 
   onClick, 
-  description 
+  completedLevels = 0,
+  totalLevels = 100
 }) => {
   // Get puppy emoji and unique design based on difficulty with creative puppy-themed icons
   const getCardConfig = () => {
@@ -71,9 +74,10 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
   return (
     <div 
       onClick={onClick}
-      className={`${color} text-white p-3 ${config.shape} shadow-2xl cursor-pointer transition-all relative overflow-hidden group flex flex-col items-center justify-center aspect-square w-full hover:shadow-3xl hover:scale-110 active:scale-95 ${config.borderStyle} hover:border-white/80`}
+      className={`${color} text-white p-3 ${config.shape} shadow-lg cursor-pointer transition-all relative overflow-hidden group flex flex-col items-center justify-center aspect-[2/1] w-full hover:shadow-xl hover:scale-105 active:scale-95 ${config.borderStyle} hover:border-white/80`}
       style={{
-        boxShadow: '0 8px 20px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.3)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.25)',
+        touchAction: 'pan-x',
       }}
     >
       {/* Unique Background Pattern based on difficulty */}
@@ -120,33 +124,29 @@ export const DifficultyCard: React.FC<DifficultyCardProps> = ({
         </div>
       )}
       
-      {/* Main Content - Centered - Enhanced */}
-      <div className="z-10 flex flex-col items-center justify-center text-center">
-        {/* Creative Puppy Icon - Large with Animation */}
-        <div className="text-5xl mb-2 drop-shadow-2xl transform group-hover:scale-125 group-hover:rotate-12 transition-all animate-bounce" style={{ animationDuration: '2.5s' }}>
+      {/* Main Content - Top-Center Positioned */}
+      <div className="z-10 flex flex-col items-center justify-start text-center w-full pt-4">
+        {/* Creative Puppy Icon - Larger */}
+        <div className="text-5xl mb-1 drop-shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all flex items-center justify-center">
           {config.puppyIcon}
         </div>
         
-        {/* Difficulty Name - Enhanced */}
-        <h3 className="text-lg font-black leading-none drop-shadow-2xl mb-1.5 bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent">
+        {/* Difficulty Name - Larger */}
+        <h3 className="text-xl font-black leading-tight drop-shadow-lg mb-0.5 bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent w-full text-center">
           {difficulty}
         </h3>
         
-        {/* Decorative Element - Animated */}
-        <div className="text-xl mb-1.5 opacity-90 animate-pulse">{config.decorative}</div>
-        
-        {/* Description - Enhanced */}
-        <p className="text-white/95 text-xs font-bold flex items-center justify-center gap-1.5 mb-2">
+        {/* Description with Levels - Larger */}
+        <p className="text-white/95 text-xs font-bold flex items-center justify-center gap-1 mb-1 w-full text-center">
           <span className="text-sm">{config.icon}</span>
-          <span>{description}</span>
-          <span className="text-xs opacity-80">🎮</span>
+          {/* <span>{completedLevels}/{totalLevels} Levels</span> */}
+          <span className="text-white/90">{completedLevels}/{totalLevels} Levels</span>
         </p>
 
-        {/* Points Badge - Enhanced */}
-        <div className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-xl border-2 border-white/50 transform group-hover:scale-110 transition-transform">
-          <span className="text-base animate-pulse">⭐</span>
+        {/* Points Badge - Larger */}
+        <div className="flex items-center justify-center gap-1.5 bg-white/40 backdrop-blur-md px-3 py-1.5 rounded-lg shadow-md border border-white/50">
+          <span className="text-sm">⭐</span>
           <span className="font-black text-base">{points}</span>
-          <span className="text-xs opacity-80">🏆</span>
         </div>
       </div>
     </div>

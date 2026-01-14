@@ -14,9 +14,8 @@ interface GameViewProps {
   formatTime: (seconds: number) => string;
   showHints: boolean;
   freeHintsRemaining: number;
-  dailyStreakHintsRemaining: number;
   totalHintsRemaining: number;
-  currentHintType: 'free' | 'streak' | 'total' | 'none';
+  currentHintType: 'free' | 'total' | 'none';
   currentHintCount: number;
   hasHints: boolean;
   hasPremiumHints: boolean;
@@ -38,7 +37,6 @@ export const GameView: React.FC<GameViewProps> = ({
   formatTime,
   showHints,
   freeHintsRemaining,
-  dailyStreakHintsRemaining,
   totalHintsRemaining,
   currentHintType,
   currentHintCount,

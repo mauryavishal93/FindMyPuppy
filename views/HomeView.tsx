@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Difficulty, UserProgress, ThemeConfig } from '../types';
 import { DifficultyCard } from '../components/ui/DifficultyCard';
 import { GameLogo } from '../components/GameLogo';
@@ -7,7 +7,7 @@ import { UserDropdown } from '../components/ui/UserDropdown';
 import { PriceOffer } from '../services/db';
 import { useDailyCheckIn } from '../hooks/useDailyCheckIn';
 import { DailyCheckInButton } from '../components/DailyCheckInButton';
-import { DailyCheckInGame } from '../components/DailyCheckInGame';
+import { PuppyFeeding } from '../components/PuppyFeeding';
 
 interface HomeViewProps {
   progress: UserProgress;
@@ -27,7 +27,7 @@ interface HomeViewProps {
   onLogout: () => void;
   priceOffer: PriceOffer | null;
   onHintsUpdated?: (newHints: number) => void;
-  onStreakHintsUpdated?: (newStreakHints: number) => void; // Callback for daily streak hints
+  onPointsUpdated?: (newPoints: number) => void;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -48,7 +48,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onLogout,
   priceOffer,
   onHintsUpdated,
-  onStreakHintsUpdated
+  onPointsUpdated
 }) => {
   // Use price offer values if available, otherwise fallback to defaults
   const marketPrice = priceOffer?.marketPrice || 99;
@@ -56,17 +56,44 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const hintCount = priceOffer?.hintCount || 100;
   const hasOffer = marketPrice !== offerPrice;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [showDailyGame, setShowDailyGame] = useState(false);
   const [currentDifficultyIndex, setCurrentDifficultyIndex] = useState(0);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [isMusicDropdownOpen, setIsMusicDropdownOpen] = useState(false);
+  const [showPuppyFeeding, setShowPuppyFeeding] = useState(false);
   
   const difficulties = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD];
+
+  // Daily Check-In Hook
+  const {
+    checkInData,
+    loading: checkInLoading,
+    completeCheckIn
+  } = useDailyCheckIn({
+    username: progress.playerName || null,
+    onPointsUpdated,
+    onHintsUpdated
+  });
+
+  const handleDailyCheckInClick = () => {
+    if (!checkInData?.hasCheckedInToday) {
+      setShowPuppyFeeding(true);
+    }
+  };
+
+  const handleFeedPuppy = async () => {
+    return await completeCheckIn();
+  };
   
   const handleNextDifficulty = () => {
+    setPrevIndex(currentDifficultyIndex);
+    setSwipeDirection('right');
     setCurrentDifficultyIndex((prev) => (prev + 1) % difficulties.length);
   };
   
   const handlePrevDifficulty = () => {
+    setPrevIndex(currentDifficultyIndex);
+    setSwipeDirection('left');
     setCurrentDifficultyIndex((prev) => (prev - 1 + difficulties.length) % difficulties.length);
   };
   
@@ -74,7 +101,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
     onSelectDifficulty(difficulties[currentDifficultyIndex]);
   };
   
-  // Swipe handlers
+  // Reset swipe direction and prev index after animation completes
+  useEffect(() => {
+    if (swipeDirection) {
+      const timer = setTimeout(() => {
+        setSwipeDirection(null);
+        setPrevIndex(null);
+      }, 300); // Match transition duration
+      return () => clearTimeout(timer);
+    }
+  }, [swipeDirection, currentDifficultyIndex]);
+  
+  // Simple smooth swipe handlers - uses same logic as arrow buttons
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   
@@ -91,66 +129,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
   
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
+    
     const distance = touchStart - touchEnd;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
+    
+    // Use the same handlers as arrow buttons for consistent animation
     if (isLeftSwipe) {
-      handleNextDifficulty();
+      handleNextDifficulty(); // Same as clicking right arrow
+    } else if (isRightSwipe) {
+      handlePrevDifficulty(); // Same as clicking left arrow
     }
-    if (isRightSwipe) {
-      handlePrevDifficulty();
-    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
-  // Daily Check-In Hook
-  const {
-    checkInData,
-    state,
-    loading: checkInLoading,
-    markAsStarted,
-    completeCheckIn,
-    hintStreak,
-    loadStatus
-  } = useDailyCheckIn({
-    username: progress.playerName || null,
-    onStreakHintsUpdated: (newStreakHints) => {
-      // Update progress with daily streak hints (from daily check-in)
-      // This updates progress.dailyStreakHints which is used as hint count in game
-      if (onStreakHintsUpdated) {
-        onStreakHintsUpdated(newStreakHints);
-      }
-    }
-  });
-
-  const handleDailyCheckInClick = () => {
-    if (state === 'ready' || state === 'missed') {
-      setShowDailyGame(true);
-    }
-  };
-
-  const handleDailyCheckInGameStarted = async () => {
-    // Mark as played when game starts (one chance per day)
-    // Don't reload status immediately - wait until game is finished
-    // This prevents the modal from closing prematurely
-    await markAsStarted();
-  };
-
-  const handleDailyCheckInComplete = async () => {
-    // Called on both success and failure - marks as complete
-    const success = await completeCheckIn();
-    // Hints are already updated via the hook's onStreakHintsUpdated callback
-    return success;
-  };
-
-  const handleDailyCheckInGameFinished = () => {
-    // Close the game modal first
-    setShowDailyGame(false);
-    // Reload status after closing to update button state
-    // This ensures the button shows "Come Back Tomorrow!" after playing
-    setTimeout(() => {
-      loadStatus();
-    }, 300);
-  };
   return (
     <div className={`flex flex-col h-full ${activeTheme.background} relative overflow-hidden transition-colors duration-500`}>
       
@@ -159,63 +153,35 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {renderThemeBackground(activeTheme.id)}
       </div>
 
-      {/* Enhanced Floating Puppy Decorations - More Kid-Friendly */}
+      {/* Reduced Floating Puppy Decorations - Less Clutter */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-[5]">
-        {/* Animated Paw Prints */}
-        <div className="absolute top-12 left-4 text-3xl opacity-20 animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0s' }}>
+        {/* Minimal Animated Paw Prints */}
+        <div className="absolute top-16 left-4 text-xl opacity-15 animate-bounce" style={{ animationDuration: '3s', animationDelay: '0s' }}>
           🐾
         </div>
-        <div className="absolute top-20 right-8 text-2xl opacity-15 animate-bounce" style={{ animationDuration: '3s', animationDelay: '0.8s' }}>
-          🐾
-        </div>
-        <div className="absolute bottom-28 left-8 text-2xl opacity-18 animate-bounce" style={{ animationDuration: '2.8s', animationDelay: '1.5s' }}>
+        <div className="absolute bottom-32 right-8 text-lg opacity-12 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1s' }}>
           🐾
         </div>
         
-        {/* Happy Puppies */}
-        <div className="absolute top-28 right-12 text-2xl opacity-20 animate-bounce" style={{ animationDuration: '3.5s', animationDelay: '1s' }}>
+        {/* Minimal Happy Puppies */}
+        <div className="absolute top-32 right-12 text-lg opacity-15 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1.5s' }}>
           🐕
-        </div>
-        <div className="absolute bottom-36 left-12 text-2xl opacity-18 animate-bounce" style={{ animationDuration: '3.2s', animationDelay: '2s' }}>
-          🐶
-        </div>
-        
-        {/* Toys & Fun Elements */}
-        <div className="absolute top-40 left-1/4 text-xl opacity-15 animate-bounce" style={{ animationDuration: '4s', animationDelay: '0.5s' }}>
-          🦴
-        </div>
-        <div className="absolute bottom-20 right-10 text-xl opacity-15 animate-bounce" style={{ animationDuration: '3.8s', animationDelay: '1.8s' }}>
-          🎾
-        </div>
-        <div className="absolute top-1/3 right-1/4 text-lg opacity-12 animate-bounce" style={{ animationDuration: '4.2s', animationDelay: '2.5s' }}>
-          🎈
-        </div>
-        <div className="absolute bottom-1/3 left-1/3 text-lg opacity-12 animate-bounce" style={{ animationDuration: '3.6s', animationDelay: '1.2s' }}>
-          ⭐
-        </div>
-        
-        {/* Sparkles */}
-        <div className="absolute top-16 left-1/2 text-sm opacity-20 animate-pulse" style={{ animationDuration: '2s', animationDelay: '0s' }}>
-          ✨
-        </div>
-        <div className="absolute bottom-40 right-1/3 text-sm opacity-18 animate-pulse" style={{ animationDuration: '2.3s', animationDelay: '1s' }}>
-          ✨
         </div>
       </div>
 
-      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md shadow-md flex justify-between z-[100] sticky top-0 border-b shrink-0 relative transition-all duration-500`}>
-        <div className="flex items-center gap-1.5 relative">
+      <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md shadow-sm flex justify-between z-[100] sticky top-0 border-b shrink-0 relative transition-all duration-500 py-2 px-2`}>
+        <div className="flex items-center gap-2 relative">
           <button
             onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
             className="flex items-center gap-1.5 hover:opacity-80 transition-all group"
           >
-            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-2 border-white shadow-sm cursor-pointer group-hover:scale-110 transition-transform relative overflow-hidden`}>
+            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border border-white shadow-sm cursor-pointer group-hover:scale-110 transition-transform relative overflow-hidden`}>
               <span className="relative z-10">{progress.playerName.charAt(0).toUpperCase()}</span>
               <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent"></div>
             </div>
             <div className="flex flex-col">
-              <span className={`text-[8px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text} flex items-center gap-0.5`}>
-                <span className="text-[10px]">🐾</span> Player
+              <span className={`text-[9px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text} flex items-center gap-0.5`}>
+                <span className="text-xs">🐾</span> Player
               </span>
               <span className={`text-xs font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
             </div>
@@ -232,24 +198,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
             onLogout={onLogout}
           />
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <a 
             href="https://raw.githubusercontent.com/mauryavishal93/FindMyPuppy/main/apk/release/findmypuppy.apk"
             target="_blank"
             rel="noopener noreferrer"
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${activeTheme.iconBg} hover:scale-110 active:scale-95 hover:rotate-12`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm ${activeTheme.iconBg} hover:scale-110 active:scale-95 hover:rotate-12`}
             title="Download Android APK"
           >
-            <i className={`fas fa-download text-xs ${activeTheme.text}`}></i>
+            <i className={`fas fa-download text-sm ${activeTheme.text}`}></i>
           </a>
 
           {/* Music Settings Dropdown */}
           <div className="relative">
             <button 
               onClick={() => setIsMusicDropdownOpen(!isMusicDropdownOpen)} 
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${activeTheme.iconBg} hover:scale-110 active:scale-95 relative z-30`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm ${activeTheme.iconBg} hover:scale-110 active:scale-95 relative z-30`}
             >
-              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-xs ${activeTheme.text}`}></i>
+              <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'} text-sm ${activeTheme.text}`}></i>
             </button>
             
             {/* Dropdown Menu */}
@@ -305,96 +271,89 @@ export const HomeView: React.FC<HomeViewProps> = ({
             )}
           </div>
 
-          <div className={`backdrop-blur-sm px-2 py-1 rounded-full font-bold flex items-center gap-1 border-2 border-white/80 shadow-sm ${activeTheme.cardBg} ${activeTheme.accent} hover:scale-105 transition-transform`}>
+          <div className={`backdrop-blur-sm px-2 py-1 rounded-full font-bold flex items-center gap-1 border border-white/80 shadow-sm ${activeTheme.cardBg} ${activeTheme.accent} hover:scale-105 transition-transform`}>
             <span className="text-sm">🏆</span>
             <span className="text-xs">{progress.totalScore}</span>
           </div>
         </div>
       </header>
       
-      <main className="mobile-main-content flex-1 px-3 py-2 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
-        <div className="w-full max-w-sm flex flex-col h-full">
-          {/* Welcome Card with Puppy Theme - Enhanced Kid-Friendly Design */}
-          <div className={`flex flex-col items-center text-center p-3 rounded-2xl backdrop-blur-md shadow-2xl border-2 relative overflow-hidden w-full ${activeTheme.cardBg} transform hover:scale-[1.02] transition-all duration-300 mb-2`}
+      <main className="mobile-main-content flex-1 px-2 py-2 overflow-y-auto overflow-x-hidden flex flex-col items-center z-10 w-full hide-scrollbar">
+        <div className="w-full max-w-sm flex flex-col gap-3 pb-4">
+          {/* Welcome Card with Logo - Compact Design */}
+          <div className={`flex flex-row items-center text-center p-2 rounded-xl backdrop-blur-md shadow-lg border-2 relative overflow-hidden w-full ${activeTheme.cardBg} transition-all duration-300 shrink-0`}
             style={{
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15), inset 0 2px 4px rgba(255,255,255,0.3)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1), inset 0 1px 2px rgba(255,255,255,0.2)',
             }}
           >
              {/* Animated Rainbow Border */}
              <div 
-               className="absolute top-0 left-0 w-full h-1.5 opacity-70 animate-pulse"
+               className="absolute top-0 left-0 w-full h-1 opacity-60 animate-pulse"
                style={{
                  background: 'linear-gradient(to right, #f472b6, #fbbf24, #34d399, #60a5fa, #a78bfa)',
                }}
              ></div>
              
-             {/* Decorative Elements - More Playful */}
-             <div className="absolute top-1 left-2 text-base opacity-25 rotate-12 animate-bounce" style={{ animationDuration: '2s' }}>🐾</div>
-             <div className="absolute top-1 right-2 text-base opacity-25 -rotate-12 animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>🐾</div>
-             <div className="absolute bottom-1 left-3 text-sm opacity-20 rotate-45">⭐</div>
-             <div className="absolute bottom-1 right-3 text-sm opacity-20 -rotate-45">✨</div>
-             
-             {/* Background Pattern */}
-             <div className="absolute inset-0 opacity-5">
-               <div className="absolute top-0 left-0 w-full h-full" style={{
-                 backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(255,192,203,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(255,255,0,0.3) 0%, transparent 50%)'
-               }}></div>
+             {/* Logo Section */}
+             <div className="flex-shrink-0 mr-2">
+               <GameLogo className="w-10 h-10 drop-shadow-lg" />
              </div>
              
-             <div className="relative z-10">
-               <GameLogo className="w-12 h-12 mb-2 drop-shadow-2xl transform hover:scale-110 hover:rotate-12 transition-all duration-500" />
-               <h2 className={`text-lg font-black tracking-tight ${activeTheme.text} mb-1 flex items-center justify-center gap-1.5`}>
-                 <span className="text-base animate-bounce" style={{ animationDuration: '2s' }}>🐕</span>
+             {/* Text Section */}
+             <div className="flex-1 relative z-10 text-left">
+               <h2 className={`text-sm font-black tracking-tight ${activeTheme.text} mb-0.5 flex items-center gap-1`}>
+                 <span className="text-xs">🐕</span>
                  <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 bg-clip-text text-transparent">
                    Find My Puppy
                  </span>
-                 <span className="text-base animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0.3s' }}>🐶</span>
                </h2>
-               <p className={`font-semibold text-[10px] ${activeTheme.subText} flex items-center justify-center gap-1 mt-0.5`}>
-                 <span className="text-xs animate-pulse">🔍</span>
-                 <span>Where are the puppies hiding?</span>
-                 <span className="text-xs animate-pulse" style={{ animationDelay: '0.5s' }}>🎯</span>
+               <p className={`font-semibold text-[9px] ${activeTheme.subText} flex items-center gap-0.5`}>
+                 <span className="text-[10px]">🔍</span>
+                 <span>Find hidden puppies!</span>
                </p>
              </div>
           </div>
           
-          {/* Fixed Daily Check-In Button - Rectangular 3D */}
+          {/* Daily Check-In Button */}
           {progress.playerName && (
-            <div className="mb-0.5">
+            <div className="w-full shrink-0">
               <DailyCheckInButton
-                state={state}
+                checkInData={checkInData}
                 loading={checkInLoading}
                 onClick={handleDailyCheckInClick}
                 activeTheme={activeTheme}
-                hintStreak={hintStreak}
               />
             </div>
           )}
 
-          {/* Difficulty Carousel - Single Card with Navigation */}
-          <div className="flex flex-col items-center justify-center mb-0.5 w-full">
-            <div 
-              className="relative w-full"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEnd}
-            >
-              {/* Left Arrow - Medium transparency, more visible on hover */}
+          {/* Difficulty Carousel - Single Card with Navigation - Compact */}
+          <div className="flex flex-col items-center justify-center w-full shrink-0 py-1">
+            <div className="relative w-full overflow-visible">
+              {/* Left Arrow - Compact */}
               <button
                 onClick={handlePrevDifficulty}
-                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 w-12 h-12 rounded-full ${activeTheme.cardBg} ${activeTheme.text} shadow-2xl border-2 border-white/60 flex items-center justify-center hover:scale-125 active:scale-95 transition-all backdrop-blur-md opacity-40 hover:opacity-100 active:opacity-100 focus:opacity-100 group`}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-20 w-7 h-7 rounded-full ${activeTheme.cardBg} ${activeTheme.text} shadow-lg border border-white/60 flex items-center justify-center hover:scale-110 active:scale-95 transition-all backdrop-blur-md opacity-40 hover:opacity-100 active:opacity-100 focus:opacity-100`}
                 style={{
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.4)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.3)',
                 }}
                 aria-label="Previous difficulty"
               >
-                <i className="fas fa-chevron-left text-base"></i>
-                <span className="absolute text-xs opacity-50">👈</span>
+                <i className="fas fa-chevron-left text-xs"></i>
               </button>
 
-              {/* Difficulty Card Carousel */}
-              <div className="relative overflow-hidden w-full">
-                <div className="relative w-full" style={{ aspectRatio: '1' }}>
+              {/* Difficulty Card Carousel - Compact */}
+              <div className="relative overflow-visible w-full">
+                <div 
+                  className="relative w-full" 
+                  style={{ 
+                    aspectRatio: '2', 
+                    minHeight: '100px',
+                    touchAction: 'pan-x',
+                  }}
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                >
                   {difficulties.map((difficulty, index) => {
                     const getDifficultyConfig = () => {
                       switch (difficulty) {
@@ -420,17 +379,82 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     };
                     const config = getDifficultyConfig();
                     const isActive = index === currentDifficultyIndex;
+                    const wasPrevActive = prevIndex !== null && index === prevIndex;
                     
+                    // Calculate completed levels for this difficulty
+                    // The clearedLevels keys use format: "Easy_1", "Medium_5", "Hard_10", etc.
+                    // difficulty is already the enum value: "Easy", "Medium", or "Hard"
+                    const getCompletedLevels = () => {
+                      // First, try to use clearedLevels object
+                      if (progress.clearedLevels && typeof progress.clearedLevels === 'object') {
+                        // Use the difficulty enum value directly (e.g., "Easy", "Medium", "Hard")
+                        const difficultyPrefix = `${difficulty}_`;
+                        const matchingKeys = Object.keys(progress.clearedLevels).filter(
+                          key => {
+                            const matches = key.startsWith(difficultyPrefix) && progress.clearedLevels[key] === true;
+                            return matches;
+                          }
+                        );
+                        return matchingKeys.length;
+                      }
+                      
+                      // Fallback: return 0 if clearedLevels is not available
+                      return 0;
+                    };
+                    const completedLevels = getCompletedLevels();
+                    const totalLevels = 100;
+                    
+                    // Unified animation logic - same for swipe and arrow buttons
+                    let animationClass = '';
+                    let transformStyle: React.CSSProperties = {};
+                    
+                    if (isActive) {
+                      // Active card - visible and centered
+                      animationClass = 'opacity-100 z-10';
+                      // Set initial transform for smooth slide-in animation
+                      if (swipeDirection === 'right') {
+                        // Card sliding in from right (swipe left or click right arrow)
+                        transformStyle = { transform: 'translateX(100%)' };
+                      } else if (swipeDirection === 'left') {
+                        // Card sliding in from left (swipe right or click left arrow)
+                        transformStyle = { transform: 'translateX(-100%)' };
+                      }
+                    } else if (wasPrevActive && swipeDirection === 'right') {
+                      // Previous card sliding out to left (swipe left or click right arrow)
+                      animationClass = 'opacity-0 -translate-x-full z-0';
+                    } else if (wasPrevActive && swipeDirection === 'left') {
+                      // Previous card sliding out to right (swipe right or click left arrow)
+                      animationClass = 'opacity-0 translate-x-full z-0';
+                    } else if (swipeDirection === 'right') {
+                      // Non-active cards hidden on left
+                      animationClass = 'opacity-0 -translate-x-full z-0';
+                    } else if (swipeDirection === 'left') {
+                      // Non-active cards hidden on right
+                      animationClass = 'opacity-0 translate-x-full z-0';
+                    } else {
+                      // Default: initial load - no animation
+                      animationClass = index < currentDifficultyIndex
+                        ? 'opacity-0 -translate-x-full z-0'
+                        : 'opacity-0 translate-x-full z-0';
+                    }
+
                     return (
                       <div
-                        key={difficulty}
-                        className={`absolute inset-0 transition-all duration-300 ease-in-out ${
-                          isActive 
-                            ? 'opacity-100 scale-100 z-10' 
-                            : index < currentDifficultyIndex
-                            ? 'opacity-0 scale-95 -translate-x-full z-0'
-                            : 'opacity-0 scale-95 translate-x-full z-0'
-                        }`}
+                        key={`${difficulty}-${currentDifficultyIndex}`}
+                        className={`absolute inset-0 overflow-visible ${animationClass}`}
+                        style={{
+                          ...transformStyle,
+                          transition: swipeDirection ? 'transform 0.3s ease-out, opacity 0.3s ease-out' : 'none',
+                        }}
+                        ref={(el) => {
+                          // Trigger animation to final position after initial render
+                          // Same logic for both swipe and arrow button clicks
+                          if (el && isActive && swipeDirection) {
+                            requestAnimationFrame(() => {
+                              el.style.transform = '';
+                            });
+                          }
+                        }}
                       >
                         <DifficultyCard 
                           difficulty={difficulty} 
@@ -438,6 +462,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
                           color={config.color}
                           description={config.description} 
                           onClick={handleDifficultySelect}
+                          completedLevels={completedLevels}
+                          totalLevels={totalLevels}
                         />
                       </div>
                     );
@@ -445,33 +471,32 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
               </div>
 
-              {/* Right Arrow - Medium transparency, more visible on hover */}
+              {/* Right Arrow - Compact */}
               <button
                 onClick={handleNextDifficulty}
-                className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 w-12 h-12 rounded-full ${activeTheme.cardBg} ${activeTheme.text} shadow-2xl border-2 border-white/60 flex items-center justify-center hover:scale-125 active:scale-95 transition-all backdrop-blur-md opacity-40 hover:opacity-100 active:opacity-100 focus:opacity-100 group`}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-20 w-7 h-7 rounded-full ${activeTheme.cardBg} ${activeTheme.text} shadow-lg border border-white/60 flex items-center justify-center hover:scale-110 active:scale-95 transition-all backdrop-blur-md opacity-40 hover:opacity-100 active:opacity-100 focus:opacity-100`}
                 style={{
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.4)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.3)',
                 }}
                 aria-label="Next difficulty"
               >
-                <i className="fas fa-chevron-right text-base"></i>
-                <span className="absolute text-xs opacity-50">👉</span>
+                <i className="fas fa-chevron-right text-xs"></i>
               </button>
 
-              {/* Dots Indicator - Enhanced with Puppy Icons */}
-              <div className="flex justify-center gap-2 mt-1.5">
+              {/* Dots Indicator - Compact */}
+              <div className="flex justify-center gap-1.5 mt-2">
                 {difficulties.map((difficulty, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentDifficultyIndex(index)}
-                    className={`transition-all transform hover:scale-125 ${
+                    className={`transition-all transform hover:scale-110 ${
                       index === currentDifficultyIndex 
-                        ? 'scale-125' 
+                        ? 'scale-110' 
                         : 'opacity-50 hover:opacity-75'
                     }`}
                     aria-label={`Go to ${difficulty}`}
                   >
-                    <span className="text-2xl">
+                    <span className="text-lg">
                       {index === currentDifficultyIndex ? '🐕' : '🐾'}
                     </span>
                   </button>
@@ -480,64 +505,48 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
             
-          {/* Fixed Buy Hints Button - Enhanced Kid-Friendly 3D */}
+          {/* Buy Hints Button - Compact */}
           <div 
             onClick={onOpenHintShop}
-            className="text-white p-3 rounded-2xl shadow-2xl cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between min-h-[60px] w-full hover:shadow-3xl hover:-translate-y-1 border-2 border-yellow-300/90 hover:border-yellow-200 mb-3"
+            className="text-white p-2 rounded-xl shadow-lg cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between w-full hover:shadow-xl hover:-translate-y-0.5 border-2 border-yellow-300/90 hover:border-yellow-200 shrink-0"
             style={{
               background: 'linear-gradient(to right, #facc15, #fb923c, #f472b6, #fb923c)',
-              boxShadow: '0 10px 20px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.4), inset 0 -3px 0 rgba(0,0,0,0.15)',
-              transform: 'perspective(1000px) rotateX(2deg)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.3)',
             }}
           >
             {/* 3D Effect Layers */}
-            <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent rounded-xl"></div>
-            <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-black/10 rounded-b-xl"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-white/15 to-transparent rounded-xl"></div>
             
-            {/* Enhanced Animated Background Elements */}
-            <div className="absolute -left-3 -bottom-3 opacity-25 text-5xl group-hover:scale-125 group-hover:rotate-12 transition-all duration-500 animate-bounce" style={{ animationDuration: '3s' }}>
+            {/* Animated Background Elements - Reduced */}
+            <div className="absolute -left-2 -bottom-2 opacity-20 text-3xl group-hover:scale-110 transition-transform">
               💡
             </div>
-            <div className="absolute top-1 right-1 text-3xl opacity-20 group-hover:scale-125 transition-transform animate-bounce" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }}>
-              🐕
-            </div>
-            <div className="absolute top-1/2 left-1/4 text-2xl opacity-15 group-hover:scale-110 transition-transform animate-pulse">
-              ✨
-            </div>
-            
-            {/* Enhanced Shimmer Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            
-            {/* Sparkle Particles */}
-            <div className="absolute top-2 left-1/3 text-xs opacity-30 animate-pulse">⭐</div>
-            <div className="absolute bottom-2 right-1/4 text-xs opacity-30 animate-pulse" style={{ animationDelay: '0.5s' }}>✨</div>
             
             <div className="z-10 flex flex-col pl-2 flex-1">
-              <h3 className="text-lg font-black leading-none drop-shadow-2xl flex items-center gap-2">
-                <span className="text-xl animate-bounce" style={{ animationDuration: '2s' }}>🛒</span>
+              <h3 className="text-sm font-black leading-tight drop-shadow-lg flex items-center gap-1">
+                <span className="text-base">🛒</span>
                 <span className="bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent">
                   Buy Hints
                 </span>
               </h3>
-              <p className="text-white/95 text-xs font-bold mt-1 flex items-center gap-1.5">
-                <span className="text-sm animate-pulse">💎</span>
+              <p className="text-white/95 text-[10px] font-bold mt-0.5 flex items-center gap-1">
+                <span className="text-xs">💎</span>
                 <span>Total: {progress.premiumHints || 0}</span>
-                <span className="text-xs opacity-80">✨</span>
               </p>
             </div>
 
             <div className="z-10 flex flex-col items-end pr-2">
-              <div className="flex items-center gap-1 bg-white/30 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-lg border-2 border-white/40">
+              <div className="flex items-center gap-1 bg-white/30 backdrop-blur-md px-2 py-0.5 rounded-lg shadow-md border border-white/40">
                 {hasOffer ? (
                   <>
-                    <span className="text-[10px] line-through opacity-70 font-medium">₹{marketPrice}</span>
-                    <span className="font-black text-sm">₹{offerPrice}</span>
+                    <span className="text-[9px] line-through opacity-70 font-medium">₹{marketPrice}</span>
+                    <span className="font-black text-xs">₹{offerPrice}</span>
                   </>
                 ) : (
-                  <span className="font-black text-sm">₹{offerPrice}</span>
+                  <span className="font-black text-xs">₹{offerPrice}</span>
                 )}
               </div>
-              <span className="text-[9px] mt-1 opacity-95 uppercase font-bold tracking-wider drop-shadow-sm flex items-center gap-0.5">
+              <span className="text-[8px] mt-0.5 opacity-95 uppercase font-bold tracking-wider flex items-center gap-0.5">
                 <span>📦</span>
                 <span>{hintCount} Pack</span>
               </span>
@@ -547,24 +556,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </main>
 
-      {/* Daily Check-In Game Modal */}
-      {/* Keep modal open even if state changes - only close when game finishes or user clicks close */}
-      {showDailyGame && (
-        <DailyCheckInGame
-          missionDay={checkInData?.currentMissionDay || 1}
-          onComplete={handleDailyCheckInComplete}
-          onGameStarted={handleDailyCheckInGameStarted}
-          onGameFinished={handleDailyCheckInGameFinished}
-          onClose={() => {
-            setShowDailyGame(false);
-            // Reload status after closing to update button state
-            setTimeout(() => {
-              loadStatus();
-            }, 300);
-          }}
-          activeTheme={activeTheme}
-        />
-      )}
+      {/* Daily Puzzle Game Modal */}
+        {showPuppyFeeding && checkInData && (
+          <PuppyFeeding
+            onFeed={handleFeedPuppy}
+            onClose={() => setShowPuppyFeeding(false)}
+            activeTheme={activeTheme}
+            puppyAge={checkInData.puppyAge}
+            puppySize={checkInData.puppySize}
+            streak={checkInData.checkInStreak}
+          />
+        )}
     </div>
   );
 };
