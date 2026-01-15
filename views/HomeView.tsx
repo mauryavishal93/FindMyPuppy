@@ -242,7 +242,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     onClick={() => {
                       onToggleBackgroundMusic();
                     }}
-                    className={`w-full px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors border-b ${activeTheme.border || 'border-white/20'}`}
+                    className={`w-full px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors border-b border-white/20`}
                   >
                     <div className="flex items-center gap-3">
                       <i className={`fas fa-volume-up text-base ${activeTheme.text}`}></i>

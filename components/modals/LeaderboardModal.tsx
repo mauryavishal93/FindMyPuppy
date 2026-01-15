@@ -77,7 +77,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div 
-        className={`${activeTheme.cardBg} ${activeTheme.text} rounded-2xl p-6 w-full max-w-md shadow-2xl relative border-2 ${activeTheme.border || 'border-white/20'}`}
+        className={`${activeTheme.cardBg} ${activeTheme.text} rounded-2xl p-6 w-full max-w-md shadow-2xl relative border-2 border-white/20`}
         style={{
           boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1)',
         }}
