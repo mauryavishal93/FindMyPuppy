@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Difficulty, ThemeType } from '../types';
 import { renderThemeBackground } from '../utils/themeBackground';
+import { THEME_CONFIGS } from '../constants/themeConfig';
 
 interface LevelSelectorProps {
   difficulty: Difficulty;
@@ -10,6 +11,10 @@ interface LevelSelectorProps {
   onBack: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
+  backgroundMusicEnabled: boolean;
+  soundEffectsEnabled: boolean;
+  onToggleBackgroundMusic: () => void;
+  onToggleSoundEffects: () => void;
   currentTheme: ThemeType;
 }
 
@@ -20,8 +25,14 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
   onBack,
   isMuted,
   onToggleMute,
+  backgroundMusicEnabled,
+  soundEffectsEnabled,
+  onToggleBackgroundMusic,
+  onToggleSoundEffects,
   currentTheme
 }) => {
+  const [isMusicDropdownOpen, setIsMusicDropdownOpen] = useState(false);
+  const activeTheme = THEME_CONFIGS[currentTheme] || THEME_CONFIGS.night;
   // Generate 100 levels
   const levels = Array.from({ length: 100 }, (_, i) => i + 1);
 
@@ -113,17 +124,72 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
          {renderThemeBackground(currentTheme)}
       </div>
 
-      <div className={`mobile-header border-b flex justify-between backdrop-blur-md shadow-sm z-10 sticky top-0 ${headerBgClass} transition-all duration-500`}>
+      <div className={`mobile-header border-b flex justify-between backdrop-blur-md shadow-sm z-40 sticky top-0 ${headerBgClass} transition-all duration-500`}>
         <button onClick={onBack} className={`w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition shadow-sm border ${btnBgClass}`}>
           <i className="fas fa-arrow-left"></i>
         </button>
         <h2 className={`text-xl font-black tracking-tight ${headerTextClass}`}>{difficulty} Levels</h2>
-        <button 
-          onClick={onToggleMute}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm border ${btnBgClass}`}
-        >
-          <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
-        </button>
+        {/* Music Settings Dropdown */}
+        <div className="relative z-50">
+          <button 
+            onClick={() => setIsMusicDropdownOpen(!isMusicDropdownOpen)} 
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-sm border ${btnBgClass} relative z-50`}
+          >
+            <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-volume-up'}`}></i>
+          </button>
+          
+          {/* Dropdown Menu */}
+          {isMusicDropdownOpen && (
+            <>
+              {/* Backdrop to close dropdown on outside click */}
+              <div 
+                className="fixed inset-0 z-[45]" 
+                onClick={() => setIsMusicDropdownOpen(false)}
+              ></div>
+              
+              {/* Dropdown Content */}
+              <div 
+                className={`absolute right-0 top-10 mt-1 w-48 rounded-xl shadow-2xl border-2 border-white/20 ${activeTheme.cardBg} ${activeTheme.text} z-[50] overflow-hidden`}
+                style={{
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.1)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Background Music Option */}
+                <button
+                  onClick={() => {
+                    onToggleBackgroundMusic();
+                  }}
+                  className={`w-full px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors border-b border-white/20`}
+                >
+                  <div className="flex items-center gap-3">
+                    <i className={`fas fa-volume-up text-base ${activeTheme.text}`}></i>
+                    <span className="text-sm font-semibold">Background Music</span>
+                  </div>
+                  <div className={`w-10 h-6 rounded-full transition-all ${backgroundMusicEnabled ? 'bg-green-500' : 'bg-gray-400'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${backgroundMusicEnabled ? 'translate-x-4' : 'translate-x-0.5'}`}></div>
+                  </div>
+                </button>
+                
+                {/* Sound Effects Option */}
+                <button
+                  onClick={() => {
+                    onToggleSoundEffects();
+                  }}
+                  className={`w-full px-4 py-3 flex items-center justify-between hover:bg-white/10 transition-colors`}
+                >
+                  <div className="flex items-center gap-3">
+                    <i className={`fas fa-music text-base ${activeTheme.text}`}></i>
+                    <span className="text-sm font-semibold">Sound Effects</span>
+                  </div>
+                  <div className={`w-10 h-6 rounded-full transition-all ${soundEffectsEnabled ? 'bg-green-500' : 'bg-gray-400'}`}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${soundEffectsEnabled ? 'translate-x-4' : 'translate-x-0.5'}`}></div>
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-transparent z-10 relative hide-scrollbar">

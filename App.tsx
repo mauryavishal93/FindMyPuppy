@@ -717,6 +717,10 @@ export default function App() {
             onBack={handleBack}
             isMuted={isMuted}
             onToggleMute={toggleMute}
+            backgroundMusicEnabled={backgroundMusicEnabled}
+            soundEffectsEnabled={soundEffectsEnabled}
+            onToggleBackgroundMusic={toggleBackgroundMusic}
+            onToggleSoundEffects={toggleSoundEffects}
             currentTheme={progress.selectedTheme || 'night'}
           />
         )}
@@ -737,13 +741,18 @@ export default function App() {
             hasHints={hasHints}
             hasPremiumHints={hasPremiumHints}
             isMuted={isMuted}
+            backgroundMusicEnabled={backgroundMusicEnabled}
+            soundEffectsEnabled={soundEffectsEnabled}
             onPuppyFound={handlePuppyFound}
             onImageLoaded={handleImageLoaded}
             onUseHint={handleUseHint}
             onToggleMute={toggleMute}
+            onToggleBackgroundMusic={toggleBackgroundMusic}
+            onToggleSoundEffects={toggleSoundEffects}
             onBack={handleBack}
             onWrongClick={handleWrongClick}
             wrongAttempts={wrongAttempts}
+            currentTheme={progress.selectedTheme || 'night'}
           />
         )}
 
