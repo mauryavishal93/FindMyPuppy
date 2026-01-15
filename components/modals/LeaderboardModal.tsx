@@ -22,6 +22,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   currentUsername
 }) => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [currentUser, setCurrentUser] = useState<LeaderboardEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,15 +30,23 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
     if (isOpen) {
       loadLeaderboard();
     }
-  }, [isOpen]);
+  }, [isOpen, currentUsername]);
 
   const loadLeaderboard = async () => {
     setLoading(true);
     setError(null);
+    setCurrentUser(null); // Reset current user
     try {
-      const response = await db.getLeaderboard();
+      const response = await db.getLeaderboard(currentUsername);
       if (response.success && response.leaderboard) {
         setLeaderboard(response.leaderboard);
+        // Set current user if they're not in top 10
+        // response.currentUser will be set only if user exists and is NOT in top 10
+        if (response.currentUser && currentUsername) {
+          setCurrentUser(response.currentUser);
+        } else {
+          setCurrentUser(null);
+        }
       } else {
         setError(response.message || 'Failed to load leaderboard');
       }
@@ -68,7 +77,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
       <div 
-        className={`${activeTheme.cardBg} ${activeTheme.text} rounded-2xl p-6 w-full max-w-md shadow-2xl relative border-2 ${activeTheme.border || 'border-white/20'}`}
+        className={`${activeTheme.cardBg} ${activeTheme.text} rounded-2xl p-6 w-full max-w-md shadow-2xl relative border-2 border-white/20`}
         style={{
           boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.1)',
         }}
@@ -114,6 +123,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
           </div>
         ) : (
           <div className="space-y-2 max-h-96 overflow-y-auto">
+            {/* Top 10 Leaderboard */}
             {leaderboard.map((entry) => {
               const isCurrentUser = entry.username === currentUsername;
               return (
@@ -160,6 +170,43 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                 </div>
               );
             })}
+
+            {/* Divider if current user is shown at bottom */}
+            {currentUser && (
+              <>
+                <div className="flex items-center gap-2 my-3">
+                  <div className="flex-1 h-px bg-white/20"></div>
+                  <div className={`text-xs ${activeTheme.subText} px-2`}>Your Rank</div>
+                  <div className="flex-1 h-px bg-white/20"></div>
+                </div>
+
+                {/* Current User (Not in Top 10) */}
+                <div
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all bg-gradient-to-r from-purple-500 to-pink-500 border-2 border-yellow-300 shadow-lg`}
+                  style={{
+                    boxShadow: '0 4px 12px rgba(255,215,0,0.3)',
+                  }}
+                >
+                  {/* Rank */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-black text-sm bg-white/30 backdrop-blur-md">
+                    #{currentUser.rank}
+                  </div>
+
+                  {/* Username */}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm truncate text-white">
+                      {currentUser.username}
+                      <span className="ml-2 text-xs">(You)</span>
+                    </div>
+                  </div>
+
+                  {/* Points */}
+                  <div className="flex-shrink-0 px-3 py-1 rounded-lg font-black text-sm bg-white/30 text-white">
+                    {currentUser.points.toLocaleString()} pts
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
 
