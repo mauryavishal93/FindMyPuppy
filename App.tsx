@@ -285,15 +285,27 @@ export default function App() {
     fetchPriceOffer();
   }, [view, fetchPriceOffer]);
 
-  // Check for reset password token in URL
+  // Check for reset password token in URL on app load (e.g. user opened link from email)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
-    if (token && view === 'LOGIN') {
+    if (token) {
       setResetPasswordToken(token);
       setShowResetPasswordModal(true);
-      // Clean URL
-      window.history.replaceState({}, '', window.location.pathname);
+      setView('LOGIN');
+      window.history.replaceState({}, '', window.location.pathname || '/');
+    }
+  }, []);
+
+  // Also handle token when already on LOGIN view (e.g. in-app navigation with ?token=)
+  useEffect(() => {
+    if (view !== 'LOGIN') return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (token) {
+      setResetPasswordToken(token);
+      setShowResetPasswordModal(true);
+      window.history.replaceState({}, '', window.location.pathname || '/');
     }
   }, [view]);
 

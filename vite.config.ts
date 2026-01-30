@@ -86,9 +86,9 @@ export default defineConfig(({ mode }) => {
       host: true,
       allowedHosts: true,
       proxy: {
-        // Forward all requests starting with /api to the Express server
+        // Forward all requests starting with /api to the Express server (port can change if 5774 is in use)
         '/api': {
-          target: 'http://localhost:5774',
+          target: 'http://localhost:' + (process.env.VITE_API_PORT || 5774),
           changeOrigin: true,
           secure: false,
         },

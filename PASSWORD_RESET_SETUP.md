@@ -1,5 +1,30 @@
 # Password Reset Feature Setup Guide
 
+## Fix "535 Username and Password not accepted" (EAUTH)
+
+If you see **Invalid login: 535-5.7.8 Username and Password not accepted** or **BadCredentials**:
+
+1. **Use a Gmail App Password, not your normal Gmail password**
+   - Go to [Google App Passwords](https://myaccount.google.com/apppasswords)
+   - You must have **2-Step Verification** turned on first (Google Account → Security)
+   - Create an App Password for "Mail" (or "Other" → "Find My Puppy")
+   - Copy the **16-character** password (e.g. `abcd efgh ijkl mnop`). You can paste it in `.env` with or without spaces; the app will strip spaces.
+
+2. **In your `.env` file** (no quotes needed):
+   ```env
+   SMTP_USER=findmypuppys@gmail.com
+   SMTP_PASS=your16charapppassword
+   ```
+   Or with spaces (both work): `SMTP_PASS=abcd efgh ijkl mnop`
+
+3. **Restart the server** after changing `.env` so the new credentials are loaded.
+
+4. If it still fails, try port 465 (SSL):
+   ```env
+   SMTP_PORT=465
+   SMTP_SECURE=true
+   ```
+
 ## Overview
 The Forgot Password feature allows users to reset their password via email. When a user requests a password reset, they receive an email with a secure link to reset their password.
 

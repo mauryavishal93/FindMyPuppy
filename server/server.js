@@ -443,13 +443,28 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
+// Normalize env value: trim, remove surrounding quotes, remove internal spaces (Gmail App Password is 16 chars)
+function normalizeEnvValue(val) {
+  if (val == null || typeof val !== 'string') return '';
+  let s = val.trim();
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim();
+  }
+  return s;
+}
+
+// Gmail App Password is 16 chars; Google shows it as "xxxx xxxx xxxx xxxx" - strip spaces for SMTP
+function normalizeAppPassword(val) {
+  const s = normalizeEnvValue(val);
+  return s.replace(/\s+/g, '');
+}
+
 // Email Configuration for Password Reset (moved up for better organization)
 const createTransporter = () => {
   // Use environment variables for email configuration
-  // For Gmail: Use App Password (not regular password)
-  // Important: Trim whitespace from credentials as they often have trailing spaces
-  const smtpUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
-  const smtpPass = (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim();
+  // For Gmail: Use App Password (not regular password) - see https://myaccount.google.com/apppasswords
+  const smtpUser = normalizeEnvValue(process.env.SMTP_USER || process.env.EMAIL_USER || '');
+  const smtpPass = normalizeAppPassword(process.env.SMTP_PASS || process.env.EMAIL_PASS || '');
   
   // Get SMTP settings
   // For production/Render: Try port 465 with SSL first (more reliable than 587)
@@ -477,12 +492,9 @@ const createTransporter = () => {
         user: smtpUser,
         pass: smtpPass
       },
-      // Gmail App Passwords: Standard configuration
+      // Gmail App Passwords: Standard configuration (use Node default TLS, avoid deprecated SSLv3)
       tls: {
-        rejectUnauthorized: false, // Allow self-signed certificates (useful for development)
-        // Additional TLS options for production
-        ciphers: 'SSLv3',
-        minVersion: 'TLSv1'
+        rejectUnauthorized: false // Allow self-signed certs in development
       },
       // Connection timeout settings for Render/production environments
       // Longer timeouts for production to handle Gmail SMTP slowness on cloud platforms
@@ -527,50 +539,30 @@ const createTransporter = () => {
 
     const transporter = nodemailer.createTransport(emailConfig);
     
-    // Skip verification if SKIP_EMAIL_VERIFY is set (useful for production when Gmail blocks connections)
-    const skipVerification = process.env.SKIP_EMAIL_VERIFY === 'true' || 
+    // Skip verification in development or when requested (avoids 535 on startup; send is still attempted)
+    const isDev = process.env.NODE_ENV !== 'production' && process.env.RENDER !== 'true';
+    const skipVerification = process.env.SKIP_EMAIL_VERIFY === 'true' ||
+                              isDev ||
                               (process.env.RENDER === 'true' && process.env.SKIP_EMAIL_VERIFY !== 'false');
     
     if (skipVerification) {
-      console.log('⚠️  Email verification skipped (SKIP_EMAIL_VERIFY=true or Render detected)');
-      console.log('   Email transporter created. Verification will happen on first email send.');
-      console.log('   This is recommended when Gmail SMTP blocks connections from cloud platforms.');
+      console.log('📧 Email transporter created (verification skipped).');
+      if (isDev) {
+        console.log('   For password-reset emails: use Gmail App Password in .env — see PASSWORD_RESET_SETUP.md');
+      }
     } else {
       // Verify transporter connection on startup (non-blocking with timeout)
-      // Note: Verification failure won't prevent emails from being sent
       const verifyTimeout = setTimeout(() => {
-        console.warn('⏱️  Email verification is taking too long, skipping...');
-        console.warn('   Email transporter created. Verification will happen on first email send.');
-        console.warn('   If this happens frequently, set SKIP_EMAIL_VERIFY=true in environment variables.');
-      }, 10000); // 10 second timeout for verification
+        console.warn('⏱️  Email verification timeout; transporter ready for first send.');
+      }, 10000);
       
       transporter.verify((error, success) => {
         clearTimeout(verifyTimeout);
         if (error) {
-          console.error('❌ Email service verification failed:');
-          console.error(`   Error: ${error.message}`);
-          if (error.responseCode === 535 || error.responseCode === '535') {
-            console.error('   🔐 Authentication Error:');
-            console.error('      - Make sure you are using an App Password (not your regular Gmail password)');
-            console.error('      - Ensure 2-Factor Authentication is enabled on your Google account');
-            console.error('      - Generate a new App Password at: https://myaccount.google.com/apppasswords');
-            console.error('      - Check that SMTP_USER and SMTP_PASS environment variables are set correctly');
-            console.error('      - Verify the password has no extra spaces (it should be trimmed automatically)');
-          } else if (error.message && error.message.includes('timeout')) {
-            console.error('   ⏱️  Connection Timeout:');
-            console.error('      - Gmail SMTP may be blocking connections from this IP address');
-            console.error('      - This is common on cloud platforms like Render');
-            console.error('      - Set SKIP_EMAIL_VERIFY=true to skip verification (emails will still work)');
-          } else {
-            console.error('   Please check your SMTP credentials in environment variables.');
+          console.warn('⚠️  Email verification failed (transporter still used for sends):', error.message?.split('\n')[0] || error.message);
+          if (error.responseCode === 535) {
+            console.warn('   Use Gmail App Password in .env — see PASSWORD_RESET_SETUP.md');
           }
-          if (error.command) {
-            console.error(`   Command: ${error.command}`);
-          }
-          if (error.response) {
-            console.error(`   Response: ${error.response}`);
-          }
-          console.warn('⚠️  Email transporter created but verification failed. Emails may still work, but please verify your credentials.');
         } else {
           console.log('✅ Email service verified and ready');
           console.log(`   SMTP Host: ${smtpHost}:${smtpPort}`);
@@ -732,7 +724,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       return res.status(500).json(errorResponse);
     }
 
-    const fromEmail = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
+    const fromEmail = normalizeEnvValue(process.env.SMTP_USER || process.env.EMAIL_USER || '');
     
     // Validate email configuration before sending
     if (!fromEmail) {
@@ -903,9 +895,7 @@ Find My Puppy | Where Adventure Meets Fun 🎮
         `
       };
 
-      // Send email asynchronously (non-blocking) to prevent request timeout
-      // This allows password reset to work even if email service is unavailable
-      // IMPORTANT: Email is sent in background - response is sent immediately to user
+      // Send email and await so we only return success when the user's inbox receives the link
       const sendEmailAsync = async () => {
         const isProduction = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
         // Use longer timeout for production to handle Gmail SMTP slowness on cloud platforms
@@ -930,7 +920,7 @@ Find My Puppy | Where Adventure Meets Fun 🎮
                     secure: true, // Required for port 465
                     auth: {
                       user: fromEmail,
-                      pass: (process.env.SMTP_PASS || process.env.EMAIL_PASS || '').trim()
+                      pass: normalizeAppPassword(process.env.SMTP_PASS || process.env.EMAIL_PASS || '')
                     },
                     tls: {
                       rejectUnauthorized: false
@@ -1077,28 +1067,19 @@ Find My Puppy | Where Adventure Meets Fun 🎮
         console.error(`🔗 [FORGOT-PASSWORD] IMPORTANT: Reset URL (use this if email fails):`);
         console.error(`   ${resetUrl}`);
         console.error('❌ ===========================================\n');
-        
-        // Don't throw - just log the error since email is sent asynchronously
-        // The reset token is already saved, so password reset will still work
-        console.error('   ⚠️  Email failed but reset token is valid. User can still reset password using the link above.');
+        throw emailError;
         }
       };
 
-      // Start email sending asynchronously (don't await - fire and forget)
-      // This prevents blocking the response even if email service is slow/unavailable
-      sendEmailAsync().catch(err => {
-        console.error('[FORGOT-PASSWORD] Unhandled error in async email send:', err);
-      });
+      // Await email send so we only return success when the registered email receives the link
+      await sendEmailAsync();
 
-      // Always return success to user (security best practice - don't reveal if email was sent)
-      // The reset token is saved in the database, so password reset will work
-      // If email fails, the reset URL is logged in server logs for manual retrieval
-      console.log(`✅ [FORGOT-PASSWORD] Password reset token generated and saved for ${user.email}`);
-      console.log(`🔗 [FORGOT-PASSWORD] Reset URL (also in logs): ${resetUrl}`);
+      console.log(`✅ [FORGOT-PASSWORD] Password reset email sent to ${user.email}`);
+      console.log(`🔗 [FORGOT-PASSWORD] Reset URL: ${resetUrl}`);
       
       res.status(200).json({ 
         success: true, 
-        message: "If an account with that email exists, a password reset link has been sent." 
+        message: "A password reset link has been sent to your email address. Please check your inbox." 
       });
   } catch (error) {
     console.error('\n❌ ========== FORGOT PASSWORD ENDPOINT ERROR ==========');
@@ -1125,10 +1106,17 @@ Find My Puppy | Where Adventure Meets Fun 🎮
     
     console.error('❌ ===================================================\n');
     
-    // Return detailed error in development, generic in production
+    // User-friendly message when email send failed so they know to try again or check config
+    const isEmailSendError = error.code === 'EAUTH' || error.code === 'ETIMEDOUT' || 
+      error.code === 'ECONNECTION' || error.code === 'ESOCKET' ||
+      (error.message && (error.message.includes('Email') || error.message.includes('timeout') || error.message.includes('SMTP')));
+    const userMessage = isEmailSendError
+      ? "We couldn't send the reset email. Please try again in a few minutes or contact support."
+      : "Server error processing password reset request.";
+    
     res.status(500).json({ 
       success: false, 
-      message: "Server error processing password reset request.",
+      message: userMessage,
       ...(process.env.NODE_ENV !== 'production' && {
         error: error.message,
         errorType: error.constructor.name
@@ -1260,12 +1248,28 @@ app.post('/api/auth/google/signin', async (req, res) => {
     let user = await User.findOne({ googleId });
 
     if (!user) {
-      // User doesn't exist - check if email exists (might be a different auth method)
+      // User doesn't exist by googleId - check if email exists (e.g. signed up with email/password)
       const existingUser = await User.findOne({ email });
       if (existingUser) {
-        return res.status(409).json({ 
-          success: false, 
-          message: "An account with this email already exists. Please use the regular login." 
+        // Link Google to existing account: same user can sign in with password or Google
+        existingUser.googleId = googleId;
+        existingUser.lastLogin = new Date();
+        await existingUser.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "Account linked! You can now sign in with Google or password.",
+          user: {
+            username: existingUser.username,
+            email: existingUser.email,
+            hints: existingUser.hints || 0,
+            points: existingUser.points || 0,
+            premium: existingUser.premium || false,
+            levelPassedEasy: existingUser.levelPassedEasy || 0,
+            levelPassedMedium: existingUser.levelPassedMedium || 0,
+            levelPassedHard: existingUser.levelPassedHard || 0,
+            referredBy: existingUser.referredBy || ""
+          }
         });
       }
 
@@ -2322,8 +2326,11 @@ app.get('/privacy-policy.html', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend Server running on http://localhost:${PORT} (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'})`);
+// Try to listen on PORT; if EADDRINUSE, try next port (5775, 5776, ...) until one is free
+function startServer(tryPort) {
+  const server = app.listen(tryPort, () => {
+    const actualPort = server.address().port;
+    console.log(`🚀 Backend Server running on http://localhost:${actualPort} (${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'})`);
   
   if (isProduction) {
     // In production, for any request that doesn't match a static file or API route,
@@ -2346,12 +2353,13 @@ app.listen(PORT, () => {
       }
     });
   } else {
-    // Start the frontend dev server ONLY in development
+    // Start the frontend dev server ONLY in development (pass backend port so proxy works if we fell back to 5775+)
     console.log('📦 Starting frontend dev server...');
     const viteProcess = spawn('npm', ['run', 'dev'], {
       cwd: join(__dirname, '..'),
       stdio: 'inherit',
-      shell: true
+      shell: true,
+      env: { ...process.env, VITE_API_PORT: String(actualPort) }
     });
   
   viteProcess.on('error', (error) => {
@@ -2377,4 +2385,17 @@ app.listen(PORT, () => {
     process.exit(0);
   });
   }
-});
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.warn(`⚠️ Port ${tryPort} in use, trying ${tryPort + 1}...`);
+      startServer(tryPort + 1);
+    } else {
+      console.error('Server error:', err);
+      process.exit(1);
+    }
+  });
+}
+
+startServer(PORT);
