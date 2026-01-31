@@ -25,7 +25,7 @@ import { useAudio } from './hooks/useAudio';
 import { db, PriceOffer } from './services/db';
 
 export default function App() {
-  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST'>('LOGIN');
+  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST'>('HOME');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
@@ -292,7 +292,6 @@ export default function App() {
     if (token) {
       setResetPasswordToken(token);
       setShowResetPasswordModal(true);
-      setView('LOGIN');
       window.history.replaceState({}, '', window.location.pathname || '/');
     }
   }, []);
@@ -309,10 +308,9 @@ export default function App() {
     }
   }, [view]);
 
-  // Restore session: if a playerName is present, stay logged in and sync data
+  // Restore session: if a playerName is present, sync data from server (HOME is already default)
   useEffect(() => {
     if (progress.playerName) {
-      setView('HOME');
       syncUserData(progress.playerName);
     }
   }, []); // Run once on mount
@@ -328,25 +326,37 @@ export default function App() {
     localStorage.setItem('findMyPuppy_progress', JSON.stringify(progress));
   }, [progress]);
 
-  const handleLogin = async () => {
+  const handleLogin = async (userData?: { username: string; email?: string; hints?: number; points?: number; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number }) => {
     // Use ref value first (updated immediately), fallback to state (for regular login)
-    const usernameToUse = loginNameRef.current.trim() || loginName.trim();
+    const usernameToUse = (userData?.username || loginNameRef.current.trim() || loginName.trim());
     if (!usernameToUse) return;
     const username = usernameToUse;
-    
-    // Set view immediately for better UX
-    setView('HOME');
-    
-    // Sync data from DB
+
+    // Apply user data from auth response immediately (points, hints, levels) if provided
+    if (userData) {
+      setProgress(prev => {
+        const newClearedLevels = { ...prev.clearedLevels };
+        const easyCount = userData.levelPassedEasy ?? 0;
+        for (let i = 1; i <= easyCount; i++) newClearedLevels[`${Difficulty.EASY}_${i}`] = true;
+        const mediumCount = userData.levelPassedMedium ?? 0;
+        for (let i = 1; i <= mediumCount; i++) newClearedLevels[`${Difficulty.MEDIUM}_${i}`] = true;
+        const hardCount = userData.levelPassedHard ?? 0;
+        for (let i = 1; i <= hardCount; i++) newClearedLevels[`${Difficulty.HARD}_${i}`] = true;
+        return {
+          ...prev,
+          playerName: userData.username,
+          email: userData.email ?? prev.email,
+          totalScore: userData.points ?? prev.totalScore,
+          premiumHints: userData.hints ?? prev.premiumHints,
+          clearedLevels: newClearedLevels
+        };
+      });
+    }
+
+    // Sync full user data from DB (points, hints, clearedLevels) before showing HOME
     await syncUserData(username);
-    
-    // Ensure local name is set even if sync fails (offline mode support)
-    setProgress(prev => {
-        if (prev.playerName !== username) {
-            return { ...prev, playerName: username };
-        }
-        return prev;
-    });
+
+    setView('HOME');
 
     if (ambientAudioRef.current && !isMuted) {
       ambientAudioRef.current.play().catch(() => {});
@@ -354,7 +364,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    // Clear progress and reset to login
+    // Clear user data and stay on HOME (difficulty selector)
     setProgress({
       playerName: '',
       clearedLevels: {},
@@ -365,7 +375,7 @@ export default function App() {
     });
     localStorage.removeItem('findMyPuppy_progress');
     setLoginName('');
-    setView('LOGIN');
+    setView('HOME');
         setBackgroundMusicEnabled(true);
         setSoundEffectsEnabled(true);
     if (ambientAudioRef.current) {
@@ -503,6 +513,10 @@ export default function App() {
   };
 
   const openHintShop = () => {
+    if (!progress.playerName) {
+      setView('LOGIN');
+      return;
+    }
     openPaymentModal({
       title: 'Hint Shop',
       description: 'Stock up on hints for the harder levels!'
@@ -610,9 +624,10 @@ export default function App() {
         setView('HOME');
         break;
       case 'HOME':
+        // Base screen - natural back behavior handled by history stack
+        break;
       case 'LOGIN':
-        // On base screens, we allow the natural back behavior to close/exit the app.
-        // This is handled by NOT pushing to the history stack in these views.
+        setView('HOME');
         break;
       default:
         break;
@@ -629,8 +644,8 @@ export default function App() {
 
   // Sync history state to intercept hardware back button on Android/Mobile
   useEffect(() => {
-    // Base screens: HOME (Select Difficulty) or LOGIN
-    const isBaseScreen = (view === 'LOGIN' || view === 'HOME') && 
+    // Base screen: HOME (Select Difficulty) only; LOGIN is a sub-screen that back navigates from
+    const isBaseScreen = view === 'HOME' && 
                          !showInfoModal && !showThemeModal && 
                          !showPurchaseHistoryModal && !showPaymentModal && 
                          !showQuitConfirm && !showLeaderboard;
@@ -676,6 +691,7 @@ export default function App() {
             }}
             onLogin={handleLogin}
             onForgotPassword={() => setShowForgotPasswordModal(true)}
+            onPlayAsGuest={() => setView('HOME')}
           />
         )}
 
@@ -699,6 +715,7 @@ export default function App() {
             onOpenPurchaseHistory={() => setShowPurchaseHistoryModal(true)}
             onOpenReferModal={() => setShowReferModal(true)}
             onLogout={handleLogout}
+            onOpenLogin={() => setView('LOGIN')}
             priceOffer={priceOffer}
             onHintsUpdated={(newHints) => {
               setProgress(prev => ({ ...prev, premiumHints: newHints }));

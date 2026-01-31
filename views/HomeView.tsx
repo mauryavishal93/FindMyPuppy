@@ -26,6 +26,7 @@ interface HomeViewProps {
   onOpenPurchaseHistory: () => void;
   onOpenReferModal: () => void;
   onLogout: () => void;
+  onOpenLogin: () => void;
   priceOffer: PriceOffer | null;
   onHintsUpdated?: (newHints: number) => void;
   onPointsUpdated?: (newPoints: number) => void;
@@ -47,6 +48,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenPurchaseHistory,
   onOpenReferModal,
   onLogout,
+  onOpenLogin,
   priceOffer,
   onHintsUpdated,
   onPointsUpdated
@@ -173,32 +175,44 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
       <header className={`mobile-header ${activeTheme.headerBg} backdrop-blur-md shadow-sm flex justify-between z-[100] sticky top-0 border-b shrink-0 relative transition-all duration-500 py-2 px-2`}>
         <div className="flex items-center gap-2 relative">
-          <button
-            onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-            className="flex items-center gap-1.5 hover:opacity-80 transition-all group"
-          >
-            <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border border-white shadow-sm cursor-pointer group-hover:scale-110 transition-transform relative overflow-hidden`}>
-              <span className="relative z-10">{progress.playerName.charAt(0).toUpperCase()}</span>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent"></div>
-            </div>
-            <div className="flex flex-col">
-              <span className={`text-[9px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text} flex items-center gap-0.5`}>
-                <span className="text-xs">🐾</span> Player
-              </span>
-              <span className={`text-xs font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
-            </div>
-          </button>
-          
-          <UserDropdown
-            isOpen={isUserDropdownOpen}
-            onClose={() => setIsUserDropdownOpen(false)}
-            activeTheme={activeTheme}
-            onInfoClick={onOpenInfoModal}
-            onThemeClick={onOpenThemeModal}
-            onPurchaseHistoryClick={onOpenPurchaseHistory}
-            onReferClick={onOpenReferModal}
-            onLogout={onLogout}
-          />
+          {progress.playerName ? (
+            <>
+              <button
+                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                className="flex items-center gap-1.5 hover:opacity-80 transition-all group"
+              >
+                <div className={`bg-gradient-to-br from-indigo-100 to-indigo-200 text-indigo-600 w-9 h-9 rounded-full flex items-center justify-center font-black text-sm border border-white shadow-sm cursor-pointer group-hover:scale-110 transition-transform relative overflow-hidden`}>
+                  <span className="relative z-10">{progress.playerName.charAt(0).toUpperCase()}</span>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent"></div>
+                </div>
+                <div className="flex flex-col">
+                  <span className={`text-[9px] font-bold uppercase tracking-wider opacity-70 ${activeTheme.text} flex items-center gap-0.5`}>
+                    <span className="text-xs">🐾</span> Player
+                  </span>
+                  <span className={`text-xs font-black leading-none drop-shadow-sm ${activeTheme.text}`}>{progress.playerName}</span>
+                </div>
+              </button>
+              
+              <UserDropdown
+                isOpen={isUserDropdownOpen}
+                onClose={() => setIsUserDropdownOpen(false)}
+                activeTheme={activeTheme}
+                onInfoClick={onOpenInfoModal}
+                onThemeClick={onOpenThemeModal}
+                onPurchaseHistoryClick={onOpenPurchaseHistory}
+                onReferClick={onOpenReferModal}
+                onLogout={onLogout}
+              />
+            </>
+          ) : (
+            <button
+              onClick={onOpenLogin}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm ${activeTheme.cardBg} ${activeTheme.text} border border-white/30 shadow-md hover:scale-105 active:scale-95 transition-all`}
+            >
+              <i className="fas fa-sign-in-alt"></i>
+              Login
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <a 

@@ -22,11 +22,12 @@ declare global {
 interface LoginViewProps {
   loginName: string;
   setLoginName: (name: string) => void;
-  onLogin: () => void;
+  onLogin: (userData?: { username: string; email?: string; hints?: number; points?: number; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number }) => void;
   onForgotPassword?: () => void;
+  onPlayAsGuest?: () => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, onLogin, onForgotPassword }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, onLogin, onForgotPassword, onPlayAsGuest }) => {
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -87,13 +88,20 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
       const result = await db.signInWithGoogle(response.credential, referralCode.trim() || undefined);
       
       if (result.success && result.user?.username) {
-        const username = result.user.username;
+        const user = result.user;
         setSuccessMsg(result.message || "Success!");
-        // Set login name (both state and will be passed via onLogin)
-        setLoginName(username);
-        // Call onLogin immediately - handleLogin will use the username from state/ref
+        setLoginName(user.username);
+        // Pass user data (points, hints, levels) for immediate load
         setTimeout(() => {
-          onLogin();
+          onLogin({
+            username: user.username,
+            email: user.email,
+            hints: user.hints,
+            points: user.points,
+            levelPassedEasy: user.levelPassedEasy,
+            levelPassedMedium: user.levelPassedMedium,
+            levelPassedHard: user.levelPassedHard
+          });
         }, 500);
       } else {
         // Extract error message properly
@@ -217,9 +225,21 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
 
       if (response.success) {
         setSuccessMsg(response.message || "Success!");
-        // Brief delay to show success message before transitioning
+        const user = response.user;
         setTimeout(() => {
-          onLogin();
+          if (user) {
+            onLogin({
+              username: user.username,
+              email: user.email,
+              hints: user.hints,
+              points: user.points,
+              levelPassedEasy: user.levelPassedEasy,
+              levelPassedMedium: user.levelPassedMedium,
+              levelPassedHard: user.levelPassedHard
+            });
+          } else {
+            onLogin();
+          }
         }, 1000);
       } else {
         setError(response.message || "Authentication failed");
@@ -245,6 +265,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
       </div>
 
       <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm z-10 text-center border-4 border-white/50 relative overflow-y-auto overflow-x-hidden max-h-[90vh] hide-scrollbar">
+        {/* Play as Guest / Back - when coming from HOME */}
+        {onPlayAsGuest && (
+          <button
+            type="button"
+            onClick={onPlayAsGuest}
+            className="absolute top-4 left-4 flex items-center gap-2 text-slate-500 hover:text-slate-700 font-bold text-sm transition-colors z-20"
+          >
+            <i className="fas fa-arrow-left"></i>
+            Play as Guest
+          </button>
+        )}
         <div className="mx-auto mb-4 flex justify-center relative">
           <div className="absolute inset-0 bg-brand-light/30 blur-2xl rounded-full scale-150"></div>
           <GameLogo className="w-24 h-24 relative z-10 drop-shadow-lg" />
