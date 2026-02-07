@@ -135,10 +135,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
     const initializeGoogleSignIn = () => {
       if (!window.google?.accounts?.id) return;
 
-      // Google Client ID - Replace with your actual Google OAuth Client ID
-      // This should be set as an environment variable or in a config file
-      const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-      
+      // Google Client ID: env first, then fallback so Sign in with Google works out of the box
+      const GOOGLE_CLIENT_ID =
+        import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+        '896459680164-aa61o2u96qrscu10ia9g0l40agca0q6i.apps.googleusercontent.com';
+
       if (!GOOGLE_CLIENT_ID) {
         console.warn('Google OAuth Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
         setGoogleClientIdConfigured(false);
