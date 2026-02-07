@@ -13,13 +13,12 @@ import fs from 'fs';
 import { OAuth2Client } from 'google-auth-library';
 import nodemailer from 'nodemailer';
 
-// Load environment variables from .env file (look in parent directory since server.js is in server folder)
+// Load environment variables (Render injects process.env; local can use .env files)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '.env') });
-
-// Also try loading from current directory as fallback
-dotenv.config();
+dotenv.config({ path: join(__dirname, '.env') }); // server/.env
+dotenv.config(); // process.cwd() .env
 
 const app = express();
 // Professional SRE Rule: Always allow the environment to override the PORT
@@ -49,6 +48,12 @@ if (googleClient) {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Allow Google Sign-In / OAuth popups to use postMessage (fixes "COOP would block window.postMessage" on Render)
+app.use((_req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
 
 // Serve static files from the 'dist' directory in production
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
@@ -1228,7 +1233,11 @@ app.post('/api/auth/google/signin', async (req, res) => {
     }
 
     if (!googleClient) {
-      return res.status(500).json({ success: false, message: "Google OAuth not configured on server." });
+      console.error('Google sign-in attempted but GOOGLE_CLIENT_ID is not set (e.g. on Render set it in Environment).');
+      return res.status(503).json({
+        success: false,
+        message: "Google sign-in is not configured on this server. Set GOOGLE_CLIENT_ID in the server environment (e.g. Render dashboard)."
+      });
     }
 
     // Verify the Google ID token
@@ -1383,7 +1392,11 @@ app.post('/api/auth/google/signin', async (req, res) => {
     });
   } catch (error) {
     console.error('Google OAuth Sign In Error:', error);
-    res.status(500).json({ success: false, message: "Server error during Google sign in." });
+    const isTokenError = error?.message?.includes('Token') || error?.message?.includes('audience') || error?.message?.includes('verify');
+    const message = isTokenError
+      ? "Invalid or expired Google sign-in. Try signing in again."
+      : "Server error during Google sign in. If this persists, check server logs and GOOGLE_CLIENT_ID.";
+    res.status(isTokenError ? 401 : 500).json({ success: false, message });
   }
 });
 
