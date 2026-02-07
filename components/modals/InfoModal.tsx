@@ -60,6 +60,63 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
             </div>
           </div>
 
+          {/* Play Your Way - Guest vs Login */}
+          <div className="bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 rounded-2xl p-5 border-2 border-white/30 relative overflow-hidden shadow-2xl">
+            <div className="absolute inset-0 opacity-15">
+              <div className="absolute top-2 right-2 text-4xl">🐾</div>
+              <div className="absolute bottom-4 left-4 text-3xl">🎮</div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-6xl opacity-30">✨</div>
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-white/25 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/40 shadow-lg">
+                  <span className="text-2xl">🚀</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-black text-white mb-1">Play Your Way</h4>
+                  <p className="text-white/90 text-xs font-medium">Guest Mode & Login — You Choose!</p>
+                </div>
+              </div>
+              <p className="text-white/95 text-sm mb-4 leading-relaxed font-medium">
+                Jump in <strong className="text-yellow-200">instantly</strong> or create an account — the adventure is yours to customize! 🐶
+              </p>
+              <div className="space-y-3">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">👋</span>
+                    <div>
+                      <span className="block text-sm font-black text-white mb-1">Play as Guest — No Login Needed!</span>
+                      <span className="text-xs text-white/90 leading-relaxed">
+                        Tap <strong>Play as Guest</strong> or just pick a difficulty and start playing! Explore all 100 levels, earn points, and find puppies — <strong className="text-yellow-200">no account required</strong>. Perfect for trying the game or playing on the go!
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">🔐</span>
+                    <div>
+                      <span className="block text-sm font-black text-white mb-1">Login to Unlock More</span>
+                      <span className="text-xs text-white/90 leading-relaxed">
+                        Sign in to save progress across devices, climb the leaderboard, get daily check-in rewards, and <strong className="text-yellow-200">buy hint packs</strong> (with points or payment). Want to stock up on hints? Tap <strong>Login</strong> in the header first!
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-amber-400/30 backdrop-blur-sm rounded-xl p-3 border border-amber-300/50 flex items-center gap-2">
+                  <i className="fas fa-lightbulb text-amber-200 text-lg flex-shrink-0"></i>
+                  <span className="text-xs font-bold text-white">
+                    <strong>💡 Buying hints</strong> (points or real purchase) requires login — so we can save them to your account!
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 justify-center">
+                <span className="bg-white/25 px-2.5 py-1 rounded-full text-[10px] font-black text-white border border-white/40">No signup to play</span>
+                <span className="bg-white/25 px-2.5 py-1 rounded-full text-[10px] font-black text-white border border-white/40">Login for hints shop</span>
+              </div>
+            </div>
+          </div>
+
           {/* Explorer Guide Feature - Similar to Daily Check-In */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl p-5 border-2 border-white/30 relative overflow-hidden shadow-2xl">
             {/* Animated Background Pattern */}
@@ -483,12 +540,16 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                     <div className="flex-1">
                       <span className="block text-sm font-black text-slate-800 mb-1">Purchase Hint Packs</span>
                       <span className="text-xs text-slate-600 leading-relaxed">
-                        Support the game and get massive hint packs! Available through secure payment options.
+                        Support the game and get massive hint packs! Available through secure payment options. <strong className="text-purple-600">Login required</strong> to buy hints (so they’re saved to your account).
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
+              <p className="text-xs text-slate-500 mt-2 italic flex items-center gap-1.5">
+                <i className="fas fa-info-circle text-indigo-500"></i>
+                Free hints (2 per level) work for everyone — guest or logged in. Buying more hints needs login!
+              </p>
             </div>
           </div>
 
