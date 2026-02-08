@@ -603,6 +603,14 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 <span><strong>100 Levels:</strong> Progress through 100 unique levels, each with beautifully crafted scenes!</span>
               </div>
               <div className="flex items-start gap-2">
+                <i className="fas fa-calendar-check text-indigo-500 mt-1"></i>
+                <span><strong>Weekly Challenges:</strong> Complete weekly goals (like clearing 5 levels) to earn extra hints!</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <i className="fas fa-medal text-indigo-500 mt-1"></i>
+                <span><strong>Achievements:</strong> Unlock special badges for milestones like "First Win" or "Streak Master"!</span>
+              </div>
+              <div className="flex items-start gap-2">
                 <i className="fas fa-palette text-indigo-500 mt-1"></i>
                 <span><strong>Multiple Themes:</strong> Choose from various beautiful themes to customize your experience</span>
               </div>
@@ -698,6 +706,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
                     Complete levels to earn points! <strong className="text-emerald-600">Easy: +5 pts</strong>, <strong className="text-blue-600">Medium: +10 pts</strong>, <strong className="text-rose-600">Hard: +15 pts</strong> per level!
+                    <br/><span className="text-amber-600 font-bold mt-1 block">✨ Level of the Day: Earn 2x Points!</span>
                   </p>
                 </div>
                 <div className="bg-white/90 p-3 rounded-xl border border-yellow-300 shadow-sm">
@@ -770,6 +779,49 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
               <div className="bg-yellow-400 text-pink-900 px-3 py-1 rounded-full text-xs font-black shadow-md flex items-center justify-center gap-1.5 mt-3">
                 <span>💎</span>
                 <span>Don't Miss a Day - Build Your Streak!</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Puppy Jump (Daily Run) Feature */}
+          <div className="bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 rounded-2xl p-5 border-2 border-white/30 relative overflow-hidden shadow-2xl">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full translate-x-10 -translate-y-10 animate-pulse"></div>
+              <div className="absolute bottom-0 left-0 w-20 h-20 bg-white rounded-full -translate-x-8 translate-y-8 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
+                  <span className="text-2xl">🏃</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-black text-white mb-1">🐕 Puppy Jump</h4>
+                  <p className="text-white/90 text-xs font-medium">Daily Endless Runner!</p>
+                </div>
+              </div>
+              <p className="text-white/95 text-sm mb-4 leading-relaxed font-medium">
+                Play the <strong className="text-yellow-200">Puppy Jump</strong> mini-game once every day! Run, jump, and duck to avoid obstacles and earn free hints based on your score!
+              </p>
+              
+              <div className="mb-4 space-y-2">
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                  <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                    <span className="text-yellow-300">🎮</span>
+                    <span><strong>Controls:</strong> Tap/Space to Jump, Down Arrow to Duck!</span>
+                  </div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                  <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                    <span className="text-yellow-300">🎁</span>
+                    <span><strong>Rewards:</strong> Score 1000+ to get 5 Hints! (500+ = 2 Hints)</span>
+                  </div>
+                </div>
+                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
+                  <div className="flex items-center gap-2 text-white text-xs font-semibold">
+                    <span className="text-yellow-300">🏆</span>
+                    <span><strong>High Score:</strong> Your best run is saved to the leaderboard!</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
