@@ -36,6 +36,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [googleClientIdConfigured, setGoogleClientIdConfigured] = useState(false);
+  const [googleScriptLoading, setGoogleScriptLoading] = useState(true); // show loading until script ready or timeout
   const googleSignInButtonRef = useRef<HTMLDivElement>(null);
   const googleSignUpButtonRef = useRef<HTMLDivElement>(null);
 
@@ -130,38 +131,31 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
     }
   }, [referralCode, onLogin, setLoginName]);
 
-  // Initialize Google OAuth
+  // Initialize Google OAuth — wait for GSI script, with programmatic load fallback for Render/production
   useEffect(() => {
+    const GOOGLE_CLIENT_ID =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      '896459680164-aa61o2u96qrscu10ia9g0l40agca0q6i.apps.googleusercontent.com';
+
     const initializeGoogleSignIn = () => {
       if (!window.google?.accounts?.id) return;
-
-      // Google Client ID: env first, then fallback so Sign in with Google works out of the box
-      const GOOGLE_CLIENT_ID =
-        import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-        '896459680164-aa61o2u96qrscu10ia9g0l40agca0q6i.apps.googleusercontent.com';
-
       if (!GOOGLE_CLIENT_ID) {
-        console.warn('Google OAuth Client ID not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.');
         setGoogleClientIdConfigured(false);
+        setGoogleScriptLoading(false);
         return;
       }
 
       setGoogleClientIdConfigured(true);
+      setGoogleScriptLoading(false);
 
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn,
       });
 
-      // Clear existing buttons
-      if (googleSignInButtonRef.current) {
-        googleSignInButtonRef.current.innerHTML = '';
-      }
-      if (googleSignUpButtonRef.current) {
-        googleSignUpButtonRef.current.innerHTML = '';
-      }
+      if (googleSignInButtonRef.current) googleSignInButtonRef.current.innerHTML = '';
+      if (googleSignUpButtonRef.current) googleSignUpButtonRef.current.innerHTML = '';
 
-      // Render appropriate button based on mode
       if (!isSignup && googleSignInButtonRef.current) {
         window.google.accounts.id.renderButton(googleSignInButtonRef.current, {
           type: 'standard',
@@ -181,19 +175,46 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
       }
     };
 
-    // Wait for Google script to load
-    if (window.google?.accounts?.id) {
-      initializeGoogleSignIn();
-    } else {
-      const checkGoogle = setInterval(() => {
-        if (window.google?.accounts?.id) {
-          clearInterval(checkGoogle);
-          initializeGoogleSignIn();
+    // Poll for script (from index.html async load)
+    let attempts = 0;
+    const maxAttempts = 100; // ~10s
+    const checkGoogle = setInterval(() => {
+      attempts++;
+      if (window.google?.accounts?.id) {
+        clearInterval(checkGoogle);
+        initializeGoogleSignIn();
+        return;
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(checkGoogle);
+        // Fallback: inject script programmatically (helps when index.html script is blocked or delayed on Render)
+        if (!document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+          const script = document.createElement('script');
+          script.src = 'https://accounts.google.com/gsi/client';
+          script.async = true;
+          script.defer = true;
+          script.onload = () => {
+            const retry = setInterval(() => {
+              if (window.google?.accounts?.id) {
+                clearInterval(retry);
+                initializeGoogleSignIn();
+              }
+            }, 100);
+            setTimeout(() => clearInterval(retry), 5000);
+          };
+          script.onerror = () => {
+            setGoogleScriptLoading(false);
+            setGoogleClientIdConfigured(false);
+          };
+          document.head.appendChild(script);
+        } else {
+          setGoogleScriptLoading(false);
+          if (!window.google?.accounts?.id) setGoogleClientIdConfigured(false);
         }
-      }, 100);
+      }
+    }, 100);
 
-      return () => clearInterval(checkGoogle);
-    }
+    return () => clearInterval(checkGoogle);
   }, [isSignup, handleGoogleSignIn]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -412,8 +433,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
         </div>
 
         {/* Google Sign In/Up Buttons - Both divs always in DOM, visibility controlled by CSS */}
-        <div className="w-full">
-          {googleClientIdConfigured ? (
+        <div className="w-full min-h-[44px] flex items-center justify-center">
+          {googleScriptLoading ? (
+            <div className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 text-center">
+              <i className="fab fa-google mr-2"></i>
+              Loading Google Sign-In…
+            </div>
+          ) : googleClientIdConfigured ? (
             <>
               <div 
                 ref={googleSignInButtonRef} 
@@ -427,7 +453,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
           ) : (
             <div className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 text-center">
               <i className="fab fa-google mr-2"></i>
-              Google Sign In/Up not configured. Please set VITE_GOOGLE_CLIENT_ID environment variable.
+              Google Sign-In unavailable. Check your connection or try again later.
             </div>
           )}
         </div>

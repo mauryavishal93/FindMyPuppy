@@ -12,12 +12,15 @@ import crypto from 'crypto';
 import fs from 'fs';
 import { OAuth2Client } from 'google-auth-library';
 import nodemailer from 'nodemailer';
+import adminRouter from './admin/routes/index.js';
+import { seedFirstAdmin } from './admin/seed.js';
 
 // Load environment variables (Render injects process.env; local can use .env files)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '.env') });
 dotenv.config({ path: join(__dirname, '.env') }); // server/.env
+dotenv.config({ path: join(__dirname, '.env.local') }); // server/.env.local (local overrides)
 dotenv.config(); // process.cwd() .env
 
 const app = express();
@@ -54,6 +57,9 @@ app.use((_req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   next();
 });
+
+// Admin Panel API (RBAC-protected; separate auth from player auth)
+app.use('/api/admin', adminRouter);
 
 // Serve static files from the 'dist' directory in production
 const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
@@ -179,7 +185,8 @@ const initializePriceOffer = async () => {
 // Run initialization after mongoose connection is established
 mongoose.connection.once('open', async () => {
   initializePriceOffer();
-  
+  seedFirstAdmin().catch((err) => console.error('Admin seed error:', err));
+
   // Migration: Ensure all existing users have the 'referredBy' field
   try {
     // 1. Add referredBy only where it is missing, null, or empty
