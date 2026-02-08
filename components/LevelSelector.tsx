@@ -16,6 +16,7 @@ interface LevelSelectorProps {
   onToggleBackgroundMusic: () => void;
   onToggleSoundEffects: () => void;
   currentTheme: ThemeType;
+  levelOfDay?: { levelId: number; difficulty: string } | null;
 }
 
 export const LevelSelector: React.FC<LevelSelectorProps> = ({ 
@@ -29,7 +30,8 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
   soundEffectsEnabled,
   onToggleBackgroundMusic,
   onToggleSoundEffects,
-  currentTheme
+  currentTheme,
+  levelOfDay = null
 }) => {
   const [isMusicDropdownOpen, setIsMusicDropdownOpen] = useState(false);
   const activeTheme = THEME_CONFIGS[currentTheme] || THEME_CONFIGS.night;
@@ -199,6 +201,7 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
             const isCleared = clearedLevels[levelKey];
             const previousKey = `${difficulty}_${level - 1}`;
             const isLocked = level > 1 && !clearedLevels[previousKey];
+            const isLevelOfDay = levelOfDay && levelOfDay.levelId === level && levelOfDay.difficulty === difficulty;
 
             // Card Colors based on theme
             let cardBaseClass = 'bg-white border-2 border-brand/50 text-brand';
@@ -255,6 +258,9 @@ export const LevelSelector: React.FC<LevelSelectorProps> = ({
                   <span className="text-[10px] font-bold uppercase tracking-wide">
                     {isCleared ? 'Done' : 'Play'}
                   </span>
+                )}
+                {isLevelOfDay && (
+                  <span className="absolute top-1 right-1 bg-amber-400 text-amber-900 text-[9px] font-black px-1 rounded">2×</span>
                 )}
               </button>
             );

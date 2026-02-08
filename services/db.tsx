@@ -23,6 +23,10 @@ export interface User {
   levelPassedMedium?: number;
   levelPassedHard?: number;
   referredBy?: string | null;
+  lastPlayedAt?: string | null;
+  comebackBonusClaimed?: boolean;
+  achievements?: string[];
+  puppyRunHighScore?: number;
 }
 
 export interface PurchaseHistory {
@@ -275,6 +279,8 @@ export const db = {
     hasCheckedInToday?: boolean;
     puppyAge?: number;
     puppySize?: number;
+    hasUsedFreezeThisWeek?: boolean;
+    streakFreezeAvailable?: boolean;
   }> => {
     try {
       const response = await secureFetch(getApiBase(), `/api/daily-checkin/status/${username}`, { method: 'GET' });
@@ -287,6 +293,8 @@ export const db = {
         hasCheckedInToday?: boolean;
         puppyAge?: number;
         puppySize?: number;
+        hasUsedFreezeThisWeek?: boolean;
+        streakFreezeAvailable?: boolean;
       }>(response);
       if (!ok) return { success: false, message: userMessage || 'Load failed' };
       return data;
@@ -308,6 +316,7 @@ export const db = {
     puppySize?: number;
     checkInStreak?: number;
     milestone?: '7days' | '30days' | '1year' | null;
+    usedStreakFreeze?: boolean;
   }> => {
     try {
       const response = await secureFetch(getApiBase(), '/api/daily-checkin/complete', {
@@ -325,11 +334,149 @@ export const db = {
         puppySize?: number;
         checkInStreak?: number;
         milestone?: '7days' | '30days' | '1year' | null;
+        usedStreakFreeze?: boolean;
       }>(response);
       if (!ok) return { success: false, message: userMessage || 'Request failed' };
       return data;
     } catch {
       return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  getDailyPuzzleStatus: async (username: string): Promise<{ success: boolean; hasCompletedToday?: boolean; lastCompletedDate?: string | null }> => {
+    try {
+      const response = await secureFetch(getApiBase(), `/api/daily-puzzle/status/${username}`, { method: 'GET' });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; hasCompletedToday?: boolean; lastCompletedDate?: string | null }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  completeDailyPuzzle: async (username: string, puzzleId: string, score: number): Promise<{ success: boolean; message?: string; hintsEarned?: number; totalHints?: number; highScore?: number }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/daily-puzzle/complete', {
+        method: 'POST',
+        body: JSON.stringify({ username, puzzleId, score }),
+      });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; message?: string; hintsEarned?: number; totalHints?: number; highScore?: number }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  getLeaderboardReferrals: async (): Promise<{ success: boolean; leaderboard?: Array<{ username: string; rank: number; referredCount: number }> }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/leaderboard/referrals', { method: 'GET' });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; leaderboard?: Array<{ username: string; rank: number; referredCount: number }> }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  getLevelOfDay: async (): Promise<{ success: boolean; levelId?: number; difficulty?: string; date?: string }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/level-of-day', { method: 'GET' });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; levelId?: number; difficulty?: string; date?: string }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  getAchievements: async (): Promise<{ success: boolean; achievements?: Array<{ id: string; name: string; desc: string; icon: string }> }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/achievements', { method: 'GET' });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; achievements?: Array<{ id: string; name: string; desc: string; icon: string }> }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  checkAchievements: async (username: string): Promise<{ success: boolean; achievements?: string[]; newlyUnlocked?: string[] }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/achievements/check', {
+        method: 'POST',
+        body: JSON.stringify({ username }),
+      });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; achievements?: string[]; newlyUnlocked?: string[] }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  getWeeklyChallenge: async (username?: string): Promise<{
+    success: boolean;
+    week?: string;
+    target?: { total: number };
+    progress?: { easy: number; medium: number; hard: number };
+    totalProgress?: number;
+    claimed?: boolean;
+  }> => {
+    try {
+      const path = username ? `/api/weekly-challenge?username=${encodeURIComponent(username)}` : '/api/weekly-challenge';
+      const response = await secureFetch(getApiBase(), path, { method: 'GET' });
+      const { ok, data } = await parseJsonResponse<{
+        success: boolean;
+        week?: string;
+        target?: { total: number };
+        progress?: { easy: number; medium: number; hard: number };
+        totalProgress?: number;
+        claimed?: boolean;
+      }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  claimWeeklyChallenge: async (username: string): Promise<{ success: boolean; message?: string; hintsEarned?: number; totalHints?: number }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/weekly-challenge/claim', {
+        method: 'POST',
+        body: JSON.stringify({ username }),
+      });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; message?: string; hintsEarned?: number; totalHints?: number }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  getComebackBonusEligibility: async (username: string): Promise<{ success: boolean; eligible?: boolean }> => {
+    try {
+      const response = await secureFetch(getApiBase(), `/api/comeback-bonus/eligibility/${username}`, { method: 'GET' });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; eligible?: boolean }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
+    }
+  },
+
+  claimComebackBonus: async (username: string): Promise<{ success: boolean; message?: string; hintsEarned?: number; totalHints?: number }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/comeback-bonus/claim', {
+        method: 'POST',
+        body: JSON.stringify({ username }),
+      });
+      const { ok, data } = await parseJsonResponse<{ success: boolean; message?: string; hintsEarned?: number; totalHints?: number }>(response);
+      if (!ok) return { success: false };
+      return data;
+    } catch {
+      return { success: false };
     }
   },
 

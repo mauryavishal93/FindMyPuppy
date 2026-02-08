@@ -4,10 +4,12 @@ import { DifficultyCard } from '../components/ui/DifficultyCard';
 import { GameLogo } from '../components/GameLogo';
 import { renderThemeBackground } from '../utils/themeBackground';
 import { UserDropdown } from '../components/ui/UserDropdown';
-import { PriceOffer } from '../services/db';
+import { db, PriceOffer } from '../services/db';
 import { useDailyCheckIn } from '../hooks/useDailyCheckIn';
+import { useDailyPuzzle } from '../hooks/useDailyPuzzle';
 import { DailyCheckInButton } from '../components/DailyCheckInButton';
 import { PuppyFeeding } from '../components/PuppyFeeding';
+import { PuppyEndlessGame } from '../components/PuppyEndlessGame';
 import { LeaderboardModal } from '../components/modals/LeaderboardModal';
 
 interface HomeViewProps {
@@ -25,11 +27,13 @@ interface HomeViewProps {
   onOpenHintShop: () => void;
   onOpenPurchaseHistory: () => void;
   onOpenReferModal: () => void;
+  onOpenAchievements?: () => void;
   onLogout: () => void;
   onOpenLogin: () => void;
   priceOffer: PriceOffer | null;
   onHintsUpdated?: (newHints: number) => void;
   onPointsUpdated?: (newPoints: number) => void;
+  isActiveView?: boolean;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
@@ -47,11 +51,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onOpenHintShop,
   onOpenPurchaseHistory,
   onOpenReferModal,
+  onOpenAchievements,
   onLogout,
   onOpenLogin,
   priceOffer,
   onHintsUpdated,
-  onPointsUpdated
+  onPointsUpdated,
+  isActiveView = true
 }) => {
   // Use price offer values if available, otherwise fallback to defaults
   const marketPrice = priceOffer?.marketPrice || 99;
@@ -66,8 +72,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [isMusicDropdownOpen, setIsMusicDropdownOpen] = useState(false);
   const [showPuppyFeeding, setShowPuppyFeeding] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showDailyPuzzle, setShowDailyPuzzle] = useState(false);
+  const [comebackEligible, setComebackEligible] = useState(false);
+  const [claimingComeback, setClaimingComeback] = useState(false);
+  const [weeklyChallenge, setWeeklyChallenge] = useState<{ totalProgress: number; target: number; claimed: boolean } | null>(null);
+  const [claimingWeekly, setClaimingWeekly] = useState(false);
   
   const difficulties = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD];
+
+  // Daily Puzzle Hook
+  const { hasCompletedToday: dailyPuzzleCompletedToday, loading: dailyPuzzleLoading, completePuzzle } = useDailyPuzzle(progress.playerName || null);
 
   // Daily Check-In Hook
   const {
@@ -89,6 +103,63 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const handleFeedPuppy = async () => {
     return await completeCheckIn();
   };
+
+  const handleDailyGameComplete = async (gameId: string, score: number) => {
+    const res = await completePuzzle(gameId, score);
+    if (res.success && res.totalHints !== undefined && onHintsUpdated) onHintsUpdated(res.totalHints);
+    return res;
+  };
+
+  useEffect(() => {
+    if (progress.playerName) {
+      db.getComebackBonusEligibility(progress.playerName).then((r) => {
+        if (r.success && r.eligible) setComebackEligible(true);
+      });
+      db.getWeeklyChallenge(progress.playerName).then((r) => {
+        if (r.success && r.target) setWeeklyChallenge({
+          totalProgress: r.totalProgress ?? 0,
+          target: r.target.total ?? 5,
+          claimed: r.claimed ?? false
+        });
+      });
+    } else {
+      setWeeklyChallenge(null);
+      setComebackEligible(false);
+    }
+  }, [progress.playerName, isActiveView]);
+
+  const handleClaimComeback = async () => {
+    if (!progress.playerName) return;
+    setClaimingComeback(true);
+    try {
+      const res = await db.claimComebackBonus(progress.playerName);
+      if (res.success && res.totalHints !== undefined && onHintsUpdated) {
+        onHintsUpdated(res.totalHints);
+        setComebackEligible(false);
+      }
+    } finally {
+      setClaimingComeback(false);
+    }
+  };
+
+  const handleClaimWeekly = async () => {
+    if (!progress.playerName) return;
+    setClaimingWeekly(true);
+    try {
+      const res = await db.claimWeeklyChallenge(progress.playerName);
+      if (res.success && res.totalHints !== undefined && onHintsUpdated) {
+        onHintsUpdated(res.totalHints);
+        setWeeklyChallenge((prev) => prev ? { ...prev, claimed: true } : null);
+      }
+    } finally {
+      setClaimingWeekly(false);
+    }
+  };
+
+  const showReminderBanner = progress.playerName && (
+    (!checkInData?.hasCheckedInToday) || (!dailyPuzzleCompletedToday)
+  );
+  const dailyGameLabel = dailyPuzzleCompletedToday ? '✓ Jump Done' : '🐕 Puppy Jump';
   
   const handleNextDifficulty = () => {
     setPrevIndex(currentDifficultyIndex);
@@ -202,6 +273,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 onThemeClick={onOpenThemeModal}
                 onPurchaseHistoryClick={onOpenPurchaseHistory}
                 onReferClick={onOpenReferModal}
+                onAchievementsClick={onOpenAchievements}
                 onLogout={onLogout}
               />
             </>
@@ -334,15 +406,73 @@ export const HomeView: React.FC<HomeViewProps> = ({
              </div>
           </div>
           
+          {/* Comeback bonus banner */}
+          {progress.playerName && comebackEligible && (
+            <div className="w-full shrink-0 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 p-3 text-white shadow-lg border-2 border-amber-300">
+              <p className="text-sm font-bold mb-2">Welcome back! 🎉</p>
+              <p className="text-xs opacity-95 mb-2">Claim 5 free hints for returning.</p>
+              <button
+                onClick={handleClaimComeback}
+                disabled={claimingComeback}
+                className="bg-white text-amber-700 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 active:scale-95 disabled:opacity-50"
+              >
+                {claimingComeback ? 'Claiming...' : 'Claim 5 Hints'}
+              </button>
+            </div>
+          )}
+
+          {/* Reminder banner */}
+          {showReminderBanner && !comebackEligible && (
+            <div className={`w-full shrink-0 rounded-lg p-2 border-2 ${activeTheme.cardBg} ${activeTheme.text} border-amber-400/50 flex items-center gap-2`}>
+              <span className="text-lg">💡</span>
+              <span className="text-xs font-bold">Don&apos;t forget: Daily check-in &amp; run available for bonus hints!</span>
+            </div>
+          )}
+
+          {/* Weekly challenge */}
+          {progress.playerName && weeklyChallenge && !weeklyChallenge.claimed && (
+            <div className={`w-full shrink-0 rounded-xl p-3 border-2 ${activeTheme.cardBg} ${activeTheme.text} border-indigo-400/50`}>
+              <p className="text-sm font-bold flex items-center gap-2">
+                <span>📅</span> Weekly: Clear 5 levels
+              </p>
+              <p className="text-xs mt-1 opacity-90">
+                Progress: {weeklyChallenge.totalProgress}/{weeklyChallenge.target}
+                {weeklyChallenge.totalProgress >= weeklyChallenge.target && (
+                  <button
+                    onClick={handleClaimWeekly}
+                    disabled={claimingWeekly}
+                    className="ml-2 bg-green-500 text-white px-2 py-1 rounded font-bold text-xs"
+                  >
+                    {claimingWeekly ? '...' : 'Claim 5 Hints'}
+                  </button>
+                )}
+              </p>
+            </div>
+          )}
+
           {/* Daily Check-In Button */}
           {progress.playerName && (
-            <div className="w-full shrink-0">
-              <DailyCheckInButton
-                checkInData={checkInData}
-                loading={checkInLoading}
-                onClick={handleDailyCheckInClick}
-                activeTheme={activeTheme}
-              />
+            <div className="w-full shrink-0 flex gap-2">
+              <div className="flex-1">
+                <DailyCheckInButton
+                  checkInData={checkInData}
+                  loading={checkInLoading}
+                  onClick={handleDailyCheckInClick}
+                  activeTheme={activeTheme}
+                />
+              </div>
+              <button
+                onClick={() => setShowDailyPuzzle(true)}
+                disabled={dailyPuzzleCompletedToday || dailyPuzzleLoading}
+                className={`flex-1 rounded-lg p-2 border-2 transition-all text-center ${
+                  dailyPuzzleCompletedToday
+                    ? 'opacity-60 cursor-not-allowed border-purple-300/50 bg-purple-500/20'
+                    : 'border-purple-400 bg-gradient-to-br from-purple-500 to-indigo-600 hover:scale-105 active:scale-95 text-white font-bold shadow-lg'
+                }`}
+              >
+                <span className="text-sm block">{dailyGameLabel}</span>
+                <span className="text-[10px] block mt-0.5 opacity-90">{dailyPuzzleCompletedToday ? 'Today' : 'Jump & duck · +3 Hints'}</span>
+              </button>
             </div>
           )}
 
@@ -581,7 +711,18 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </main>
 
-      {/* Daily Puzzle Game Modal */}
+      {/* Puppy Endless Run (Daily Game) Modal */}
+      {showDailyPuzzle && progress.playerName && (
+        <PuppyEndlessGame
+          onComplete={handleDailyGameComplete}
+          onClose={() => setShowDailyPuzzle(false)}
+          activeTheme={activeTheme}
+          username={progress.playerName}
+          highScore={progress.puppyRunHighScore}
+        />
+      )}
+
+      {/* Daily Check-In Puppy Feeding Modal */}
         {showPuppyFeeding && checkInData && (
           <PuppyFeeding
             onFeed={handleFeedPuppy}

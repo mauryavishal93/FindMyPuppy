@@ -22,7 +22,7 @@ declare global {
 interface LoginViewProps {
   loginName: string;
   setLoginName: (name: string) => void;
-  onLogin: (userData?: { username: string; email?: string; hints?: number; points?: number; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number }) => void;
+  onLogin: (userData?: { username: string; email?: string; hints?: number; points?: number; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number; puppyRunHighScore?: number }) => void;
   onForgotPassword?: () => void;
   onPlayAsGuest?: () => void;
 }
@@ -101,7 +101,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
             points: user.points,
             levelPassedEasy: user.levelPassedEasy,
             levelPassedMedium: user.levelPassedMedium,
-            levelPassedHard: user.levelPassedHard
+            levelPassedHard: user.levelPassedHard,
+            puppyRunHighScore: user.puppyRunHighScore
           });
         }, 500);
       } else {
@@ -257,7 +258,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
               points: user.points,
               levelPassedEasy: user.levelPassedEasy,
               levelPassedMedium: user.levelPassedMedium,
-              levelPassedHard: user.levelPassedHard
+              levelPassedHard: user.levelPassedHard,
+              puppyRunHighScore: user.puppyRunHighScore
             });
           } else {
             onLogin();

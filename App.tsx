@@ -11,6 +11,7 @@ import { PaymentModal } from './components/modals/PaymentModal';
 import { PaymentResultModal } from './components/modals/PaymentResultModal';
 import { PurchaseHistoryModal } from './components/modals/PurchaseHistoryModal';
 import { ReferFriendModal } from './components/modals/ReferFriendModal';
+import { AchievementsModal } from './components/modals/AchievementsModal';
 import { ForgotPasswordModal } from './components/modals/ForgotPasswordModal';
 import { ResetPasswordModal } from './components/modals/ResetPasswordModal';
 import { Button } from './components/ui/Button';
@@ -63,6 +64,7 @@ export default function App() {
 
   // Refer a Friend Modal State
   const [showReferModal, setShowReferModal] = useState(false);
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
 
   // Forgot Password Modal State
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
@@ -78,6 +80,11 @@ export default function App() {
   const [priceOffer, setPriceOffer] = useState<PriceOffer | null>(null);
   const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
   const [maintenanceMode, setMaintenanceMode] = useState<{ enabled: boolean; message: string | null } | null>(null);
+  const [levelOfDay, setLevelOfDay] = useState<{ levelId: number; difficulty: string } | null>(null);
+  const [showFirstTimeLoginPrompt, setShowFirstTimeLoginPrompt] = useState(false);
+  const hasShownFirstTimeLoginPromptRef = useRef(false);
+  const [showUnlockCelebration, setShowUnlockCelebration] = useState<Difficulty | null>(null);
+  const [newlyUnlockedAchievements, setNewlyUnlockedAchievements] = useState<string[]>([]);
 
   // Quit Confirmation State
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
@@ -90,7 +97,8 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
-      selectedTheme: 'night' as ThemeType
+      selectedTheme: 'night' as ThemeType,
+      puppyRunHighScore: 0
     };
     return saved ? { ...defaultProgress, ...JSON.parse(saved) } : defaultProgress;
   });
@@ -193,7 +201,8 @@ export default function App() {
             totalScore: user.points || 0,
             points: user.points || 0,
             premiumHints: user.hints || 0,
-            clearedLevels: newClearedLevels
+            clearedLevels: newClearedLevels,
+            puppyRunHighScore: user.puppyRunHighScore || 0
             // Preserve theme as it might be local pref or we could sync it if DB supported it
           };
         });
@@ -290,6 +299,17 @@ export default function App() {
     fetchGameConfig();
   }, [view, fetchGameConfig]);
 
+  // Fetch level of the day when entering level select or game
+  useEffect(() => {
+    if (view === 'LEVEL_SELECT' || view === 'GAME') {
+      db.getLevelOfDay().then((res) => {
+        if (res.success && res.levelId != null && res.difficulty) {
+          setLevelOfDay({ levelId: res.levelId, difficulty: res.difficulty });
+        }
+      });
+    }
+  }, [view]);
+
   // Check for reset password token in URL on app load (e.g. user opened link from email)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -331,7 +351,7 @@ export default function App() {
     localStorage.setItem('findMyPuppy_progress', JSON.stringify(progress));
   }, [progress]);
 
-  const handleLogin = async (userData?: { username: string; email?: string; hints?: number; points?: number; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number }) => {
+  const handleLogin = async (userData?: { username: string; email?: string; hints?: number; points?: number; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number; puppyRunHighScore?: number }) => {
     // Use ref value first (updated immediately), fallback to state (for regular login)
     const usernameToUse = (userData?.username || loginNameRef.current.trim() || loginName.trim());
     if (!usernameToUse) return;
@@ -353,13 +373,20 @@ export default function App() {
           email: userData.email ?? prev.email,
           totalScore: userData.points ?? prev.totalScore,
           premiumHints: userData.hints ?? prev.premiumHints,
-          clearedLevels: newClearedLevels
+          clearedLevels: newClearedLevels,
+          puppyRunHighScore: userData.puppyRunHighScore ?? prev.puppyRunHighScore
         };
       });
     }
 
     // Sync full user data from DB (points, hints, clearedLevels) before showing HOME
     await syncUserData(username);
+
+    db.checkAchievements(username).then((r) => {
+      if (r.success && r.newlyUnlocked && r.newlyUnlocked.length > 0) {
+        setNewlyUnlockedAchievements(r.newlyUnlocked);
+      }
+    });
 
     setView('HOME');
 
@@ -440,11 +467,13 @@ export default function App() {
       if (selectedDifficulty === Difficulty.HARD) pointsAwarded = 15;
     }
 
+    const isLevelOfDay = levelOfDay && levelOfDay.levelId === currentLevelId && levelOfDay.difficulty === selectedDifficulty;
+    if (isFirstClear && isLevelOfDay) pointsAwarded *= 2;
+
     setProgress(prev => {
       const newTotalScore = prev.totalScore + pointsAwarded;
       const updatedClearedLevels = { ...prev.clearedLevels, [levelKey]: true };
       
-      // Count levels passed for each difficulty
       const countLevelsPassed = (difficulty: Difficulty) => {
         return Object.keys(updatedClearedLevels).filter(key => {
           const [diff] = key.split('_');
@@ -456,15 +485,12 @@ export default function App() {
       const levelPassedMedium = countLevelsPassed(Difficulty.MEDIUM);
       const levelPassedHard = countLevelsPassed(Difficulty.HARD);
       
-      // Sync points and level passed counts to database if user is logged in
       if (prev.playerName) {
         if (pointsAwarded > 0) {
           db.updatePoints(prev.playerName, newTotalScore).catch(err => {
             console.error('Failed to update points in database:', err);
           });
         }
-        
-        // Sync level passed count for the current difficulty
         db.updateLevelPassed(prev.playerName, selectedDifficulty, 
           selectedDifficulty === Difficulty.EASY ? levelPassedEasy :
           selectedDifficulty === Difficulty.MEDIUM ? levelPassedMedium :
@@ -472,7 +498,15 @@ export default function App() {
         ).catch(err => {
           console.error('Failed to update level passed count in database:', err);
         });
+        db.checkAchievements(prev.playerName).then((r) => {
+          if (r.success && r.newlyUnlocked && r.newlyUnlocked.length > 0) {
+            setNewlyUnlockedAchievements(r.newlyUnlocked);
+          }
+        });
       }
+      
+      if (levelPassedEasy === 10 && selectedDifficulty === Difficulty.EASY) setShowUnlockCelebration(Difficulty.MEDIUM);
+      else if (levelPassedMedium === 10 && selectedDifficulty === Difficulty.MEDIUM) setShowUnlockCelebration(Difficulty.HARD);
       
       return {
         ...prev,
@@ -482,7 +516,11 @@ export default function App() {
     });
 
     setView('WIN');
-  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName, gameConfig]);
+    if (!progress.playerName && !hasShownFirstTimeLoginPromptRef.current) {
+      hasShownFirstTimeLoginPromptRef.current = true;
+      setShowFirstTimeLoginPrompt(true);
+    }
+  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName, gameConfig, levelOfDay]);
 
   const handlePuppyFound = useCallback((id: string) => {
     playSfx('found', soundEffectsEnabled);
@@ -717,6 +755,7 @@ export default function App() {
           <HomeView
             progress={progress}
             activeTheme={activeTheme}
+            isActiveView={view === 'HOME'}
             onSelectDifficulty={(diff) => {
               setSelectedDifficulty(diff);
               setView('LEVEL_SELECT');
@@ -732,6 +771,7 @@ export default function App() {
             onOpenHintShop={openHintShop}
             onOpenPurchaseHistory={() => setShowPurchaseHistoryModal(true)}
             onOpenReferModal={() => setShowReferModal(true)}
+            onOpenAchievements={() => setShowAchievementsModal(true)}
             onLogout={handleLogout}
             onOpenLogin={() => setView('LOGIN')}
             priceOffer={priceOffer}
@@ -769,6 +809,7 @@ export default function App() {
             onToggleBackgroundMusic={toggleBackgroundMusic}
             onToggleSoundEffects={toggleSoundEffects}
             currentTheme={progress.selectedTheme || 'night'}
+            levelOfDay={levelOfDay}
           />
         )}
 
@@ -812,7 +853,12 @@ export default function App() {
               </div>
               
               <h2 className="text-3xl font-black text-slate-800 mt-12 mb-2">Level Clear!</h2>
-              <p className="text-slate-500 font-medium mb-6">Fantastic job finding all the pups!</p>
+              <p className="text-slate-500 font-medium mb-6">
+                Fantastic job finding all the pups!
+                {levelOfDay && levelOfDay.levelId === currentLevelId && levelOfDay.difficulty === selectedDifficulty && (
+                  <span className="block mt-2 text-amber-600 font-bold">🎉 2× Points Bonus!</span>
+                )}
+              </p>
               
               <div className="flex justify-center gap-4 mb-8">
                 <div className="bg-yellow-50 p-3 rounded-xl border border-yellow-100 flex flex-col items-center w-24">
@@ -834,6 +880,38 @@ export default function App() {
                 </button>
               </div>
             </div>
+            
+            {/* First-time login prompt (guest after first clear) */}
+            {showFirstTimeLoginPrompt && (
+              <div className="absolute inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 animate-fade-in">
+                <div className="bg-white rounded-2xl p-6 max-w-sm text-center shadow-2xl border-4 border-brand/30">
+                  <p className="text-lg font-bold text-slate-800 mb-2">Save your progress?</p>
+                  <p className="text-slate-600 text-sm mb-4">Log in to sync scores, hints, and unlock the leaderboard!</p>
+                  <div className="flex gap-3 justify-center">
+                    <Button onClick={() => { setShowFirstTimeLoginPrompt(false); setView('LOGIN'); }} className="bg-brand text-white px-4 py-2 rounded-xl font-bold">
+                      Log in
+                    </Button>
+                    <button onClick={() => setShowFirstTimeLoginPrompt(false)} className="text-slate-500 font-bold px-4 py-2 hover:text-slate-700">
+                      Maybe later
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Difficulty unlock celebration */}
+            {showUnlockCelebration && (
+              <div className="absolute inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 animate-fade-in">
+                <div className="bg-gradient-to-br from-amber-100 to-yellow-200 rounded-2xl p-6 max-w-sm text-center shadow-2xl border-4 border-amber-400">
+                  <p className="text-4xl mb-2">🎉</p>
+                  <p className="text-xl font-black text-slate-800 mb-1">{showUnlockCelebration} Unlocked!</p>
+                  <p className="text-slate-600 text-sm mb-4">You can now play {showUnlockCelebration} levels from the map.</p>
+                  <Button onClick={() => setShowUnlockCelebration(null)} className="bg-amber-500 text-white px-6 py-2 rounded-xl font-bold">
+                    Awesome!
+                  </Button>
+                </div>
+              </div>
+            )}
             
             {/* Confetti */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -994,6 +1072,15 @@ export default function App() {
           />
         )}
 
+        {showAchievementsModal && (
+          <AchievementsModal
+            isOpen={showAchievementsModal}
+            onClose={() => setShowAchievementsModal(false)}
+            activeTheme={THEME_CONFIGS[progress.selectedTheme || 'night']}
+            username={progress.playerName || null}
+          />
+        )}
+
         {showReferModal && (
           <ReferFriendModal
             isOpen={showReferModal}
@@ -1026,6 +1113,24 @@ export default function App() {
               setView('LOGIN');
             }}
           />
+        )}
+
+        {/* New achievements unlocked overlay */}
+        {newlyUnlockedAchievements.length > 0 && (
+          <div className="absolute inset-0 z-[190] bg-black/60 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-2xl p-6 max-w-sm text-center shadow-2xl border-4 border-amber-300">
+              <p className="text-2xl mb-2">🏅</p>
+              <p className="text-lg font-black text-slate-800 mb-2">Achievements Unlocked!</p>
+              <ul className="text-sm text-slate-600 mb-4 space-y-1">
+                {newlyUnlockedAchievements.map((id) => (
+                  <li key={id} className="font-bold capitalize">{id.replace(/_/g, ' ')}</li>
+                ))}
+              </ul>
+              <Button onClick={() => setNewlyUnlockedAchievements([])} className="bg-amber-500 text-white px-6 py-2 rounded-xl font-bold">
+                Cool!
+              </Button>
+            </div>
+          </div>
         )}
 
         {showQuitConfirm && (
