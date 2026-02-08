@@ -13,7 +13,7 @@ const ROLE_PERMISSIONS = {
   game_admin: ['gameplay:read', 'gameplay:write', 'scenes:read', 'scenes:write', 'themes:read', 'themes:write'],
   content_admin: ['scenes:read', 'scenes:write', 'themes:read', 'themes:write', 'gameplay:read'],
   support_admin: ['users:read', 'users:write', 'users:ban', 'hints:read', 'hints:grant', 'referrals:read', 'dailycheckin:read', 'dailycheckin:write', 'leaderboard:read'],
-  finance_admin: ['shop:read', 'shop:write', 'payments:refund', 'referrals:read', 'referrals:write', 'referrals:revoke', 'analytics:read'],
+  finance_admin: ['shop:read', 'shop:write', 'payments:refund', 'referrals:read', 'referrals:write', 'referrals:revoke', 'analytics:read', 'users:read'],
 };
 
 function getPermissions(admin) {

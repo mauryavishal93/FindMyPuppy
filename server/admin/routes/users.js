@@ -14,9 +14,11 @@ const PurchaseHistory = () => mongoose.models.PurchaseHistory;
 router.get('/', requireAdmin, requirePermission('users:read'), async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const limit = Math.min(5000, Math.max(1, parseInt(req.query.limit, 10) || 500));
     const skip = (page - 1) * limit;
     const q = (req.query.q || '').trim();
+    const sort = (req.query.sort || 'lastLogin').toString();
+    const bannedFilter = req.query.banned;
     const filter = {};
     if (q) {
       filter.$or = [
@@ -24,8 +26,31 @@ router.get('/', requireAdmin, requirePermission('users:read'), async (req, res) 
         { email: { $regex: q, $options: 'i' } },
       ];
     }
+    if (bannedFilter === 'true' || bannedFilter === '1') filter.banned = true;
+    else if (bannedFilter === 'false' || bannedFilter === '0') filter.banned = { $ne: true };
+
+    const sortOpt = {};
+    if (sort === 'points') sortOpt.points = -1;
+    else if (sort === 'hints') sortOpt.hints = -1;
+    else sortOpt.lastLogin = -1;
+    if (sort === 'totalCleared') {
+      const maxTotalCleared = 5000;
+      const [users, total] = await Promise.all([
+        User().find(filter).lean().limit(maxTotalCleared),
+        User().countDocuments(filter),
+      ]);
+      const withTotal = users.map((u) => ({
+        ...u,
+        totalCleared: (u.levelPassedEasy || 0) + (u.levelPassedMedium || 0) + (u.levelPassedHard || 0),
+      }));
+      withTotal.sort((a, b) => (b.totalCleared || 0) - (a.totalCleared || 0));
+      const paginated = withTotal.slice(skip, skip + limit);
+      res.json({ success: true, users: paginated, total: Math.min(total, withTotal.length), page, limit });
+      return;
+    }
+
     const [users, total] = await Promise.all([
-      User().find(filter).sort({ lastLogin: -1 }).skip(skip).limit(limit).lean(),
+      User().find(filter).sort(sortOpt).skip(skip).limit(limit).lean(),
       User().countDocuments(filter),
     ]);
     res.json({ success: true, users, total, page, limit });
@@ -92,6 +117,41 @@ router.get('/:username/purchases', requireAdmin, requirePermission('users:read',
   } catch (err) {
     console.error('Admin purchases list error:', err);
     res.status(500).json({ success: false, message: 'Failed to list purchases.' });
+  }
+});
+
+router.post('/:username/ban', requireAdmin, requirePermission('users:ban'), async (req, res) => {
+  try {
+    const user = await User().findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    const reason = (req.body && req.body.reason) ? String(req.body.reason) : 'Banned by admin';
+    user.banned = true;
+    user.bannedAt = new Date();
+    user.bannedBy = req.admin._id;
+    user.banReason = reason;
+    await user.save();
+    await audit(req, 'user.ban', `user:${user.username}`, { reason });
+    res.json({ success: true, user: { username: user.username, banned: true } });
+  } catch (err) {
+    console.error('Admin user ban error:', err);
+    res.status(500).json({ success: false, message: 'Failed to ban user.' });
+  }
+});
+
+router.delete('/:username/ban', requireAdmin, requirePermission('users:ban'), async (req, res) => {
+  try {
+    const user = await User().findOne({ username: req.params.username });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+    user.banned = false;
+    user.bannedAt = undefined;
+    user.bannedBy = undefined;
+    user.banReason = undefined;
+    await user.save();
+    await audit(req, 'user.unban', `user:${user.username}`, {});
+    res.json({ success: true, user: { username: user.username, banned: false } });
+  } catch (err) {
+    console.error('Admin user unban error:', err);
+    res.status(500).json({ success: false, message: 'Failed to unban user.' });
   }
 });
 

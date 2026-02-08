@@ -1,17 +1,17 @@
 // ------------------------------------------------------------------
 // AUTH SERVICE - Client Side
+// Network calls use a secure layer so URLs and endpoints are not
+// visible in errors or console to end users.
 // ------------------------------------------------------------------
 
-// API Base URL Configuration:
-// - For production: Use the production server URL
-// - For local development: Use empty string to leverage Vite proxy (recommended)
-//   OR use "http://localhost:5774" for direct backend connection
-// - For Android Emulator: "http://10.0.2.2:5774"
-// - For Physical Device: your computer's local IP (e.g., "http://192.168.1.100:5774")
+import { secureFetch, parseJsonResponse, NETWORK_ERROR_MESSAGE } from './network';
 
-// Use production server for DB writes, or empty string to use Vite proxy in development
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-                            (import.meta.env.DEV ? "" : "https://findmypuppydb.onrender.com");
+// API base: not exposed in errors or logs. Export for config only (e.g. Razorpay callback).
+const getApiBase = (): string =>
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '' : 'https://findmypuppydb.onrender.com');
+
+export const API_BASE_URL = getApiBase();
 
 export interface User {
   username: string;
@@ -45,133 +45,106 @@ export interface PriceOffer {
   marketPrice: number;
   offerPrice: number;
   hintCount: number;
+  offerReason?: string;
+}
+
+export interface GameConfig {
+  puppyCountEasy: number;
+  puppyCountMedium: number;
+  puppyCountHard: number;
+  timerMediumSeconds: number;
+  timerHardSeconds: number;
+  wrongTapLimit: number;
+  pointsPerLevelEasy: number;
+  pointsPerLevelMedium: number;
+  pointsPerLevelHard: number;
+  levelsEnabled: boolean;
+  timerEnabled: boolean;
 }
 
 export const db = {
   login: async (username: string, password: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/login`, {
+      const response = await secureFetch(getApiBase(), '/api/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, password }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Login failed" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<AuthResponse>(response);
+      if (!ok) return { success: false, message: userMessage || 'Login failed' };
       return data;
-    } catch (error) {
-      console.error("DB Login Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   signup: async (username: string, email: string, password: string, referralCode?: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/signup`, {
+      const response = await secureFetch(getApiBase(), '/api/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, email, password, referralCode }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Signup failed" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<AuthResponse>(response);
+      if (!ok) return { success: false, message: userMessage || 'Signup failed' };
       return data;
-    } catch (error) {
-      console.error("DB Signup Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   updateHints: async (username: string, hints: number): Promise<{ success: boolean; message?: string; hints?: number }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/update-hints`, {
+      const response = await secureFetch(getApiBase(), '/api/user/update-hints', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, hints }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to update hints" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; hints?: number }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Update failed' };
       return data;
-    } catch (error) {
-      console.error("DB Update Hints Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
 
   updatePoints: async (username: string, points: number): Promise<{ success: boolean; message?: string; points?: number }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/update-points`, {
+      const response = await secureFetch(getApiBase(), '/api/user/update-points', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, points }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to update points" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; points?: number }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Update failed' };
       return data;
-    } catch (error) {
-      console.error("DB Update Points Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   updatePremium: async (username: string, premium: boolean): Promise<{ success: boolean; message?: string; premium?: boolean }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/update-premium`, {
+      const response = await secureFetch(getApiBase(), '/api/user/update-premium', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, premium }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to update premium status" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; premium?: boolean }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Update failed' };
       return data;
-    } catch (error) {
-      console.error("DB Update Premium Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   updateLevelPassed: async (username: string, difficulty: string, levelPassed: number): Promise<{ success: boolean; message?: string; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/update-level-passed`, {
+      const response = await secureFetch(getApiBase(), '/api/user/update-level-passed', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, difficulty, levelPassed }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to update level passed count" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; levelPassedEasy?: number; levelPassedMedium?: number; levelPassedHard?: number }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Update failed' };
       return data;
-    } catch (error) {
-      console.error("DB Update Level Passed Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
@@ -183,145 +156,113 @@ export const db = {
     purchaseMode: 'Money' | 'Points' = 'Money'
   ): Promise<{ success: boolean; message?: string; purchase?: PurchaseHistory }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/purchase-history`, {
+      const response = await secureFetch(getApiBase(), '/api/purchase-history', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username, amount, purchaseType, pack, purchaseMode }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to create purchase history" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; purchase?: PurchaseHistory }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Save failed' };
       return data;
-    } catch (error) {
-      console.error("DB Create Purchase History Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   getPurchaseHistory: async (username: string): Promise<{ success: boolean; message?: string; purchases?: PurchaseHistory[] }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/purchase-history/${username}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to fetch purchase history" };
-      }
+      const response = await secureFetch(getApiBase(), `/api/purchase-history/${username}`, { method: 'GET' });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; purchases?: PurchaseHistory[] }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Load failed' };
       return data;
-    } catch (error) {
-      console.error("DB Get Purchase History Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   getUser: async (username: string): Promise<{ success: boolean; message?: string; user?: User }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/user/${username}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to fetch user data" };
-      }
+      const response = await secureFetch(getApiBase(), `/api/user/${username}`, { method: 'GET' });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; user?: User }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Load failed' };
       return data;
-    } catch (error) {
-      console.error("DB Get User Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   getPriceOffer: async (): Promise<{ success: boolean; message?: string; offer?: PriceOffer }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/price-offer`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to fetch price offer" };
-      }
+      const response = await secureFetch(getApiBase(), '/api/price-offer', { method: 'GET' });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; offer?: PriceOffer }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Load failed' };
       return data;
-    } catch (error) {
-      console.error("DB Get Price Offer Error:", error);
-      return { success: false, message: "Connection error." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  getGameConfig: async (): Promise<{
+    success: boolean;
+    message?: string;
+    gameConfig?: GameConfig | null;
+    priceOffer?: PriceOffer | null;
+    maintenance?: { enabled: boolean; message: string | null };
+  }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/game-config', { method: 'GET' });
+      const { ok, data, userMessage } = await parseJsonResponse<{
+        success: boolean;
+        message?: string;
+        gameConfig?: GameConfig | null;
+        priceOffer?: PriceOffer | null;
+        maintenance?: { enabled: boolean; message: string | null };
+      }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Load failed' };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   signInWithGoogle: async (idToken: string, referralCode?: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/google/signin`, {
+      const response = await secureFetch(getApiBase(), '/api/auth/google/signin', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ idToken, referralCode }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Google sign in failed" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<AuthResponse>(response);
+      if (!ok) return { success: false, message: userMessage || 'Sign in failed' };
       return data;
-    } catch (error) {
-      console.error("DB Google Sign In Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   forgotPassword: async (email: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      const response = await secureFetch(getApiBase(), '/api/auth/forgot-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to send password reset email" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Request failed' };
       return data;
-    } catch (error) {
-      console.error("DB Forgot Password Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
   resetPassword: async (token: string, newPassword: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      const response = await secureFetch(getApiBase(), '/api/auth/reset-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ token, newPassword }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to reset password" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Reset failed' };
       return data;
-    } catch (error) {
-      console.error("DB Reset Password Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
@@ -336,21 +277,21 @@ export const db = {
     puppySize?: number;
   }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/daily-checkin/status/${username}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to get daily check-in status" };
-      }
+      const response = await secureFetch(getApiBase(), `/api/daily-checkin/status/${username}`, { method: 'GET' });
+      const { ok, data, userMessage } = await parseJsonResponse<{
+        success: boolean;
+        message?: string;
+        lastCheckInDate?: string | null;
+        checkInStreak?: number;
+        totalCheckIns?: number;
+        hasCheckedInToday?: boolean;
+        puppyAge?: number;
+        puppySize?: number;
+      }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Load failed' };
       return data;
-    } catch (error) {
-      console.error("DB Get Daily Check-In Status Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
@@ -369,22 +310,26 @@ export const db = {
     milestone?: '7days' | '30days' | '1year' | null;
   }> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/daily-checkin/complete`, {
+      const response = await secureFetch(getApiBase(), '/api/daily-checkin/complete', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ username }),
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to complete daily check-in" };
-      }
+      const { ok, data, userMessage } = await parseJsonResponse<{
+        success: boolean;
+        message?: string;
+        hintsEarned?: number;
+        pointsEarned?: number;
+        totalHints?: number;
+        totalPoints?: number;
+        puppyAge?: number;
+        puppySize?: number;
+        checkInStreak?: number;
+        milestone?: '7days' | '30days' | '1year' | null;
+      }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Request failed' };
       return data;
-    } catch (error) {
-      console.error("DB Complete Daily Check-In Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 
@@ -395,26 +340,51 @@ export const db = {
     currentUser?: { username: string; rank: number; points: number } | null;
   }> => {
     try {
-      // Add username as query parameter if provided
-      const url = currentUsername 
-        ? `${API_BASE_URL}/api/leaderboard?username=${encodeURIComponent(currentUsername)}`
-        : `${API_BASE_URL}/api/leaderboard`;
-      
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        return { success: false, message: data.message || "Failed to fetch leaderboard" };
-      }
+      const path = currentUsername
+        ? `/api/leaderboard?username=${encodeURIComponent(currentUsername)}`
+        : '/api/leaderboard';
+      const response = await secureFetch(getApiBase(), path, { method: 'GET' });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; leaderboard?: Array<{ username: string; rank: number; points: number }>; currentUser?: { username: string; rank: number; points: number } | null }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Load failed' };
       return data;
-    } catch (error) {
-      console.error("DB Get Leaderboard Error:", error);
-      return { success: false, message: "Connection error. Check your internet." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  createRazorpayOrder: async (amount: number, receipt: string): Promise<{ success: boolean; message?: string; order?: { id: string; amount: number; currency: string } }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/razorpay/create-order', {
+        method: 'POST',
+        body: JSON.stringify({ amount, receipt }),
+      });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; order?: { id: string; amount: number; currency: string } }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Failed' };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  verifyRazorpayPayment: async (params: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    username: string;
+    pack: string;
+    hintsToAdd: number;
+    amount: number;
+  }): Promise<{ success: boolean; message?: string; errorCode?: string }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/razorpay/verify-payment', {
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; errorCode?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Verification failed', errorCode: (data as { errorCode?: string })?.errorCode };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
     }
   },
 

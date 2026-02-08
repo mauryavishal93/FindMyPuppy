@@ -1,3 +1,4 @@
+import { db } from './db';
 
 export interface RazorpayResponse {
   razorpay_order_id: string;
@@ -38,18 +39,9 @@ export const initializeRazorpayPayment = async (options: {
     // Flag to track if payment was already handled by success/fail events
     let isHandled = false;
 
-    // 1. Create order on the backend
-    const orderResponse = await fetch('/api/razorpay/create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: options.amount,
-        receipt: `receipt_${Date.now()}`
-      })
-    });
-
-    const orderData = await orderResponse.json();
-    if (!orderData.success) {
+    // 1. Create order via gateway (no direct API URL in Network tab)
+    const orderData = await db.createRazorpayOrder(options.amount, `receipt_${Date.now()}`);
+    if (!orderData.success || !orderData.order) {
       throw new Error(orderData.message || 'Failed to create order');
     }
 

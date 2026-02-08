@@ -32,6 +32,7 @@ interface GameViewProps {
   onBack: () => void;
   onWrongClick: () => void;
   wrongAttempts: number;
+  wrongTapLimit: number;
   currentTheme: ThemeType;
 }
 
@@ -60,6 +61,7 @@ export const GameView: React.FC<GameViewProps> = ({
   onBack,
   onWrongClick,
   wrongAttempts,
+  wrongTapLimit = 3,
   currentTheme
 }) => {
   const [isMusicDropdownOpen, setIsMusicDropdownOpen] = useState(false);
@@ -180,15 +182,15 @@ export const GameView: React.FC<GameViewProps> = ({
           <div className="bg-red-900/80 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold text-white border border-red-700 flex items-center gap-2 shadow-lg">
             {/* Creative Puppy Icons showing remaining attempts */}
             <div className="flex items-center gap-1">
-              {[1, 2, 3].map((attempt) => (
+              {Array.from({ length: wrongTapLimit }, (_, i) => i + 1).map((attempt) => (
                 <i 
                   key={attempt}
                   className={`fas fa-dog text-[10px] sm:text-xs transition-all duration-300 ${
-                    attempt > (3 - wrongAttempts) 
+                    attempt > (wrongTapLimit - wrongAttempts) 
                       ? 'text-red-300/30 scale-75 opacity-50' 
-                      : wrongAttempts >= 2 
+                      : wrongAttempts >= wrongTapLimit - 1 
                         ? 'text-red-300 animate-pulse' 
-                        : wrongAttempts === 1 
+                        : wrongAttempts >= 1 
                           ? 'text-yellow-300' 
                           : 'text-white'
                   }`}
@@ -197,8 +199,8 @@ export const GameView: React.FC<GameViewProps> = ({
             </div>
             <span className="flex items-center gap-1">
               <span className="text-[10px] sm:text-xs opacity-80 uppercase tracking-tighter">Lifes</span>
-              <span className={`${wrongAttempts >= 2 ? 'text-red-300 animate-pulse' : wrongAttempts === 1 ? 'text-yellow-300' : 'text-white'}`}>
-                {3 - wrongAttempts}
+              <span className={`${wrongAttempts >= wrongTapLimit - 1 ? 'text-red-300 animate-pulse' : wrongAttempts >= 1 ? 'text-yellow-300' : 'text-white'}`}>
+                {wrongTapLimit - wrongAttempts}
               </span>
             </span>
           </div>

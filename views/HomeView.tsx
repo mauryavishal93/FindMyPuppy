@@ -57,6 +57,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const marketPrice = priceOffer?.marketPrice || 99;
   const offerPrice = priceOffer?.offerPrice || 9;
   const hintCount = priceOffer?.hintCount || 100;
+  const offerReason = priceOffer?.offerReason || 'Special Offer';
   const hasOffer = marketPrice !== offerPrice;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [currentDifficultyIndex, setCurrentDifficultyIndex] = useState(0);
@@ -555,6 +556,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
 
             <div className="z-10 flex flex-col items-end pr-2">
+              {hasOffer && offerReason && (
+                <span className="text-[8px] mb-0.5 opacity-95 uppercase font-bold tracking-wider drop-shadow-sm">
+                  {offerReason}
+                </span>
+              )}
               <div className="flex items-center gap-1 bg-white/30 backdrop-blur-md px-2 py-0.5 rounded-lg shadow-md border border-white/40">
                 {hasOffer ? (
                   <>

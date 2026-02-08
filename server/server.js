@@ -14,6 +14,7 @@ import { OAuth2Client } from 'google-auth-library';
 import nodemailer from 'nodemailer';
 import adminRouter from './admin/routes/index.js';
 import { seedFirstAdmin } from './admin/seed.js';
+import { GameConfig, MaintenanceMode } from './admin/schemas.js';
 
 // Load environment variables (Render injects process.env; local can use .env files)
 const __filename = fileURLToPath(import.meta.url);
@@ -38,8 +39,8 @@ const razorpay = new Razorpay({
 
 console.log(`💳 Razorpay Initialized with Key ID: ${RAZORPAY_KEY_ID.substring(0, 8)}...`);
 
-// Google OAuth Configuration
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+// Google OAuth Configuration (use same client ID as frontend; Render may set VITE_GOOGLE_CLIENT_ID only)
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '';
 const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 if (googleClient) {
@@ -82,8 +83,8 @@ if (isProduction) {
   console.log('🚀 Running in DEVELOPMENT mode.');
 }
 
-// MongoDB Connection
-const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://vimaurya24_db_user:jrPF6GqaTX9H40s1@findmypuppy.q6hlrak.mongodb.net/findmypuppy?appName=findmypuppy";
+// MongoDB Connection (Render uses MONGODB_URI; support both)
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb+srv://vimaurya24_db_user:jrPF6GqaTX9H40s1@findmypuppy.q6hlrak.mongodb.net/findmypuppy?appName=findmypuppy";
 const COLLECTION_NAME = "user"; 
 
 mongoose.connect(MONGO_URI)
@@ -113,7 +114,12 @@ const userSchema = new mongoose.Schema({
   puppyAge: { type: Number, default: 0 }, // Puppy age in days (0-7, then cycles)
   puppySize: { type: Number, default: 1 }, // Puppy size multiplier (1.0 to 2.0 based on age)
   createdAt: { type: Date, default: Date.now },
-  lastLogin: { type: Date, default: Date.now }
+  lastLogin: { type: Date, default: Date.now },
+  // Admin: ban
+  banned: { type: Boolean, default: false },
+  bannedAt: { type: Date },
+  bannedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser' },
+  banReason: { type: String },
 }, { collection: COLLECTION_NAME });
 
 // Ensure strict is false for this model just in case
@@ -261,6 +267,10 @@ app.post('/api/login', async (req, res) => {
     
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found. Please sign up." });
+    }
+
+    if (user.banned) {
+      return res.status(403).json({ success: false, message: "This account has been banned." });
     }
 
     // Skip password check for OAuth users
@@ -1263,10 +1273,17 @@ app.post('/api/auth/google/signin', async (req, res) => {
     // Check if user exists with this Google ID
     let user = await User.findOne({ googleId });
 
+    if (user && user.banned) {
+      return res.status(403).json({ success: false, message: "This account has been banned." });
+    }
+
     if (!user) {
       // User doesn't exist by googleId - check if email exists (e.g. signed up with email/password)
       const existingUser = await User.findOne({ email });
       if (existingUser) {
+        if (existingUser.banned) {
+          return res.status(403).json({ success: false, message: "This account has been banned." });
+        }
         // Link Google to existing account: same user can sign in with password or Google
         existingUser.googleId = googleId;
         existingUser.lastLogin = new Date();
@@ -2037,6 +2054,78 @@ app.get('/api/user/:username', async (req, res) => {
   } catch (error) {
     console.error('Get User Error:', error);
     res.status(500).json({ success: false, message: "Server error fetching user data." });
+  }
+});
+
+// Public game config (used by game client so admin changes reflect for all users)
+app.get('/api/game-config', async (req, res) => {
+  try {
+    const [maintenanceDoc, gameConfigDoc] = await Promise.all([
+      MaintenanceMode.findOne({ configKey: 'default' }).lean(),
+      GameConfig.findOne({ configKey: 'default' }).lean(),
+    ]);
+    if (maintenanceDoc && maintenanceDoc.enabled) {
+      return res.status(200).json({
+        success: true,
+        maintenance: {
+          enabled: true,
+          message: maintenanceDoc.message || 'Under maintenance. Please try again later.',
+        },
+        gameConfig: null,
+        priceOffer: null,
+      });
+    }
+    let gameConfig = gameConfigDoc;
+    if (!gameConfig) {
+      gameConfig = {
+        puppyCountEasy: 15,
+        puppyCountMedium: 25,
+        puppyCountHard: 40,
+        timerMediumSeconds: 150,
+        timerHardSeconds: 180,
+        wrongTapLimit: 3,
+        pointsPerLevelEasy: 5,
+        pointsPerLevelMedium: 10,
+        pointsPerLevelHard: 15,
+        levelsEnabled: true,
+        timerEnabled: true,
+      };
+    }
+    const offer = await PriceOffer.findOne({ hintPack: '100 Hints Pack' }).lean();
+    const priceOffer = offer ? {
+      hintPack: offer.hintPack,
+      marketPrice: offer.marketPrice,
+      offerPrice: offer.offerPrice,
+      hintCount: offer.hintCount,
+      offerReason: offer.offerReason || 'Special Offer',
+    } : {
+      hintPack: '100 Hints Pack',
+      marketPrice: 99,
+      offerPrice: 9,
+      hintCount: 100,
+      offerReason: 'Special Offer',
+    };
+    res.status(200).json({
+      success: true,
+      maintenance: { enabled: false, message: null },
+      gameConfig: {
+        puppyCountEasy: gameConfig.puppyCountEasy,
+        puppyCountMedium: gameConfig.puppyCountMedium,
+        puppyCountHard: gameConfig.puppyCountHard,
+        timerMediumSeconds: gameConfig.timerMediumSeconds,
+        timerHardSeconds: gameConfig.timerHardSeconds,
+        wrongTapLimit: gameConfig.wrongTapLimit,
+        pointsPerLevelEasy: gameConfig.pointsPerLevelEasy,
+        pointsPerLevelMedium: gameConfig.pointsPerLevelMedium,
+        pointsPerLevelHard: gameConfig.pointsPerLevelHard,
+        levelsEnabled: gameConfig.levelsEnabled !== false,
+        timerEnabled: gameConfig.timerEnabled !== false,
+      },
+      priceOffer,
+    });
+  } catch (error) {
+    console.error('Get game config error:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching game config.' });
   }
 });
 

@@ -22,7 +22,7 @@ import { useTimer } from './hooks/useTimer';
 import { usePayment } from './hooks/usePayment';
 import { useHints } from './hooks/useHints';
 import { useAudio } from './hooks/useAudio';
-import { db, PriceOffer } from './services/db';
+import { db, PriceOffer, GameConfig } from './services/db';
 
 export default function App() {
   const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST'>('HOME');
@@ -76,6 +76,8 @@ export default function App() {
 
   // Price Offer State
   const [priceOffer, setPriceOffer] = useState<PriceOffer | null>(null);
+  const [gameConfig, setGameConfig] = useState<GameConfig | null>(null);
+  const [maintenanceMode, setMaintenanceMode] = useState<{ enabled: boolean; message: string | null } | null>(null);
 
   // Quit Confirmation State
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
@@ -107,17 +109,18 @@ export default function App() {
     setView('GAME_OVER');
   }, [playSfx, soundEffectsEnabled]);
 
+  const wrongTapLimit = gameConfig?.wrongTapLimit ?? 3;
   const handleWrongClick = useCallback(() => {
     playSfx('fail', soundEffectsEnabled);
     setWrongAttempts(prev => {
       const newAttempts = prev + 1;
-      if (newAttempts >= 3) {
+      if (newAttempts >= wrongTapLimit) {
         setIsTimerRunning(false);
         setView('GAME_LOST');
       }
       return newAttempts;
     });
-  }, [playSfx, soundEffectsEnabled]);
+  }, [playSfx, soundEffectsEnabled, wrongTapLimit]);
 
   const { timeLeft, setTimeLeft, formatTime, resetTimer } = useTimer({
     timeLimit,
@@ -127,14 +130,17 @@ export default function App() {
 
   // --- DATA SYNCHRONIZATION HELPERS ---
 
-  // Fetch price offer from database
-  const fetchPriceOffer = useCallback(async () => {
+  // Fetch game config and price offer (used so admin changes reflect for all users)
+  const fetchGameConfig = useCallback(async () => {
     try {
-      const response = await db.getPriceOffer();
-      if (response.success && response.offer) {
-        setPriceOffer(response.offer);
-      } else {
-        // Fallback to default if fetch fails
+      const response = await db.getGameConfig();
+      if (response.success) {
+        if (response.maintenance) setMaintenanceMode(response.maintenance);
+        if (response.maintenance?.enabled) return;
+        if (response.gameConfig) setGameConfig(response.gameConfig);
+        if (response.priceOffer) setPriceOffer(response.priceOffer);
+      }
+      if (!response.success || !response.priceOffer) {
         setPriceOffer({
           hintPack: '100 Hints Pack',
           marketPrice: 99,
@@ -143,8 +149,7 @@ export default function App() {
         });
       }
     } catch (error) {
-      console.error("Failed to fetch price offer:", error);
-      // Fallback to default on error
+      console.error("Failed to fetch game config:", error);
       setPriceOffer({
         hintPack: '100 Hints Pack',
         marketPrice: 99,
@@ -277,13 +282,13 @@ export default function App() {
 
   // Fetch price offer on mount
   useEffect(() => {
-    fetchPriceOffer();
-  }, [fetchPriceOffer]);
+    fetchGameConfig();
+  }, [fetchGameConfig]);
 
   // Fetch price offer when view changes (app load, refresh, open game, come back from game)
   useEffect(() => {
-    fetchPriceOffer();
-  }, [view, fetchPriceOffer]);
+    fetchGameConfig();
+  }, [view, fetchGameConfig]);
 
   // Check for reset password token in URL on app load (e.g. user opened link from email)
   useEffect(() => {
@@ -395,7 +400,7 @@ export default function App() {
     resetHints();
     setWrongAttempts(0); // Reset wrong attempts for new level
     
-    const result = await initLevel(level, diff);
+    const result = await initLevel(level, diff, gameConfig ?? undefined);
     
     // Always reset timer to the full time limit for a fresh start
     // Set timeLimit first, then reset timer to ensure fresh start
@@ -411,7 +416,7 @@ export default function App() {
     
     // Ensure timer is stopped until image loads
     setIsTimerRunning(false);
-  }, [initLevel, resetHints, setTimeLeft, resetTimer]);
+  }, [initLevel, resetHints, setTimeLeft, resetTimer, gameConfig]);
 
   const handleLevelSelect = (levelId: number) => {
     setCurrentLevelId(levelId);
@@ -425,7 +430,11 @@ export default function App() {
     const isFirstClear = !progress.clearedLevels[levelKey];
     let pointsAwarded = 0;
     
-    if (isFirstClear) {
+    if (isFirstClear && gameConfig) {
+      if (selectedDifficulty === Difficulty.EASY) pointsAwarded = gameConfig.pointsPerLevelEasy ?? 5;
+      if (selectedDifficulty === Difficulty.MEDIUM) pointsAwarded = gameConfig.pointsPerLevelMedium ?? 10;
+      if (selectedDifficulty === Difficulty.HARD) pointsAwarded = gameConfig.pointsPerLevelHard ?? 15;
+    } else if (isFirstClear) {
       if (selectedDifficulty === Difficulty.EASY) pointsAwarded = 5;
       if (selectedDifficulty === Difficulty.MEDIUM) pointsAwarded = 10;
       if (selectedDifficulty === Difficulty.HARD) pointsAwarded = 15;
@@ -473,7 +482,7 @@ export default function App() {
     });
 
     setView('WIN');
-  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName]);
+  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName, gameConfig]);
 
   const handlePuppyFound = useCallback((id: string) => {
     playSfx('found', soundEffectsEnabled);
@@ -670,6 +679,15 @@ export default function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, showLeaderboard, handleBack]);
 
+  if (maintenanceMode?.enabled) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-center text-white">
+        <h1 className="text-2xl font-bold mb-4">Under maintenance</h1>
+        <p className="text-slate-300 max-w-md">{maintenanceMode.message || 'Please try again later.'}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mobile-app-container">
       
@@ -781,6 +799,7 @@ export default function App() {
             onBack={handleBack}
             onWrongClick={handleWrongClick}
             wrongAttempts={wrongAttempts}
+            wrongTapLimit={wrongTapLimit}
             currentTheme={progress.selectedTheme || 'night'}
           />
         )}
@@ -889,7 +908,7 @@ export default function App() {
                     🐾 Too Many Wrong Guesses! 🐾
                   </p>
                   <p className="text-slate-500 text-sm font-medium">
-                    Those sneaky puppies are still hiding! You tapped 3 wrong spots.
+                    Those sneaky puppies are still hiding! You tapped {wrongTapLimit} wrong spots.
                   </p>
                   <p className="text-slate-400 text-xs italic mt-3">
                     "The best detectives take their time and look carefully!"
