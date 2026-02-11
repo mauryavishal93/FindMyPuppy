@@ -14,6 +14,7 @@ import { ReferFriendModal } from './components/modals/ReferFriendModal';
 import { AchievementsModal } from './components/modals/AchievementsModal';
 import { ForgotPasswordModal } from './components/modals/ForgotPasswordModal';
 import { ResetPasswordModal } from './components/modals/ResetPasswordModal';
+import { SettingsModal } from './components/modals/SettingsModal';
 import { Button } from './components/ui/Button';
 import { LoginView } from './views/LoginView';
 import { HomeView } from './views/HomeView';
@@ -24,6 +25,7 @@ import { usePayment } from './hooks/usePayment';
 import { useHints } from './hooks/useHints';
 import { useAudio } from './hooks/useAudio';
 import { db, PriceOffer, GameConfig } from './services/db';
+import { triggerHaptic, HAPTIC_PATTERNS } from './utils/haptics';
 
 export default function App() {
   const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST'>('HOME');
@@ -40,6 +42,10 @@ export default function App() {
     const saved = localStorage.getItem('findMyPuppy_soundEffects');
     return saved ? JSON.parse(saved) : true;
   });
+  const [hapticsEnabled, setHapticsEnabled] = useState(() => {
+    const saved = localStorage.getItem('findMyPuppy_hapticsEnabled');
+    return saved ? JSON.parse(saved) : true;
+  });
   
   // Legacy isMuted for backward compatibility (both disabled = muted)
   const isMuted = !backgroundMusicEnabled && !soundEffectsEnabled;
@@ -49,6 +55,9 @@ export default function App() {
   
   // Info Modal State
   const [showInfoModal, setShowInfoModal] = useState(false);
+  
+  // Settings Modal State
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   
   // Explorer Guide State
   const [showExplorerGuide, setShowExplorerGuide] = useState(false);
@@ -108,7 +117,33 @@ export default function App() {
   const activeTheme = THEME_CONFIGS[selectedTheme as ThemeType] || THEME_CONFIGS['night'];
 
   // Custom Hooks
-  const { ambientAudioRef, playSfx } = useAudio({ view, backgroundMusicEnabled, soundEffectsEnabled });
+  const { ambientAudioRef, playSfx: playAudioSfx } = useAudio({ view, backgroundMusicEnabled, soundEffectsEnabled });
+  
+  // Enhanced SFX handler with Haptics
+  const playSfx = useCallback((type: 'found' | 'clear' | 'hint' | 'pay' | 'fail', enabled: boolean) => {
+    // 1. Play Audio
+    playAudioSfx(type, enabled);
+    
+    // 2. Trigger Haptic (if enabled globally)
+    if (hapticsEnabled) {
+      switch (type) {
+        case 'found':
+          triggerHaptic(HAPTIC_PATTERNS.SUCCESS);
+          break;
+        case 'clear':
+          triggerHaptic(HAPTIC_PATTERNS.SUCCESS);
+          break;
+        case 'fail':
+          triggerHaptic(HAPTIC_PATTERNS.ERROR);
+          break;
+        case 'hint':
+        case 'pay':
+          triggerHaptic(HAPTIC_PATTERNS.MEDIUM);
+          break;
+      }
+    }
+  }, [playAudioSfx, hapticsEnabled]);
+
   const { gameState, initLevel, updatePuppy } = useGameState();
   
   const handleGameOver = useCallback(() => {
@@ -294,9 +329,11 @@ export default function App() {
     fetchGameConfig();
   }, [fetchGameConfig]);
 
-  // Fetch price offer when view changes (app load, refresh, open game, come back from game)
+  // Fetch price offer when returning to HOME (refresh offers/config)
   useEffect(() => {
-    fetchGameConfig();
+    if (view === 'HOME') {
+      fetchGameConfig();
+    }
   }, [view, fetchGameConfig]);
 
   // Fetch level of the day when entering level select or game
@@ -631,6 +668,13 @@ export default function App() {
     setSoundEffectsEnabled(newValue);
     localStorage.setItem('findMyPuppy_soundEffects', JSON.stringify(newValue));
   };
+
+  const toggleHaptics = () => {
+    const newValue = !hapticsEnabled;
+    setHapticsEnabled(newValue);
+    localStorage.setItem('findMyPuppy_hapticsEnabled', JSON.stringify(newValue));
+    if (newValue) triggerHaptic(HAPTIC_PATTERNS.MEDIUM); // Feedback when enabling
+  };
   
   // Legacy toggle for backward compatibility
   const toggleMute = () => {
@@ -643,11 +687,12 @@ export default function App() {
 
   const handleBack = useCallback(() => {
     // 1. If any modal is open, close it and ensure we are on HOME (Select Difficulty)
-    if (showInfoModal || showThemeModal || showPurchaseHistoryModal || showPaymentModal || showLeaderboard) {
+    if (showInfoModal || showThemeModal || showPurchaseHistoryModal || showPaymentModal || showLeaderboard || showSettingsModal) {
       setShowInfoModal(false);
       setShowLeaderboard(false);
       setShowThemeModal(false);
       setShowPurchaseHistoryModal(false);
+      setShowSettingsModal(false);
       closePaymentModal();
       setView('HOME');
       return;
@@ -686,6 +731,7 @@ export default function App() {
     showPurchaseHistoryModal, 
     showPaymentModal, 
     showQuitConfirm, 
+    showSettingsModal,
     closePaymentModal
   ]);
 
@@ -695,7 +741,7 @@ export default function App() {
     const isBaseScreen = view === 'HOME' && 
                          !showInfoModal && !showThemeModal && 
                          !showPurchaseHistoryModal && !showPaymentModal && 
-                         !showQuitConfirm && !showLeaderboard;
+                         !showQuitConfirm && !showLeaderboard && !showSettingsModal;
 
     if (!isBaseScreen) {
       // If we are not on a base screen, ensure there is a history entry to "pop"
@@ -715,7 +761,7 @@ export default function App() {
 
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, showLeaderboard, handleBack]);
+  }, [view, showInfoModal, showThemeModal, showPurchaseHistoryModal, showPaymentModal, showQuitConfirm, showLeaderboard, showSettingsModal, handleBack]);
 
   if (maintenanceMode?.enabled) {
     return (
@@ -768,6 +814,7 @@ export default function App() {
             onToggleSoundEffects={toggleSoundEffects}
             onOpenThemeModal={() => setShowThemeModal(true)}
             onOpenInfoModal={() => setShowInfoModal(true)}
+            onOpenSettings={() => setShowSettingsModal(true)}
             onOpenHintShop={openHintShop}
             onOpenPurchaseHistory={() => setShowPurchaseHistoryModal(true)}
             onOpenReferModal={() => setShowReferModal(true)}
@@ -1022,6 +1069,18 @@ export default function App() {
               setShowInfoModal(false);
               setShowLeaderboard(true);
             }}
+          />
+        )}
+
+        {showSettingsModal && (
+          <SettingsModal
+            onClose={() => setShowSettingsModal(false)}
+            backgroundMusicEnabled={backgroundMusicEnabled}
+            soundEffectsEnabled={soundEffectsEnabled}
+            hapticsEnabled={hapticsEnabled}
+            onToggleBackgroundMusic={toggleBackgroundMusic}
+            onToggleSoundEffects={toggleSoundEffects}
+            onToggleHaptics={toggleHaptics}
           />
         )}
 

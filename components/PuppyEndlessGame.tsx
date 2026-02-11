@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { ThemeConfig } from '../types';
+import { triggerHaptic, HAPTIC_PATTERNS } from '../utils/haptics';
 
 // --- Game Constants ---
 // Physics and gameplay tuning variables
@@ -64,6 +65,12 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(initialHighScoreProp);
   const [showReward, setShowReward] = useState(false);
+  const touchStartRef = useRef<number | null>(null);
+  const highScoreRef = useRef(highScore);
+
+  useEffect(() => {
+    highScoreRef.current = highScore;
+  }, [highScore]);
   
   // Unique ID for daily reward tracking
   const gameId = `endless-${new Date().toISOString().slice(0, 10)}`;
@@ -89,6 +96,7 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
     // Game variables (reset on start)
     let animationId: number;
     let puppyY = FLOOR_PUPPY;
+    let puppyX = 0.15; // Horizontal position (relative to width)
     let puppyVy = 0; // Vertical velocity
     let isDucking = false;
     let obstacles: Obstacle[] = [];
@@ -119,7 +127,7 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
       const py = puppyY * height;
       const h = (isDucking ? PUPPY_HEIGHT_DUCK : PUPPY_HEIGHT_RUN) * height;
       const w = PUPPY_WIDTH * width;
-      const px = width * 0.15; // Fixed X position
+      const px = width * puppyX; // Dynamic X position
       
       // Animation state
       const legCycle = Math.floor(frameCount / 6) % 2;
@@ -213,7 +221,7 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
 
     // Check for AABB collision between puppy and obstacles
     const checkCollision = (): boolean => {
-      const px = 0.15 * width;
+      const px = puppyX * width;
       const py = puppyY * height;
       const pw = PUPPY_WIDTH * width;
       const ph = (isDucking ? PUPPY_HEIGHT_DUCK : PUPPY_HEIGHT_RUN) * height;
@@ -262,20 +270,55 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
       if (jumpRequestedRef.current && puppyY >= FLOOR_PUPPY - 0.002 && !isDucking) {
         puppyVy = JUMP_VELOCITY;
         jumpRequestedRef.current = false;
+        triggerHaptic(HAPTIC_PATTERNS.JUMP);
       }
       
       // Gravity & Ducking
       if (isDucking) {
-        // Fast fall if ducking in air
-        if (puppyY >= FLOOR_PUPPY - 0.01) puppyY = FLOOR_PUPPY_DUCK;
-        puppyVy = 0;
+        // Check if on/near ground (transition to slide)
+        if (puppyY >= FLOOR_PUPPY - 0.02) {
+          puppyY = FLOOR_PUPPY_DUCK;
+          puppyVy = 0;
+        } else {
+          // In air: Fast Dive (Gravity assist)
+          puppyVy += GRAVITY * 3.5; 
+          puppyY += puppyVy;
+          
+          // Maintain forward momentum during dive
+          if (puppyY < FLOOR_PUPPY_DUCK) {
+             if (puppyX < 0.4) puppyX += 0.0004;
+          }
+
+          // Floor collision during dive
+          if (puppyY >= FLOOR_PUPPY_DUCK) {
+             puppyY = FLOOR_PUPPY_DUCK;
+             puppyVy = 0;
+          }
+        }
       } else {
         puppyVy += GRAVITY;
         puppyY += puppyVy;
+        
+        // Move forward while in air (jump arc)
+        // Always add positive X momentum when in air
+        if (puppyY < FLOOR_PUPPY) {
+             puppyX += 0.0004; // Constant forward speed in air
+             // Cap max forward position
+             if (puppyX > 0.4) puppyX = 0.4;
+        }
+
         // Floor collision
         if (puppyY >= FLOOR_PUPPY) {
           puppyY = FLOOR_PUPPY;
           puppyVy = 0;
+        }
+      }
+
+      // Ground Logic: Drift back to start position
+      if (puppyY >= FLOOR_PUPPY && !isDucking) {
+        if (puppyX > 0.15) {
+             puppyX -= 0.001; // Drift back speed
+             if (puppyX < 0.15) puppyX = 0.15;
         }
       }
 
@@ -307,10 +350,12 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
       if (checkCollision()) {
         setGameState('gameover');
         setShowReward(true);
+        triggerHaptic(HAPTIC_PATTERNS.ERROR);
         
         // Update High Score
-        if (currentScore > highScore) {
+        if (currentScore > highScoreRef.current) {
           setHighScore(currentScore);
+          highScoreRef.current = currentScore;
           localStorage.setItem('puppyJump_highScore', currentScore.toString());
         }
         return;
@@ -339,6 +384,7 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
       if (e.code === 'ArrowDown' || e.key === 'ArrowDown') {
         e.preventDefault();
         isDucking = true;
+        triggerHaptic(HAPTIC_PATTERNS.LIGHT);
       }
     };
     
@@ -348,16 +394,47 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
       }
     };
     
+    // Touch Logic
     const handleTouchStart = (e: TouchEvent) => {
       if (gameState !== 'playing') return;
-      e.preventDefault();
-      // Simple tap to jump
-      jumpRequestedRef.current = true;
+      // Prevent default to stop scrolling
+      e.preventDefault(); 
+      
+      const touchY = e.touches[0].clientY;
+      touchStartRef.current = touchY;
+      
+      // Assume Jump on start (tap behavior)
+      if (puppyY >= FLOOR_PUPPY - 0.001) {
+         jumpRequestedRef.current = true;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (gameState !== 'playing' || touchStartRef.current === null) return;
+      e.preventDefault(); // Prevent scrolling while swiping
+      
+      const touchY = e.touches[0].clientY;
+      const diffY = touchY - touchStartRef.current;
+      
+      // Swipe Down Detection (positive Y diff)
+      if (diffY > 30) { // Threshold for swipe down
+        isDucking = true;
+        // Don't repeatedly trigger haptic
+      } else {
+        isDucking = false;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      touchStartRef.current = null;
+      isDucking = false; // Stop ducking on release
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     // Start loop
     setGameState('playing');
@@ -368,8 +445,10 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [gameState, highScore]); // Re-run if gameState changes
+  }, [gameState]); // Re-run if gameState changes
 
   // Trigger game loop when state becomes 'playing'
   useEffect(() => {

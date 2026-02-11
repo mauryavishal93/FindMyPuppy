@@ -50,7 +50,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 </div>
               </div>
               <p className="text-slate-700 text-sm font-medium leading-relaxed mb-3">
-                Embark on an <strong className="text-brand-dark">epic adventure</strong> through magical worlds and rescue adorable puppies hiding in plain sight! Each scene is uniquely crafted with <strong className="text-pink-600">AI-generated artwork</strong>, making every level a fresh and exciting challenge! 🌟
+                Embark on an <strong className="text-brand-dark">epic adventure</strong> through magical worlds and rescue adorable puppies hiding in plain sight! Each scene is uniquely crafted, making every level a fresh and exciting challenge! 🌟
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
                 <span className="bg-white/80 px-2 py-1 rounded-full text-xs font-bold text-slate-700 border border-brand/30">✨ 100 Unique Levels</span>
@@ -77,42 +77,24 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                   <p className="text-white/90 text-xs font-medium">Guest Mode & Login — You Choose!</p>
                 </div>
               </div>
-              <p className="text-white/95 text-sm mb-4 leading-relaxed font-medium">
-                Jump in <strong className="text-yellow-200">instantly</strong> or create an account — the adventure is yours to customize! 🐶
-              </p>
-              <div className="space-y-3">
-                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">👋</span>
+              
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
+                <ul className="space-y-3 text-xs text-white leading-relaxed">
+                  <li className="flex gap-3">
+                    <span className="text-lg">👋</span>
                     <div>
-                      <span className="block text-sm font-black text-white mb-1">Play as Guest — No Login Needed!</span>
-                      <span className="text-xs text-white/90 leading-relaxed">
-                        Tap <strong>Play as Guest</strong> or just pick a difficulty and start playing! Explore all 100 levels, earn points, and find puppies — <strong className="text-yellow-200">no account required</strong>. Perfect for trying the game or playing on the go!
-                      </span>
+                      <strong className="block text-yellow-200 text-sm">Guest Mode</strong>
+                      <span>Play instantly! No signup required. Perfect for quick fun.</span>
                     </div>
-                  </div>
-                </div>
-                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/30">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">🔐</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-lg">🔐</span>
                     <div>
-                      <span className="block text-sm font-black text-white mb-1">Login to Unlock More</span>
-                      <span className="text-xs text-white/90 leading-relaxed">
-                        Sign in to save progress across devices, climb the leaderboard, get daily check-in rewards, and <strong className="text-yellow-200">buy hint packs</strong> (with points or payment). Want to stock up on hints? Tap <strong>Login</strong> in the header first!
-                      </span>
+                      <strong className="block text-yellow-200 text-sm">Login Benefits</strong>
+                      <span>Save progress to cloud, compete on leaderboard, earn daily rewards, and buy hint packs!</span>
                     </div>
-                  </div>
-                </div>
-                <div className="bg-amber-400/30 backdrop-blur-sm rounded-xl p-3 border border-amber-300/50 flex items-center gap-2">
-                  <i className="fas fa-lightbulb text-amber-200 text-lg flex-shrink-0"></i>
-                  <span className="text-xs font-bold text-white">
-                    <strong>💡 Buying hints</strong> (points or real purchase) requires login — so we can save them to your account!
-                  </span>
-                </div>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2 justify-center">
-                <span className="bg-white/25 px-2.5 py-1 rounded-full text-[10px] font-black text-white border border-white/40">No signup to play</span>
-                <span className="bg-white/25 px-2.5 py-1 rounded-full text-[10px] font-black text-white border border-white/40">Login for hints shop</span>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -578,11 +560,11 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 </div>
               <div className="flex items-start gap-2">
                 <i className="fas fa-heart text-red-500 mt-1"></i>
-                <span><strong>Lifes:</strong> Watch the top-left - you have 3 lifes before game over! Wrong taps show a red ❌ mark.</span>
+                <span><strong>Lives:</strong> Watch the top-left - you have 3 lives before game over! Wrong taps show a red ❌ mark.</span>
               </div>
               <div className="flex items-start gap-2">
-                <i className="fas fa-music text-purple-500 mt-1"></i>
-                <span><strong>Audio:</strong> Toggle background music and sound effects from the music icon in the header!</span>
+                <i className="fas fa-sliders-h text-purple-500 mt-1"></i>
+                <span><strong>Settings:</strong> Toggle Music, SFX, and Haptics (Vibration) from the Settings menu!</span>
               </div>
               <div className="flex items-start gap-2">
                 <i className="fas fa-user-friends text-blue-500 mt-1"></i>
@@ -626,108 +608,34 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 <i className="fas fa-trophy text-yellow-500 mt-1"></i>
                 <span><strong>Track Progress:</strong> See your cleared levels and unlock new difficulties as you progress</span>
               </div>
-            </div>
-          </div>
-
-          {/* Advanced Strategies Section */}
-          <div className="bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 rounded-2xl p-5 border-2 border-emerald-200 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-300/20 rounded-full -mr-10 -mt-10"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg">
-                  <i className="fas fa-brain text-white text-xl"></i>
-                </div>
-                <h4 className="text-lg font-black text-slate-800">🧠 Advanced Strategies</h4>
-              </div>
-              <div className="space-y-3">
-                <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 shadow-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">🔍</span>
-                    <div className="flex-1">
-                      <span className="block text-sm font-black text-slate-800 mb-1">Systematic Search Pattern</span>
-                      <span className="text-xs text-slate-600 leading-relaxed">
-                        Start from one corner and work your way across the image in a grid pattern. This ensures you don't miss any areas!
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 shadow-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">🔎</span>
-                    <div className="flex-1">
-                      <span className="block text-sm font-black text-slate-800 mb-1">Zoom Strategy</span>
-                      <span className="text-xs text-slate-600 leading-relaxed">
-                        Zoom in to check small details, then zoom out to see the bigger picture. Puppies can be hiding in textures, shadows, or blending with similar colors!
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 shadow-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">💡</span>
-                    <div className="flex-1">
-                      <span className="block text-sm font-black text-slate-800 mb-1">Smart Hint Usage</span>
-                      <span className="text-xs text-slate-600 leading-relaxed">
-                        Save your hints for when you're stuck! Use them after finding most puppies naturally - they'll help you locate the trickiest ones!
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 shadow-sm">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">⏱️</span>
-                    <div className="flex-1">
-                      <span className="block text-sm font-black text-slate-800 mb-1">Time Management</span>
-                      <span className="text-xs text-slate-600 leading-relaxed">
-                        In Medium and Hard modes, don't spend too long on one area. If you can't find a puppy, move on and come back later!
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-start gap-2">
+                <i className="fas fa-gift text-pink-500 mt-1"></i>
+                <span><strong>Comeback Bonus:</strong> Returning after a break? Claim 5 free hints as a welcome back gift!</span>
               </div>
             </div>
           </div>
 
-          {/* Points & Rewards System */}
-          <div className="bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-2xl p-5 border-2 border-yellow-300 relative overflow-hidden shadow-lg">
-            <div className="absolute top-0 left-0 w-24 h-24 bg-yellow-400/20 rounded-full -ml-12 -mt-12"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                  <i className="fas fa-coins text-white text-xl"></i>
-                </div>
-                <h4 className="text-lg font-black text-slate-800">💰 Points & Rewards System</h4>
+          {/* Android App Promo */}
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-4 text-white shadow-lg border-2 border-green-400 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-10 -mt-10 animate-pulse"></div>
+            <div className="relative z-10 flex items-center justify-between gap-4">
+              <div>
+                <h5 className="font-black text-white text-sm mb-1 flex items-center gap-2">
+                  <i className="fab fa-android text-lg"></i>
+                  <span>Play on Android!</span>
+                </h5>
+                <p className="text-xs text-white/90 leading-tight">
+                  Download the official app for the smoothest experience, haptic feedback, and offline play!
+                </p>
               </div>
-              <div className="space-y-3">
-                <div className="bg-white/90 p-3 rounded-xl border border-yellow-300 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-black text-slate-800">🎯 Earning Points</span>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Easy!</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Complete levels to earn points! <strong className="text-emerald-600">Easy: +5 pts</strong>, <strong className="text-blue-600">Medium: +10 pts</strong>, <strong className="text-rose-600">Hard: +15 pts</strong> per level!
-                    <br/><span className="text-amber-600 font-bold mt-1 block">✨ Level of the Day: Earn 2x Points!</span>
-                  </p>
-                </div>
-                <div className="bg-white/90 p-3 rounded-xl border border-yellow-300 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-black text-slate-800">🛒 Spending Points</span>
-                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Worth It!</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Use points to buy hints! <strong className="text-indigo-600">10 points = 2 premium hints</strong>. Perfect for those challenging levels!
-                  </p>
-                </div>
-                <div className="bg-white/90 p-3 rounded-xl border border-yellow-300 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-black text-slate-800">🏆 Leaderboard</span>
-                    <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded">Compete!</span>
-                  </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Your total points determine your rank! Climb the leaderboard by completing more levels and earning more points!
-                  </p>
-                </div>
-              </div>
+              <a 
+                href="https://raw.githubusercontent.com/mauryavishal93/FindMyPuppy/main/apk/release/findmypuppy.apk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white text-green-600 px-3 py-2 rounded-lg font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all whitespace-nowrap"
+              >
+                Download APK
+              </a>
             </div>
           </div>
 
@@ -807,7 +715,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
                   <div className="flex items-center gap-2 text-white text-xs font-semibold">
                     <span className="text-yellow-300">🎮</span>
-                    <span><strong>Controls:</strong> Tap/Space to Jump, Down Arrow to Duck!</span>
+                    <span><strong>Controls:</strong> Tap/Space to Jump, Down Arrow (or Swipe Down) to Duck!</span>
                   </div>
                 </div>
                 <div className="bg-white/20 backdrop-blur-sm rounded-xl p-3 border border-white/30">
