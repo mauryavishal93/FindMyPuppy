@@ -27,6 +27,7 @@ export interface User {
   comebackBonusClaimed?: boolean;
   achievements?: string[];
   puppyRunHighScore?: number;
+  unlockedThemes?: string[];
 }
 
 export interface PurchaseHistory {
@@ -529,6 +530,33 @@ export const db = {
       });
       const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string; errorCode?: string }>(response);
       if (!ok) return { success: false, message: userMessage || 'Verification failed', errorCode: (data as { errorCode?: string })?.errorCode };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  getUnlockedThemes: async (username: string): Promise<{ success: boolean; unlockedThemes?: string[]; message?: string }> => {
+    try {
+      const response = await secureFetch(getApiBase(), `/api/user/${username}/themes`, {
+        method: 'GET',
+      });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; unlockedThemes?: string[]; message?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Failed to fetch themes' };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  unlockTheme: async (username: string, theme: string, unlockMethod: 'games' | 'points'): Promise<{ success: boolean; unlockedThemes?: string[]; points?: number; message?: string }> => {
+    try {
+      const response = await secureFetch(getApiBase(), `/api/user/${username}/unlock-theme`, {
+        method: 'POST',
+        body: JSON.stringify({ theme, unlockMethod }),
+      });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; unlockedThemes?: string[]; points?: number; message?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Failed to unlock theme' };
       return data;
     } catch {
       return { success: false, message: NETWORK_ERROR_MESSAGE };

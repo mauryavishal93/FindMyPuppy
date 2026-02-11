@@ -107,9 +107,15 @@ export default function App() {
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
       selectedTheme: 'night' as ThemeType,
-      puppyRunHighScore: 0
+      puppyRunHighScore: 0,
+      unlockedThemes: ['sunny', 'night'] as ThemeType[] // First 2 themes unlocked by default
     };
-    return saved ? { ...defaultProgress, ...JSON.parse(saved) } : defaultProgress;
+    const parsed = saved ? JSON.parse(saved) : {};
+    // Ensure unlockedThemes exists and includes at least first 2
+    if (!parsed.unlockedThemes || parsed.unlockedThemes.length < 2) {
+      parsed.unlockedThemes = ['sunny', 'night'];
+    }
+    return { ...defaultProgress, ...parsed };
   });
 
   // Ensure we always have a valid theme, fallback to 'night' if invalid
@@ -237,7 +243,10 @@ export default function App() {
             points: user.points || 0,
             premiumHints: user.hints || 0,
             clearedLevels: newClearedLevels,
-            puppyRunHighScore: user.puppyRunHighScore || 0
+            puppyRunHighScore: user.puppyRunHighScore || 0,
+            unlockedThemes: (user.unlockedThemes ? user.unlockedThemes.filter((t): t is ThemeType => 
+              Object.keys(THEME_CONFIGS).includes(t)
+            ) : ['sunny', 'night']) as ThemeType[]
             // Preserve theme as it might be local pref or we could sync it if DB supported it
           };
         });
@@ -411,7 +420,8 @@ export default function App() {
           totalScore: userData.points ?? prev.totalScore,
           premiumHints: userData.hints ?? prev.premiumHints,
           clearedLevels: newClearedLevels,
-          puppyRunHighScore: userData.puppyRunHighScore ?? prev.puppyRunHighScore
+          puppyRunHighScore: userData.puppyRunHighScore ?? prev.puppyRunHighScore,
+          unlockedThemes: prev.unlockedThemes || ['sunny', 'night']
         };
       });
     }
@@ -440,7 +450,8 @@ export default function App() {
       totalScore: 0,
       unlockedDifficulties: [Difficulty.EASY],
       premiumHints: 0,
-      selectedTheme: 'night' as ThemeType
+      selectedTheme: 'night' as ThemeType,
+      unlockedThemes: ['sunny', 'night'] as ThemeType[]
     });
     localStorage.removeItem('findMyPuppy_progress');
     setLoginName('');
@@ -522,6 +533,33 @@ export default function App() {
       const levelPassedMedium = countLevelsPassed(Difficulty.MEDIUM);
       const levelPassedHard = countLevelsPassed(Difficulty.HARD);
       
+      // Calculate total completed games (all difficulties combined)
+      const totalCompletedGames = levelPassedEasy + levelPassedMedium + levelPassedHard;
+      
+      // Check for theme unlock (every 10 games, starting from game 10)
+      let newlyUnlockedTheme: ThemeType | null = null;
+      if (isFirstClear && prev.playerName && totalCompletedGames > 0 && totalCompletedGames % 10 === 0) {
+        // Get all themes and find the next locked one
+        const allThemes = Object.keys(THEME_CONFIGS) as ThemeType[];
+        const currentUnlocked = prev.unlockedThemes || ['sunny', 'night'];
+        const nextLockedTheme = allThemes.find(theme => !currentUnlocked.includes(theme));
+        
+        if (nextLockedTheme) {
+          newlyUnlockedTheme = nextLockedTheme;
+          // Unlock via games method
+          db.unlockTheme(prev.playerName, nextLockedTheme, 'games').then((result) => {
+            if (result.success && result.unlockedThemes) {
+              setProgress(p => ({
+                ...p,
+                unlockedThemes: result.unlockedThemes as ThemeType[]
+              }));
+            }
+          }).catch(err => {
+            console.error('Failed to unlock theme:', err);
+          });
+        }
+      }
+      
       if (prev.playerName) {
         if (pointsAwarded > 0) {
           db.updatePoints(prev.playerName, newTotalScore).catch(err => {
@@ -548,7 +586,10 @@ export default function App() {
       return {
         ...prev,
         clearedLevels: updatedClearedLevels,
-        totalScore: newTotalScore
+        totalScore: newTotalScore,
+        unlockedThemes: newlyUnlockedTheme 
+          ? [...(prev.unlockedThemes || ['sunny', 'night']), newlyUnlockedTheme]
+          : prev.unlockedThemes
       };
     });
 
@@ -1058,6 +1099,17 @@ export default function App() {
             onClose={() => setShowThemeModal(false)}
             onSelect={handleThemeChange}
             currentTheme={progress.selectedTheme || 'night'}
+            unlockedThemes={progress.unlockedThemes || ['sunny', 'night']}
+            points={progress.points || progress.totalScore || 0}
+            username={progress.playerName}
+            onThemeUnlocked={(themes, newPoints) => {
+              setProgress(prev => ({
+                ...prev,
+                unlockedThemes: themes,
+                points: newPoints !== undefined ? newPoints : prev.points,
+                totalScore: newPoints !== undefined ? newPoints : prev.totalScore
+              }));
+            }}
           />
         )}
 

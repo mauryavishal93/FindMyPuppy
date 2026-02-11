@@ -50,7 +50,7 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 </div>
               </div>
               <p className="text-slate-700 text-sm font-medium leading-relaxed mb-3">
-                Embark on an <strong className="text-brand-dark">epic adventure</strong> through magical worlds and rescue adorable puppies hiding in plain sight! Each scene is uniquely crafted, making every level a fresh and exciting challenge! 🌟
+                Embark on an <strong className="text-brand-dark">epic adventure</strong> through magical worlds and rescue adorable puppies hiding in plain sight! Each scene is uniquely craftedvv, making every level a fresh and exciting challenge! 🌟
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
                 <span className="bg-white/80 px-2 py-1 rounded-full text-xs font-bold text-slate-700 border border-brand/30">✨ 100 Unique Levels</span>
