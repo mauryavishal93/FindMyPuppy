@@ -35,8 +35,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [googleClientIdConfigured, setGoogleClientIdConfigured] = useState(false);
-  const [googleScriptLoading, setGoogleScriptLoading] = useState(true); // show loading until script ready or timeout
+  const [googleClientIdConfigured, setGoogleClientIdConfigured] = useState(() => {
+    // Check immediately if script is already loaded
+    return !!(window.google?.accounts?.id);
+  });
+  const [googleScriptLoading, setGoogleScriptLoading] = useState(() => {
+    // Only show loading if script is not already loaded
+    return !window.google?.accounts?.id;
+  });
   const googleSignInButtonRef = useRef<HTMLDivElement>(null);
   const googleSignUpButtonRef = useRef<HTMLDivElement>(null);
 
@@ -154,6 +160,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
         callback: handleGoogleSignIn,
       });
 
+      // Clear and render the appropriate button based on current isSignup state
       if (googleSignInButtonRef.current) googleSignInButtonRef.current.innerHTML = '';
       if (googleSignUpButtonRef.current) googleSignUpButtonRef.current.innerHTML = '';
 
@@ -176,9 +183,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
       }
     };
 
-    // Poll for script (from index.html async load)
+    // Check if script is already loaded (optimistic check - most common case)
+    if (window.google?.accounts?.id) {
+      initializeGoogleSignIn();
+      return () => {}; // Return empty cleanup
+    }
+
+    // If script not ready, poll for it
+
+    // Poll for script (from index.html async load) - check frequently for fast response
     let attempts = 0;
-    const maxAttempts = 100; // ~10s
+    const maxAttempts = 50; // ~5s max wait
     const checkGoogle = setInterval(() => {
       attempts++;
       if (window.google?.accounts?.id) {
@@ -200,8 +215,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
                 clearInterval(retry);
                 initializeGoogleSignIn();
               }
-            }, 100);
-            setTimeout(() => clearInterval(retry), 5000);
+            }, 50); // Check more frequently
+            setTimeout(() => {
+              clearInterval(retry);
+              if (!window.google?.accounts?.id) {
+                setGoogleScriptLoading(false);
+                setGoogleClientIdConfigured(false);
+              }
+            }, 3000);
           };
           script.onerror = () => {
             setGoogleScriptLoading(false);
@@ -209,11 +230,19 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
           };
           document.head.appendChild(script);
         } else {
-          setGoogleScriptLoading(false);
-          if (!window.google?.accounts?.id) setGoogleClientIdConfigured(false);
+          // Script tag exists but not loaded yet - wait a bit more
+          const finalCheck = setTimeout(() => {
+            if (window.google?.accounts?.id) {
+              initializeGoogleSignIn();
+            } else {
+              setGoogleScriptLoading(false);
+              setGoogleClientIdConfigured(false);
+            }
+          }, 2000);
+          return () => clearTimeout(finalCheck);
         }
       }
-    }, 100);
+    }, 50); // Check every 50ms for faster response
 
     return () => clearInterval(checkGoogle);
   }, [isSignup, handleGoogleSignIn]);
@@ -446,7 +475,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ loginName, setLoginName, o
 
           {/* Google Sign In/Up Buttons */}
           <div className="w-full min-h-[40px] flex items-center justify-center pb-2">
-            {googleScriptLoading ? (
+            {/* Always show button container immediately - it will populate when script loads */}
+            {googleScriptLoading && !googleClientIdConfigured ? (
               <div className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-400 flex items-center justify-center gap-2">
                 <i className="fas fa-circle-notch animate-spin"></i>
                 Loading...
