@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Difficulty, UserProgress, ThemeConfig } from '../types';
 import { DifficultyCard } from '../components/ui/DifficultyCard';
 import { GameLogo } from '../components/GameLogo';
@@ -16,12 +16,6 @@ interface HomeViewProps {
   progress: UserProgress;
   activeTheme: ThemeConfig;
   onSelectDifficulty: (diff: Difficulty) => void;
-  onToggleMute: () => void;
-  isMuted: boolean;
-  backgroundMusicEnabled: boolean;
-  soundEffectsEnabled: boolean;
-  onToggleBackgroundMusic: () => void;
-  onToggleSoundEffects: () => void;
   onOpenThemeModal: () => void;
   onOpenInfoModal: () => void;
   onOpenHintShop: () => void;
@@ -41,12 +35,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   progress,
   activeTheme,
   onSelectDifficulty,
-  onToggleMute,
-  isMuted,
-  backgroundMusicEnabled,
-  soundEffectsEnabled,
-  onToggleBackgroundMusic,
-  onToggleSoundEffects,
   onOpenThemeModal,
   onOpenInfoModal,
   onOpenHintShop,
@@ -64,7 +52,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
   // Use price offer values if available, otherwise fallback to defaults
   const marketPrice = priceOffer?.marketPrice || 99;
   const offerPrice = priceOffer?.offerPrice || 9;
-  const hintCount = priceOffer?.hintCount || 100;
   const offerReason = priceOffer?.offerReason || 'Special Offer';
   const hasOffer = marketPrice !== offerPrice;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -164,9 +151,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }
   };
 
-  const showReminderBanner = progress.playerName && (
-    (!checkInData?.hasCheckedInToday) || (!dailyPuzzleCompletedToday)
-  );
   const dailyGameLabel = dailyPuzzleCompletedToday ? '✓ Jump Done' : '🐕 Puppy Jump';
   
   const handleNextDifficulty = () => {
@@ -581,7 +565,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Hint Shop Button - Compact */}
             <div 
               onClick={onOpenHintShop}
-              className="text-white p-2 rounded-xl shadow-lg cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between w-[346px] max-w-full mx-auto hover:shadow-xl hover:-translate-y-0.5 border-2 border-yellow-300/90 hover:border-yellow-200 shrink-0 h-[53px]"
+              className="text-white p-2 rounded-xl shadow-lg cursor-pointer transition-all relative overflow-hidden group flex items-center justify-between w-[342px] max-w-full mx-auto hover:shadow-xl hover:-translate-y-0.5 border-2 border-yellow-300/90 hover:border-yellow-200 shrink-0 h-[60px]"
               style={{
                 background: 'linear-gradient(to right, #facc15, #fb923c, #f472b6, #fb923c)',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.3)',

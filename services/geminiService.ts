@@ -32,33 +32,7 @@ const THEMES = [
 // Curated list of high-quality background images for game levels
 // Using local assets from public/asset folder (works for both web and Android)
 const FALLBACK_BG_IMAGES = [
-  // "/asset/1.png",
-  // "/asset/2.png",
-  // "/asset/3.png",
-  // "/asset/4.png",
-  // "/asset/5.png",
-  // "/asset/6.png",
-  // "/asset/7.png",
-  // "/asset/8.png",
-  // "/asset/9.png",
-  // "/asset/10.png",
-  // "/asset/11.png",
-  // "/asset/12.png",
-  // "/asset/13.png",
-  // "/asset/14.png",
-  // "/asset/15.png",
-  // "/asset/16.png",
-  // "/asset/17.png",
-  // "/asset/18.png",
-  // "/asset/19.png",
-  // "/asset/20.png",
-  // "/asset/21.png",
-  // "/asset/22.png",
-  // "/asset/23.png",
-  // "/asset/24.png",
-  // "/asset/25.png",
-  // "/asset/26.png"
-  "/asset/1.webp",
+"/asset/1.webp",
 "/asset/2.webp",
 "/asset/3.webp",
 "/asset/4.webp",
@@ -91,7 +65,7 @@ export const generateLevelTheme = async (levelId: number, _difficulty: Difficult
   return THEMES[(levelId - 1) % THEMES.length];
 };
 
-export const generateLevelImage = async (theme: string, levelId: number, timestamp?: number): Promise<string> => {
+export const generateLevelImage = async (_theme: string, levelId: number, timestamp?: number): Promise<string> => {
   // Use seeded random to select image based on level and timestamp for consistency
   // This ensures the same level gets the same image, but different levels get different images
   const seed = levelId * 1000 + (timestamp ? timestamp % 1000 : 0);
