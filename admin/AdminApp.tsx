@@ -206,6 +206,17 @@ function AdminLogin({ onLogin }: { onLogin: (email: string, password: string) =>
   );
 }
 
+type UserListItem = {
+  username: string;
+  email: string;
+  lastLogin?: string;
+  points?: number;
+  hints?: number;
+  levelPassedEasy?: number;
+  levelPassedMedium?: number;
+  levelPassedHard?: number;
+};
+
 function AdminDashboard() {
   const [stats, setStats] = useState<{
     dau?: number;
@@ -220,12 +231,44 @@ function AdminDashboard() {
     sparkline?: { date: string; dau: number; revenue: number }[];
   } | null>(null);
   const [err, setErr] = useState('');
+  const [showDAUList, setShowDAUList] = useState(false);
+  const [showMAUList, setShowMAUList] = useState(false);
+  const [dauUsers, setDauUsers] = useState<UserListItem[]>([]);
+  const [mauUsers, setMauUsers] = useState<UserListItem[]>([]);
+  const [loadingDAU, setLoadingDAU] = useState(false);
+  const [loadingMAU, setLoadingMAU] = useState(false);
 
   useEffect(() => {
     adminJson<{ stats: typeof stats }>('/dashboard/stats')
       .then((d) => setStats(d.stats || null))
       .catch((e) => setErr(e.message));
   }, []);
+
+  const loadDAUUsers = async () => {
+    setLoadingDAU(true);
+    try {
+      const data = await adminJson<{ users: UserListItem[]; count: number }>('/dashboard/dau-users');
+      setDauUsers(data.users || []);
+      setShowDAUList(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to load DAU users');
+    } finally {
+      setLoadingDAU(false);
+    }
+  };
+
+  const loadMAUUsers = async () => {
+    setLoadingMAU(true);
+    try {
+      const data = await adminJson<{ users: UserListItem[]; count: number }>('/dashboard/mau-users');
+      setMauUsers(data.users || []);
+      setShowMAUList(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Failed to load MAU users');
+    } finally {
+      setLoadingMAU(false);
+    }
+  };
 
   if (err) return <p className="text-red-400">{err}</p>;
   if (!stats) return <p className="text-slate-400">Loading stats...</p>;
@@ -236,8 +279,20 @@ function AdminDashboard() {
     <div>
       <h2 className="text-2xl font-bold text-white mb-6">Dashboard</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="DAU" value={stats.dau ?? 0} />
-        <StatCard label="MAU" value={stats.mau ?? 0} />
+        <StatCard 
+          label="DAU" 
+          value={stats.dau ?? 0} 
+          onClick={loadDAUUsers}
+          loading={loadingDAU}
+          clickable
+        />
+        <StatCard 
+          label="MAU" 
+          value={stats.mau ?? 0} 
+          onClick={loadMAUUsers}
+          loading={loadingMAU}
+          clickable
+        />
         <StatCard label="Total users" value={stats.totalUsers ?? 0} />
         <StatCard label="Hints sold" value={stats.hintsSold ?? 0} />
         <StatCard label="Revenue today (₹)" value={stats.revenueToday ?? 0} />
@@ -247,14 +302,17 @@ function AdminDashboard() {
         <StatCard label="Revenue total (₹)" value={stats.revenueTotal ?? 0} />
       </div>
       {stats.sparkline && stats.sparkline.length > 0 && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-6">
           <h3 className="text-lg font-bold text-white mb-3">Last 7 days (DAU)</h3>
-          <div className="flex items-end gap-1 h-24">
+          <div className="flex items-end gap-1 h-32">
             {stats.sparkline.map((s) => (
               <div key={s.date} className="flex-1 flex flex-col items-center gap-1">
                 <div
-                  className="w-full bg-indigo-600 rounded-t min-h-[2px]"
-                  style={{ height: `${Math.max(4, (s.dau / maxDau) * 80)}px` }}
+                  className="w-full rounded-t min-h-[2px] transition-all hover:opacity-80"
+                  style={{ 
+                    height: `${Math.max(4, (s.dau / maxDau) * 100)}px`,
+                    background: `linear-gradient(to top, #f97316, #fb923c, #fdba74)`
+                  }}
                   title={`${s.date}: DAU ${s.dau}, ₹${s.revenue}`}
                 />
                 <span className="text-xs text-slate-400 truncate w-full text-center">{s.date.slice(5)}</span>
@@ -264,15 +322,110 @@ function AdminDashboard() {
           <p className="text-xs text-slate-500 mt-2">Bar = DAU; hover for revenue</p>
         </div>
       )}
+
+      {showDAUList && (
+        <UserListModal
+          title="Daily Active Users (DAU)"
+          users={dauUsers}
+          onClose={() => setShowDAUList(false)}
+        />
+      )}
+
+      {showMAUList && (
+        <UserListModal
+          title="Monthly Active Users (MAU)"
+          users={mauUsers}
+          onClose={() => setShowMAUList(false)}
+        />
+      )}
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({ 
+  label, 
+  value, 
+  onClick, 
+  loading, 
+  clickable 
+}: { 
+  label: string; 
+  value: number;
+  onClick?: () => void;
+  loading?: boolean;
+  clickable?: boolean;
+}) {
   return (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+    <div 
+      className={`bg-slate-800 border border-slate-700 rounded-lg p-4 ${clickable ? 'cursor-pointer hover:bg-slate-750 hover:border-orange-500/50 transition-all' : ''}`}
+      onClick={clickable && !loading ? onClick : undefined}
+    >
       <p className="text-slate-400 text-sm">{label}</p>
-      <p className="text-xl font-bold text-white">{value}</p>
+      <p className="text-xl font-bold text-white">
+        {loading ? 'Loading...' : value}
+      </p>
+      {clickable && (
+        <p className="text-xs text-orange-400 mt-1">Click to view list</p>
+      )}
+    </div>
+  );
+}
+
+function UserListModal({ 
+  title, 
+  users, 
+  onClose 
+}: { 
+  title: string; 
+  users: UserListItem[]; 
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
+      <div className="bg-slate-800 border border-slate-700 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 border-b border-slate-700 flex justify-between items-center sticky top-0 bg-slate-800">
+          <h3 className="text-lg font-bold text-white">{title} ({users.length})</h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+        <div className="p-4">
+          <div className="max-h-[70vh] overflow-auto">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-slate-800 sticky top-0 z-10">
+                <tr>
+                  <th className="px-4 py-2 text-slate-300">Username</th>
+                  <th className="px-4 py-2 text-slate-300">Email</th>
+                  <th className="px-4 py-2 text-slate-300">Last Login</th>
+                  <th className="px-4 py-2 text-slate-300">Points</th>
+                  <th className="px-4 py-2 text-slate-300">Hints</th>
+                  <th className="px-4 py-2 text-slate-300">Levels (E/M/H)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">No users found</td>
+                  </tr>
+                ) : (
+                  users.map((u) => (
+                    <tr key={u.username} className="border-t border-slate-700 hover:bg-slate-800/50">
+                      <td className="px-4 py-2">{u.username}</td>
+                      <td className="px-4 py-2">{u.email}</td>
+                      <td className="px-4 py-2 text-slate-300">
+                        {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}
+                      </td>
+                      <td className="px-4 py-2">{u.points ?? 0}</td>
+                      <td className="px-4 py-2">{u.hints ?? 0}</td>
+                      <td className="px-4 py-2">
+                        {u.levelPassedEasy ?? 0} / {u.levelPassedMedium ?? 0} / {u.levelPassedHard ?? 0}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

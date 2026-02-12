@@ -120,4 +120,80 @@ router.get('/stats', requireAdmin, requirePermission('analytics:read', 'users:re
   }
 });
 
+// Get DAU users list (last 24 hours)
+router.get('/dau-users', requireAdmin, requirePermission('analytics:read', 'users:read'), async (req, res) => {
+  try {
+    const UserModel = mongoose.models.User;
+    if (!UserModel) {
+      return res.status(500).json({ success: false, message: 'Models not available.' });
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const dauUsers = await UserModel.find(
+      { lastLogin: { $gte: startOfToday } },
+      { username: 1, email: 1, lastLogin: 1, points: 1, hints: 1, levelPassedEasy: 1, levelPassedMedium: 1, levelPassedHard: 1 }
+    )
+      .sort({ lastLogin: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      users: dauUsers.map(u => ({
+        username: u.username,
+        email: u.email,
+        lastLogin: u.lastLogin,
+        points: u.points || 0,
+        hints: u.hints || 0,
+        levelPassedEasy: u.levelPassedEasy || 0,
+        levelPassedMedium: u.levelPassedMedium || 0,
+        levelPassedHard: u.levelPassedHard || 0,
+      })),
+      count: dauUsers.length,
+    });
+  } catch (err) {
+    console.error('DAU users error:', err);
+    res.status(500).json({ success: false, message: 'Failed to load DAU users.' });
+  }
+});
+
+// Get MAU users list (last 30 days)
+router.get('/mau-users', requireAdmin, requirePermission('analytics:read', 'users:read'), async (req, res) => {
+  try {
+    const UserModel = mongoose.models.User;
+    if (!UserModel) {
+      return res.status(500).json({ success: false, message: 'Models not available.' });
+    }
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const mauUsers = await UserModel.find(
+      { lastLogin: { $gte: startOfMonth } },
+      { username: 1, email: 1, lastLogin: 1, points: 1, hints: 1, levelPassedEasy: 1, levelPassedMedium: 1, levelPassedHard: 1 }
+    )
+      .sort({ lastLogin: -1 })
+      .lean();
+
+    res.json({
+      success: true,
+      users: mauUsers.map(u => ({
+        username: u.username,
+        email: u.email,
+        lastLogin: u.lastLogin,
+        points: u.points || 0,
+        hints: u.hints || 0,
+        levelPassedEasy: u.levelPassedEasy || 0,
+        levelPassedMedium: u.levelPassedMedium || 0,
+        levelPassedHard: u.levelPassedHard || 0,
+      })),
+      count: mauUsers.length,
+    });
+  } catch (err) {
+    console.error('MAU users error:', err);
+    res.status(500).json({ success: false, message: 'Failed to load MAU users.' });
+  }
+});
+
 export default router;

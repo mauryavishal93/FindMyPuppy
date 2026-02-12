@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { PuppyDesignsModal } from './PuppyDesignsModal';
 
 interface InfoModalProps {
   onClose: () => void;
@@ -8,9 +9,14 @@ interface InfoModalProps {
 
 export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGuide, onOpenLeaderboard }) => {
   const [showGuidePreview, setShowGuidePreview] = useState(false);
+  const [showPuppyDesigns, setShowPuppyDesigns] = useState(false);
 
   return (
-  <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 px-4 animate-fade-in overflow-hidden">
+    <>
+      {showPuppyDesigns && (
+        <PuppyDesignsModal onClose={() => setShowPuppyDesigns(false)} />
+      )}
+      <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 px-4 animate-fade-in overflow-hidden">
     <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl relative max-h-[calc(90vh-2rem)] flex flex-col border-4 border-white overflow-hidden">
       {/* Header - Fixed with Gradient */}
       <div className="flex-shrink-0 p-6 pb-4 border-b border-slate-100 bg-gradient-to-br from-brand-light via-pink-50 to-yellow-50">
@@ -773,6 +779,47 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
             </div>
           </div>
 
+          {/* Hidden Puppy Designs */}
+          <div className="bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-2xl p-5 border-2 border-white/30 relative overflow-hidden shadow-2xl">
+            <div className="absolute inset-0 opacity-20">
+              <div className="absolute top-0 left-0 w-24 h-24 bg-white rounded-full -translate-x-12 -translate-y-12 animate-pulse"></div>
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-white rounded-full translate-x-16 translate-y-16 animate-pulse" style={{ animationDelay: '1s' }}></div>
+            </div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border-2 border-white/30 shadow-lg">
+                  <span className="text-2xl">🐾</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-black text-white mb-1">🎨 Hidden Puppy Designs</h4>
+                  <p className="text-white/90 text-xs font-medium">View All Puppy Designs</p>
+                </div>
+              </div>
+              
+              <p className="text-white/95 text-sm mb-4 leading-relaxed font-medium">
+                Discover all the adorable puppy designs hidden throughout the game! Each level features these unique puppies camouflaged in the scenes. Can you find them all? 🎯
+              </p>
+
+              {/* Action Button */}
+              <button
+                onClick={() => setShowPuppyDesigns(true)}
+                className="w-full bg-white text-purple-600 px-4 py-3 rounded-xl font-black text-sm shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 border-2 border-white/50"
+              >
+                <i className="fas fa-images"></i>
+                <span>View All Puppy Designs</span>
+              </button>
+
+              {/* Badge/Indicator */}
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <div className="bg-yellow-400 text-purple-900 px-3 py-1 rounded-full text-xs font-black shadow-md flex items-center gap-1.5">
+                  <span>🎯</span>
+                  <span>Find Them All!</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Pro Tip - Enhanced */}
           <div className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 rounded-xl p-4 text-white shadow-lg border-2 border-amber-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -mr-8 -mt-8"></div>
@@ -842,5 +889,6 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
       </div>
     </div>
   </div>
+    </>
   );
 };
