@@ -279,17 +279,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
           )}
         </div>
           <div className="flex items-center gap-1.5 shrink-0">
-          {/* Download APK Button */}
-          <a 
-            href="https://raw.githubusercontent.com/mauryavishal93/FindMyPuppy/main/apk/release/findmypuppy.apk"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all bg-white/80 hover:bg-white text-slate-600 shadow-sm border border-white/50 active:scale-95 hover:rotate-12`}
-            title="Download Android APK"
-          >
-            <i className={`fas fa-download text-xs`}></i>
-          </a>
-
           {/* Settings Button */}
           <button 
             onClick={onOpenSettings}
