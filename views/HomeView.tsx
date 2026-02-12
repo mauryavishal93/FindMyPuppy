@@ -570,6 +570,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     Hint Shop
                   </span>
                 </h3>
+                <div className="flex items-center gap-1 bg-white/90 text-purple-600 px-1.5 py-0.5 rounded-md text-[9px] font-black shadow-sm border border-white/50 mt-0.5 ml-5 w-fit">
+                  <i className="fas fa-lightbulb text-[8px]"></i>
+                  <span>{progress.premiumHints ?? 0}</span>
+                </div>
               </div>
 
               <div className="z-10 flex flex-col items-end pr-2 justify-center">
