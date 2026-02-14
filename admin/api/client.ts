@@ -3,7 +3,10 @@
  * Errors never expose URLs, paths, or auth details to the UI or console.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+// Same logic as services/db.tsx — VITE_API_BASE_URL, else DEV='' / prod=findmypuppydb
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? '' : 'https://findmypuppydb.onrender.com');
 
 const getToken = () => localStorage.getItem('findMyPuppy_adminToken');
 
