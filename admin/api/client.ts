@@ -30,7 +30,8 @@ export async function adminFetch(path: string, options: RequestInit = {}): Promi
     ...(options.headers as Record<string, string>),
   };
   if (token) (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-  const url = `${API_BASE}/api/admin${path}`;
+  const base = (typeof API_BASE === 'string' ? API_BASE : '').replace(/\/$/, '');
+  const url = `${base}/api/admin${path.startsWith('/') ? path : `/${path}`}`;
   return fetch(url, { ...options, headers });
 }
 
