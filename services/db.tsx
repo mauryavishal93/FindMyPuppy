@@ -271,6 +271,20 @@ export const db = {
     }
   },
 
+  deleteAccount: async (username: string, password: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const response = await secureFetch(getApiBase(), '/api/auth/delete-account', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; message?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Delete failed' };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
   getDailyCheckInStatus: async (username: string): Promise<{
     success: boolean;
     message?: string;

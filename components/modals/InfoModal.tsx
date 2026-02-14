@@ -880,6 +880,14 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
                 <span>Privacy Policy</span>
                 <i className="fas fa-external-link-alt text-[10px]"></i>
               </a>
+              <a
+                href="/delete-account"
+                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 border border-red-200 shadow-sm"
+              >
+                <i className="fas fa-user-times text-xs"></i>
+                <span>Delete Account Permanently</span>
+                <i className="fas fa-external-link-alt text-[10px]"></i>
+              </a>
               <p className="text-[10px] text-slate-500 text-center max-w-xs">
                 COPPA Compliant • GDPR & CCPA Compliant
               </p>
