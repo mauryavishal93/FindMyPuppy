@@ -19,6 +19,8 @@ export function AdminApp() {
     return (allowed.includes(hash as AdminPage) ? hash : 'dashboard') as AdminPage;
   });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [sidebarMinimized, setSidebarMinimized] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -100,58 +102,138 @@ export function AdminApp() {
     );
   }
 
-  const navItems: { id: AdminPage; label: string }[] = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'users', label: 'Users' },
-    { id: 'gameplay', label: 'Gameplay' },
-    { id: 'shop', label: 'Shop' },
-    { id: 'security', label: 'Security' },
-    { id: 'maintenance', label: 'Maintenance' },
+  const navItems: { id: AdminPage; label: string; icon: string }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line' },
+    { id: 'users', label: 'Users', icon: 'fa-users' },
+    { id: 'gameplay', label: 'Gameplay', icon: 'fa-gamepad' },
+    { id: 'shop', label: 'Shop', icon: 'fa-shopping-cart' },
+    { id: 'security', label: 'Security', icon: 'fa-shield-alt' },
+    { id: 'maintenance', label: 'Maintenance', icon: 'fa-wrench' },
   ];
 
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+  const goTo = (id: AdminPage) => {
+    window.location.hash = id;
+    closeMobileMenu();
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-200 flex">
+    <div className="h-screen max-h-[100dvh] min-h-0 flex flex-col md:flex-row bg-slate-900 text-slate-200 overflow-hidden">
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 px-4 py-2 rounded shadow-lg ${
+          className={`fixed top-4 right-4 z-[60] px-4 py-2 rounded-xl shadow-lg text-sm max-w-[90vw] ${
             toast.type === 'success' ? 'bg-green-800' : toast.type === 'error' ? 'bg-red-800' : 'bg-slate-700'
           } text-white`}
         >
           {toast.message}
         </div>
       )}
-      <aside className="w-56 bg-slate-800 border-r border-slate-700 p-4 flex flex-col">
-        <h1 className="font-bold text-lg text-white mb-4">Find My Puppy Admin</h1>
-        <nav className="flex flex-col gap-1">
-          {navItems.map(({ id, label }) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              className={`px-3 py-2 rounded ${page === id ? 'bg-indigo-600 text-white' : 'hover:bg-slate-700'}`}
+
+      {/* Mobile overlay when drawer is open */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-30 md:hidden backdrop-blur-sm"
+          onClick={closeMobileMenu}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          fixed md:relative z-40 h-screen flex flex-col bg-slate-800 border-r border-slate-700
+          transition-[width,transform] duration-200 ease-out flex-shrink-0
+          ${sidebarMinimized ? 'w-14 md:w-14' : 'w-56 md:w-56'}
+          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+      >
+        <div className="p-2 md:p-4 flex flex-col h-full min-w-0">
+          <div className={`flex items-center gap-2 mb-2 md:mb-4 ${sidebarMinimized ? 'justify-center' : 'justify-between'}`}>
+            {!sidebarMinimized && (
+              <h1 className="font-bold text-sm md:text-lg text-white truncate">Find My Puppy Admin</h1>
+            )}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="md:hidden p-2 rounded text-slate-400 hover:text-white hover:bg-slate-700"
+                aria-label="Close menu"
+              >
+                <i className="fas fa-times" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSidebarMinimized((v) => !v)}
+                className="hidden md:flex p-2 rounded text-slate-400 hover:text-white hover:bg-slate-700"
+                aria-label={sidebarMinimized ? 'Expand sidebar' : 'Minimize sidebar'}
+                title={sidebarMinimized ? 'Expand' : 'Minimize'}
+              >
+                <i className={`fas fa-chevron-${sidebarMinimized ? 'right' : 'left'}`} />
+              </button>
+            </div>
+          </div>
+          <nav className="flex flex-col gap-0.5 md:gap-1 flex-1 min-h-0">
+            {navItems.map(({ id, label, icon }) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                onClick={(e) => { goTo(id); e.preventDefault(); }}
+                className={`
+                  flex items-center gap-2 px-2 md:px-3 py-2 rounded min-h-[2.5rem]
+                  ${page === id ? 'bg-indigo-600 text-white' : 'hover:bg-slate-700'}
+                  ${sidebarMinimized ? 'justify-center px-0' : ''}
+                `}
+                title={sidebarMinimized ? label : undefined}
+              >
+                <i className={`fas ${icon} w-5 flex-shrink-0`} />
+                {!sidebarMinimized && <span className="truncate">{label}</span>}
+              </a>
+            ))}
+          </nav>
+          <div className={`mt-auto pt-2 md:pt-4 border-t border-slate-700 ${sidebarMinimized ? 'text-center' : ''}`}>
+            {!sidebarMinimized && (
+              <span className="text-xs text-slate-400 block truncate mb-1">{admin?.email} ({admin?.role})</span>
+            )}
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm text-red-400 hover:text-red-300 w-full md:block"
+              title={sidebarMinimized ? 'Logout' : undefined}
             >
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div className="mt-auto pt-4 border-t border-slate-700">
-          <span className="text-xs text-slate-400">{admin?.email} ({admin?.role})</span>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-2 block text-sm text-red-400 hover:text-red-300"
-          >
-            Logout
-          </button>
+              {sidebarMinimized ? <i className="fas fa-sign-out-alt" /> : 'Logout'}
+            </button>
+          </div>
         </div>
       </aside>
-      <main className="flex-1 p-6 overflow-auto">
-        {page === 'dashboard' && <AdminDashboard />}
-        {page === 'users' && <AdminUsers showToast={showToast} />}
-        {page === 'gameplay' && <AdminGameplay showToast={showToast} />}
-        {page === 'security' && <AdminSecurity showToast={showToast} />}
-        {page === 'shop' && <AdminShop showToast={showToast} />}
-        {page === 'maintenance' && <AdminMaintenance showToast={showToast} />}
-      </main>
+
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+        {/* Mobile header with menu button */}
+        <header className="md:hidden flex-shrink-0 flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-slate-800 to-slate-800/95 border-b border-slate-700/80 shadow-lg z-20">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2.5 -ml-1 rounded-xl bg-slate-700/80 text-slate-200 hover:text-white hover:bg-indigo-600/80 active:scale-95 transition-all"
+            aria-label="Open menu"
+          >
+            <i className="fas fa-bars text-lg" />
+          </button>
+          <h2 className="font-bold text-white capitalize truncate flex-1">{page}</h2>
+          <span className="text-xs text-slate-400 font-medium px-2 py-1 rounded-lg bg-slate-700/50">Admin</span>
+        </header>
+
+        <main
+          className="flex-1 p-4 md:p-6 pb-8 md:pb-6 overflow-y-auto overflow-x-hidden min-w-0 min-h-0 overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
+          <div className="min-h-0">
+          {page === 'dashboard' && <AdminDashboard />}
+          {page === 'users' && <AdminUsers showToast={showToast} />}
+          {page === 'gameplay' && <AdminGameplay showToast={showToast} />}
+          {page === 'security' && <AdminSecurity showToast={showToast} />}
+          {page === 'shop' && <AdminShop showToast={showToast} />}
+          {page === 'maintenance' && <AdminMaintenance showToast={showToast} />}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
@@ -276,9 +358,9 @@ function AdminDashboard() {
   const maxDau = Math.max(1, ...(stats.sparkline?.map((s) => s.dau) ?? []));
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-white mb-6">Dashboard</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="min-w-0">
+      <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">Dashboard</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <StatCard 
           label="DAU" 
           value={stats.dau ?? 0} 
@@ -302,9 +384,9 @@ function AdminDashboard() {
         <StatCard label="Revenue total (₹)" value={stats.revenueTotal ?? 0} />
       </div>
       {stats.sparkline && stats.sparkline.length > 0 && (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-bold text-white mb-3">Last 7 days (DAU)</h3>
-          <div className="flex items-end gap-1 h-32">
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 md:p-4 mb-4 md:mb-6 overflow-x-auto">
+          <h3 className="text-base md:text-lg font-bold text-white mb-2 md:mb-3">Last 7 days (DAU)</h3>
+          <div className="flex items-end gap-0.5 md:gap-1 h-24 md:h-32 min-w-[200px]">
             {stats.sparkline.map((s) => (
               <div key={s.date} className="flex-1 flex flex-col items-center gap-1">
                 <div
@@ -381,23 +463,23 @@ function UserListModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
-      <div className="bg-slate-800 border border-slate-700 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="p-4 border-b border-slate-700 flex justify-between items-center sticky top-0 bg-slate-800">
-          <h3 className="text-lg font-bold text-white">{title} ({users.length})</h3>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60" onClick={onClose}>
+      <div className="bg-slate-800 border border-slate-700 rounded-t-xl sm:rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-xl flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="p-3 sm:p-4 border-b border-slate-700 flex justify-between items-center flex-shrink-0 bg-slate-800">
+          <h3 className="text-base sm:text-lg font-bold text-white truncate pr-2">{title} ({users.length})</h3>
+          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white p-2 flex-shrink-0">✕</button>
         </div>
-        <div className="p-4">
-          <div className="max-h-[70vh] overflow-auto">
-            <table className="w-full text-left border-collapse">
+        <div className="p-2 sm:p-4 overflow-auto min-h-0">
+          <div className="max-h-[60vh] sm:max-h-[70vh] overflow-auto overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm min-w-[500px]">
               <thead className="bg-slate-800 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-2 text-slate-300">Username</th>
-                  <th className="px-4 py-2 text-slate-300">Email</th>
-                  <th className="px-4 py-2 text-slate-300">Last Login</th>
-                  <th className="px-4 py-2 text-slate-300">Points</th>
-                  <th className="px-4 py-2 text-slate-300">Hints</th>
-                  <th className="px-4 py-2 text-slate-300">Levels (E/M/H)</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300">Username</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300">Email</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Last Login</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300">Points</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300">Hints</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300 hidden md:table-cell">Levels (E/M/H)</th>
                 </tr>
               </thead>
               <tbody>
@@ -408,14 +490,14 @@ function UserListModal({
                 ) : (
                   users.map((u) => (
                     <tr key={u.username} className="border-t border-slate-700 hover:bg-slate-800/50">
-                      <td className="px-4 py-2">{u.username}</td>
-                      <td className="px-4 py-2">{u.email}</td>
-                      <td className="px-4 py-2 text-slate-300">
+                      <td className="px-2 sm:px-4 py-2 font-medium">{u.username}</td>
+                      <td className="px-2 sm:px-4 py-2 truncate max-w-[120px] sm:max-w-none">{u.email}</td>
+                      <td className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">
                         {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}
                       </td>
-                      <td className="px-4 py-2">{u.points ?? 0}</td>
-                      <td className="px-4 py-2">{u.hints ?? 0}</td>
-                      <td className="px-4 py-2">
+                      <td className="px-2 sm:px-4 py-2">{u.points ?? 0}</td>
+                      <td className="px-2 sm:px-4 py-2">{u.hints ?? 0}</td>
+                      <td className="px-2 sm:px-4 py-2 hidden md:table-cell">
                         {u.levelPassedEasy ?? 0} / {u.levelPassedMedium ?? 0} / {u.levelPassedHard ?? 0}
                       </td>
                     </tr>
@@ -475,15 +557,15 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
   }, [load]);
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-white mb-4">Users</h2>
-      <div className="flex flex-wrap gap-2 mb-4 items-center">
+    <div className="min-w-0">
+      <h2 className="text-xl md:text-2xl font-bold text-white mb-3 md:mb-4">Users</h2>
+      <div className="flex flex-wrap gap-2 mb-3 md:mb-4 items-center">
         <input
           type="search"
-          placeholder="Search username or email"
+          placeholder="Search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="px-3 py-2 rounded bg-slate-800 border border-slate-600 text-white w-64"
+          className="px-3 py-2 rounded bg-slate-800 border border-slate-600 text-white w-full min-w-0 sm:w-64 text-sm"
         />
         <select
           value={sort}
@@ -505,21 +587,21 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
           <option value="no">Not banned</option>
         </select>
       </div>
-      {err && <p className="text-red-400 mb-2">{err}</p>}
-      {loading && <p className="text-slate-400 mb-2">Loading users…</p>}
-      <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-700">
-        <table className="w-full text-left border-collapse">
+      {err && <p className="text-red-400 mb-2 text-sm">{err}</p>}
+      {loading && <p className="text-slate-400 mb-2 text-sm">Loading users…</p>}
+      <div className="max-h-[70vh] overflow-auto overflow-x-auto rounded-lg border border-slate-700">
+        <table className="w-full text-left border-collapse text-sm min-w-[600px]">
           <thead className="bg-slate-800 sticky top-0 z-10">
             <tr>
-              <th className="px-4 py-2 text-slate-300">Username</th>
-              <th className="px-4 py-2 text-slate-300">Email</th>
-              <th className="px-4 py-2 text-slate-300">Points</th>
-              <th className="px-4 py-2 text-slate-300">Hints</th>
-              <th className="px-4 py-2 text-slate-300">Easy</th>
-              <th className="px-4 py-2 text-slate-300">Medium</th>
-              <th className="px-4 py-2 text-slate-300">Hard</th>
-              <th className="px-4 py-2 text-slate-300">Total cleared</th>
-              <th className="px-4 py-2 text-slate-300">Status</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Username</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Email</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Points</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Hints</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Easy</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Medium</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Hard</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Total</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -534,15 +616,15 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
                   className="border-t border-slate-700 hover:bg-slate-800/50 cursor-pointer"
                   onClick={() => setDetailUser(u)}
                 >
-                  <td className="px-4 py-2">{u.username}</td>
-                  <td className="px-4 py-2">{u.email}</td>
-                  <td className="px-4 py-2">{u.points ?? 0}</td>
-                  <td className="px-4 py-2">{u.hints ?? 0}</td>
-                  <td className="px-4 py-2">{easy}</td>
-                  <td className="px-4 py-2">{medium}</td>
-                  <td className="px-4 py-2">{hard}</td>
-                  <td className="px-4 py-2 font-medium text-white">{totalCleared}</td>
-                  <td className="px-4 py-2">{u.banned ? <span className="text-red-400 font-medium">Banned</span> : '—'}</td>
+                  <td className="px-2 sm:px-4 py-2 font-medium">{u.username}</td>
+                  <td className="px-2 sm:px-4 py-2 truncate max-w-[100px] sm:max-w-none">{u.email}</td>
+                  <td className="px-2 sm:px-4 py-2">{u.points ?? 0}</td>
+                  <td className="px-2 sm:px-4 py-2">{u.hints ?? 0}</td>
+                  <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{easy}</td>
+                  <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{medium}</td>
+                  <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{hard}</td>
+                  <td className="px-2 sm:px-4 py-2 font-medium text-white">{totalCleared}</td>
+                  <td className="px-2 sm:px-4 py-2">{u.banned ? <span className="text-red-400 font-medium">Banned</span> : '—'}</td>
                 </tr>
               );
             })}
