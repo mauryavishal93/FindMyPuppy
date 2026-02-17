@@ -416,11 +416,11 @@ export const db = {
     }
   },
 
-  checkAchievements: async (username: string): Promise<{ success: boolean; achievements?: string[]; newlyUnlocked?: string[] }> => {
+  checkAchievements: async (username: string, noHintsUsed?: boolean): Promise<{ success: boolean; achievements?: string[]; newlyUnlocked?: string[] }> => {
     try {
       const response = await secureFetch(getApiBase(), '/api/achievements/check', {
         method: 'POST',
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, noHintsUsed }),
       });
       const { ok, data } = await parseJsonResponse<{ success: boolean; achievements?: string[]; newlyUnlocked?: string[] }>(response);
       if (!ok) return { success: false };

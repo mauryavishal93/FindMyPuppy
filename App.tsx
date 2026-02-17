@@ -46,6 +46,10 @@ export default function App() {
     const saved = localStorage.getItem('findMyPuppy_hapticsEnabled');
     return saved ? JSON.parse(saved) : true;
   });
+  const [webViewEnabled, setWebViewEnabled] = useState(() => {
+    const saved = localStorage.getItem('findMyPuppy_webView');
+    return saved ? JSON.parse(saved) : false;
+  });
   
   // Legacy isMuted for backward compatibility (both disabled = muted)
   const isMuted = !backgroundMusicEnabled && !soundEffectsEnabled;
@@ -318,6 +322,7 @@ export default function App() {
     showHints,
     handleUseHint,
     resetHints,
+    hintsUsedInLevel,
     freeHintsRemaining,
     totalHintsRemaining,
     currentHintType,
@@ -573,7 +578,7 @@ export default function App() {
         ).catch(err => {
           console.error('Failed to update level passed count in database:', err);
         });
-        db.checkAchievements(prev.playerName).then((r) => {
+        db.checkAchievements(prev.playerName, hintsUsedInLevel === 0).then((r) => {
           if (r.success && r.newlyUnlocked && r.newlyUnlocked.length > 0) {
             setNewlyUnlockedAchievements(r.newlyUnlocked);
           }
@@ -598,7 +603,7 @@ export default function App() {
       hasShownFirstTimeLoginPromptRef.current = true;
       setShowFirstTimeLoginPrompt(true);
     }
-  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName, gameConfig, levelOfDay]);
+  }, [playSfx, soundEffectsEnabled, selectedDifficulty, currentLevelId, progress.clearedLevels, progress.playerName, gameConfig, levelOfDay, hintsUsedInLevel]);
 
   const handlePuppyFound = useCallback((id: string) => {
     playSfx('found', soundEffectsEnabled);
@@ -716,6 +721,12 @@ export default function App() {
     localStorage.setItem('findMyPuppy_hapticsEnabled', JSON.stringify(newValue));
     if (newValue) triggerHaptic(HAPTIC_PATTERNS.MEDIUM); // Feedback when enabling
   };
+
+  const toggleWebView = () => {
+    const newValue = !webViewEnabled;
+    setWebViewEnabled(newValue);
+    localStorage.setItem('findMyPuppy_webView', JSON.stringify(newValue));
+  };
   
   // Legacy toggle for backward compatibility
   const toggleMute = () => {
@@ -814,7 +825,7 @@ export default function App() {
   }
 
   return (
-    <div className="mobile-app-container">
+    <div className={`mobile-app-container ${webViewEnabled ? 'web-view-container' : ''}`}>
       
       {/* PC Background Decorations (Web Only) */}
       <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden hidden sm:block">
@@ -823,7 +834,7 @@ export default function App() {
       </div>
 
       {/* Physical Phone Frame Container */}
-      <div className={`mobile-phone-frame shadow-2xl ${activeTheme.background} transition-colors duration-500`}>
+      <div className={`mobile-phone-frame shadow-2xl ${activeTheme.background} transition-colors duration-500 ${webViewEnabled ? 'web-view-mode' : ''}`}>
          
         {view === 'LOGIN' && (
           <LoginView 
@@ -1130,9 +1141,11 @@ export default function App() {
             backgroundMusicEnabled={backgroundMusicEnabled}
             soundEffectsEnabled={soundEffectsEnabled}
             hapticsEnabled={hapticsEnabled}
+            webViewEnabled={webViewEnabled}
             onToggleBackgroundMusic={toggleBackgroundMusic}
             onToggleSoundEffects={toggleSoundEffects}
             onToggleHaptics={toggleHaptics}
+            onToggleWebView={toggleWebView}
           />
         )}
 

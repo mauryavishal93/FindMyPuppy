@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ThemeType } from '../../types';
 import { THEME_CONFIGS } from '../../constants/themeConfig';
 import { db } from '../../services/db';
+import { ModalBase, ModalHeader, ModalContent } from './ModalBase';
 
 interface ThemeModalProps {
   onClose: () => void;
@@ -65,16 +66,14 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
 
 
   return (
-    <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl border-4 border-white animate-fade-in max-h-[80vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-          <h3 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-            <i className="fas fa-paint-brush text-brand"></i> Theme
-          </h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center">
-            <i className="fas fa-times text-slate-500"></i>
-          </button>
-        </div>
+    <ModalBase isOpen={true} onClose={onClose} maxWidth="sm">
+      <ModalHeader>
+        <h3 className="text-xl sm:text-2xl font-black text-slate-800 flex items-center gap-2 pr-0">
+          <i className="fas fa-paint-brush text-brand"></i> Theme
+        </h3>
+      </ModalHeader>
+      
+      <ModalContent>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -82,7 +81,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           {allThemes.map((themeKey) => {
             const theme = THEME_CONFIGS[themeKey];
             const isSelected = currentTheme === themeKey;
@@ -174,14 +173,14 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
         </div>
 
         {username && (
-          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
             <p className="text-xs text-slate-600 text-center">
               <i className="fas fa-info-circle text-brand mr-1"></i>
               Complete 10 games or spend 25 points to unlock each theme
             </p>
           </div>
         )}
-      </div>
-    </div>
+      </ModalContent>
+    </ModalBase>
   );
 };

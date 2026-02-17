@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { PuppyDesignsModal } from './PuppyDesignsModal';
+import { ModalBase, ModalHeader, ModalContent } from './ModalBase';
 
 interface InfoModalProps {
   onClose: () => void;
@@ -16,12 +17,9 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
       {showPuppyDesigns && (
         <PuppyDesignsModal onClose={() => setShowPuppyDesigns(false)} />
       )}
-      <div className="absolute inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-4 px-4 animate-fade-in overflow-hidden">
-    <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl relative max-h-[calc(90vh-2rem)] flex flex-col border-4 border-white overflow-hidden">
-      {/* Header - Fixed with Gradient */}
-      <div className="flex-shrink-0 p-6 pb-4 border-b border-slate-100 bg-gradient-to-br from-brand-light via-pink-50 to-yellow-50">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
+      <ModalBase isOpen={true} onClose={onClose} maxWidth="md">
+        <ModalHeader className="bg-gradient-to-br from-brand-light via-pink-50 to-yellow-50">
+          <div className="flex items-center gap-3 pr-0">
             <div className="w-12 h-12 bg-gradient-to-br from-brand to-brand-dark rounded-full flex items-center justify-center shadow-lg animate-pulse-fast">
               <i className="fas fa-book-open text-white text-xl"></i>
             </div>
@@ -30,17 +28,9 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
               <p className="text-xs text-slate-600 font-medium">Your Complete Adventure Manual</p>
             </div>
           </div>
-          <button 
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/80 text-slate-400 hover:bg-white hover:text-slate-600 flex items-center justify-center transition-colors shadow-sm"
-          >
-            <i className="fas fa-times"></i>
-          </button>
-        </div>
-      </div>
+        </ModalHeader>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-4 hide-scrollbar">
+        <ModalContent className="hide-scrollbar pt-4">
         <div className="space-y-6">
           
           {/* Hero Section - Enhanced */}
@@ -894,9 +884,8 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenExplorerGui
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
+        </ModalContent>
+      </ModalBase>
     </>
   );
 };

@@ -140,6 +140,27 @@
         }
       }
 
+      /* Web View Mode - Remove phone frame styling */
+      .mobile-phone-frame.web-view-mode {
+        width: 100% !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border: none !important;
+        border-radius: 0 !important;
+        outline: none !important;
+        box-shadow: none !important;
+      }
+
+      .mobile-phone-frame.web-view-mode::before {
+        display: none !important;
+      }
+
+      .mobile-app-container.web-view-container {
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+      }
+
       /* Standardized Internal Components */
       .mobile-header {
         padding-top: env(safe-area-inset-top, 0px);

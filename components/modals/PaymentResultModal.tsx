@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '../ui/Button';
+import { ModalBase, ModalHeader, ModalContent } from './ModalBase';
 
 export type PaymentResultType = 'success' | 'failed' | 'cancelled' | 'declined';
 
@@ -75,31 +76,11 @@ export const PaymentResultModal: React.FC<PaymentResultModalProps> = ({
   const displayMessage = message || config.defaultMessage;
 
   return (
-    <div className="absolute inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-      <div className={`bg-white rounded-[2rem] p-8 w-full max-w-sm text-center shadow-2xl relative border-4 ${config.borderColor} overflow-hidden flex flex-col items-center animate-fade-in`}>
-        {/* Animated Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          {[...Array(30)].map((_, i) => (
-            <div key={i} className="absolute animate-pulse" style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              fontSize: `${10 + Math.random() * 20}px`,
-              transform: `rotate(${Math.random() * 360}deg)`,
-              animationDelay: `${Math.random() * 2}s`,
-              animationDuration: `${1 + Math.random() * 2}s`
-            }}>
-              {result === 'success' ? (
-                <i className="fas fa-check text-green-500"></i>
-              ) : (
-                <i className="fas fa-times text-red-500"></i>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center w-full">
+    <ModalBase isOpen={true} onClose={onClose} maxWidth="sm" showCloseButton={false} className={`border-4 ${config.borderColor}`}>
+      <ModalHeader className={`${config.bgPattern} border-b-0`}>
+        <div className="text-center pr-0">
           {/* Icon - Top Center */}
-          <div className={`w-28 h-28 bg-gradient-to-br ${config.iconBg} rounded-full flex items-center justify-center shadow-2xl border-4 border-white mb-6 ${
+          <div className={`w-28 h-28 bg-gradient-to-br ${config.iconBg} rounded-full flex items-center justify-center shadow-2xl border-4 border-white mb-6 mx-auto ${
             result === 'success' ? 'animate-bounce-short' : 'animate-pulse'
           }`}>
             <i className={`fas ${config.icon} text-6xl text-white drop-shadow-lg`}></i>
@@ -109,9 +90,12 @@ export const PaymentResultModal: React.FC<PaymentResultModalProps> = ({
           <h2 className={`text-4xl font-black mb-3 bg-gradient-to-r ${config.iconBg} bg-clip-text text-transparent`}>
             {config.title}
           </h2>
+        </div>
+      </ModalHeader>
 
-          {/* Message */}
-          <div className={`mb-6 space-y-2 w-full ${config.bgPattern} rounded-xl p-4 border-2 ${config.borderColor}`}>
+      <ModalContent className="text-center">
+        {/* Message */}
+        <div className={`mb-6 space-y-2 w-full ${config.bgPattern} rounded-xl p-4 border-2 ${config.borderColor}`}>
             <p className={`${config.textColor} font-bold text-lg`}>
               {displayMessage}
             </p>
@@ -166,9 +150,8 @@ export const PaymentResultModal: React.FC<PaymentResultModalProps> = ({
               )}
             </Button>
           </div>
-        </div>
-      </div>
-    </div>
+        </ModalContent>
+    </ModalBase>
   );
 };
 
