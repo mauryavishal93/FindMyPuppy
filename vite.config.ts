@@ -67,6 +67,7 @@ export default defineConfig(({ mode }) => {
     build: {
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
+        input: ['index.html', 'explorer-guide.html'],
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {

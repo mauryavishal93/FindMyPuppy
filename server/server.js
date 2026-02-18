@@ -3057,7 +3057,7 @@ app.get('/explorer-guide', (req, res) => {
   if (isProduction) {
     res.sendFile(join(__dirname, '..', 'dist', 'explorer-guide.html'));
   } else {
-    res.sendFile(join(__dirname, '..', 'public', 'explorer-guide.html'));
+    res.sendFile(join(__dirname, '..', 'explorer-guide.html'));
   }
 });
 
