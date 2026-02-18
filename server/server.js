@@ -660,6 +660,15 @@ if (emailTransporter) {
 }
 console.log('📧 ================================================\n');
 
+// Log password-reset URL base when on Render (so deployers can verify reset links)
+if (process.env.RENDER === 'true') {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://findmypuppy.onrender.com';
+  console.log('🔗 [RENDER] Password reset links will use FRONTEND_URL:', frontendUrl);
+  if (!process.env.FRONTEND_URL) {
+    console.warn('   ⚠️  Set FRONTEND_URL in Render env if your app is not at https://findmypuppy.onrender.com');
+  }
+}
+
 // Password Reset Request Endpoint
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {

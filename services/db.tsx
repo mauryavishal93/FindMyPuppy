@@ -7,9 +7,13 @@
 import { secureFetch, parseJsonResponse, NETWORK_ERROR_MESSAGE } from './network';
 
 // API base: not exposed in errors or logs. Export for config only (e.g. Razorpay callback).
-const getApiBase = (): string =>
-  import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? '' : 'https://findmypuppydb.onrender.com');
+// When deployed on Render with same service serving app + API, same origin works without VITE_API_BASE_URL.
+const getApiBase = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
+  if (import.meta.env.DEV) return '';
+  if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin;
+  return 'https://findmypuppydb.onrender.com';
+};
 
 export const API_BASE_URL = getApiBase();
 

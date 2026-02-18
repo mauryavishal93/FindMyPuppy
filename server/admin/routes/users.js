@@ -19,6 +19,7 @@ router.get('/', requireAdmin, requirePermission('users:read'), async (req, res) 
     const q = (req.query.q || '').trim();
     const sort = (req.query.sort || 'lastLogin').toString();
     const bannedFilter = req.query.banned;
+    const authProviderFilter = req.query.authProvider;
     const filter = {};
     if (q) {
       filter.$or = [
@@ -28,6 +29,9 @@ router.get('/', requireAdmin, requirePermission('users:read'), async (req, res) 
     }
     if (bannedFilter === 'true' || bannedFilter === '1') filter.banned = true;
     else if (bannedFilter === 'false' || bannedFilter === '0') filter.banned = { $ne: true };
+    if (authProviderFilter && (authProviderFilter === 'local' || authProviderFilter === 'google')) {
+      filter.authProvider = authProviderFilter;
+    }
 
     const sortOpt = {};
     if (sort === 'points') sortOpt.points = -1;

@@ -297,6 +297,7 @@ type UserListItem = {
   levelPassedEasy?: number;
   levelPassedMedium?: number;
   levelPassedHard?: number;
+  authProvider?: string;
 };
 
 function AdminDashboard() {
@@ -476,6 +477,7 @@ function UserListModal({
                 <tr>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Username</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Email</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300">Auth Provider</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Last Login</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Points</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Hints</th>
@@ -485,13 +487,22 @@ function UserListModal({
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">No users found</td>
+                    <td colSpan={7} className="px-4 py-8 text-center text-slate-400">No users found</td>
                   </tr>
                 ) : (
                   users.map((u) => (
                     <tr key={u.username} className="border-t border-slate-700 hover:bg-slate-800/50">
                       <td className="px-2 sm:px-4 py-2 font-medium">{u.username}</td>
                       <td className="px-2 sm:px-4 py-2 truncate max-w-[120px] sm:max-w-none">{u.email}</td>
+                      <td className="px-2 sm:px-4 py-2">
+                        {u.authProvider === 'google' ? (
+                          <span className="text-blue-400 font-medium flex items-center gap-1">
+                            <i className="fab fa-google text-xs"></i> Google
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Local</span>
+                        )}
+                      </td>
                       <td className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">
                         {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}
                       </td>
@@ -522,6 +533,7 @@ type AdminUserRow = {
   levelPassedHard?: number;
   banned?: boolean;
   lastLogin?: string;
+  authProvider?: string;
 };
 
 function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'error' | 'info') => void }) {
@@ -531,6 +543,7 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
   const [q, setQ] = useState('');
   const [sort, setSort] = useState<string>('lastLogin');
   const [bannedFilter, setBannedFilter] = useState<string>('');
+  const [authProviderFilter, setAuthProviderFilter] = useState<string>('');
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(true);
   const [detailUser, setDetailUser] = useState<AdminUserRow | null>(null);
@@ -543,6 +556,7 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
     if (sort) params.set('sort', sort);
     if (bannedFilter === 'yes') params.set('banned', 'true');
     if (bannedFilter === 'no') params.set('banned', 'false');
+    if (authProviderFilter) params.set('authProvider', authProviderFilter);
     adminJson<{ users: AdminUserRow[]; total: number }>(`/users?${params}`)
       .then((d) => {
         setUsers(d.users || []);
@@ -550,7 +564,7 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
       })
       .catch((e) => setErr(e.message))
       .finally(() => setLoading(false));
-  }, [page, q, sort, bannedFilter]);
+  }, [page, q, sort, bannedFilter, authProviderFilter]);
 
   useEffect(() => {
     load();
@@ -586,6 +600,15 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
           <option value="yes">Banned only</option>
           <option value="no">Not banned</option>
         </select>
+        <select
+          value={authProviderFilter}
+          onChange={(e) => setAuthProviderFilter(e.target.value)}
+          className="px-3 py-2 rounded bg-slate-800 border border-slate-600 text-white"
+        >
+          <option value="">All auth methods</option>
+          <option value="local">Local</option>
+          <option value="google">Google</option>
+        </select>
       </div>
       {err && <p className="text-red-400 mb-2 text-sm">{err}</p>}
       {loading && <p className="text-slate-400 mb-2 text-sm">Loading users…</p>}
@@ -595,6 +618,7 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
             <tr>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Username</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Email</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300">Auth Provider</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Points</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Hints</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Easy</th>
@@ -618,6 +642,15 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
                 >
                   <td className="px-2 sm:px-4 py-2 font-medium">{u.username}</td>
                   <td className="px-2 sm:px-4 py-2 truncate max-w-[100px] sm:max-w-none">{u.email}</td>
+                  <td className="px-2 sm:px-4 py-2">
+                    {u.authProvider === 'google' ? (
+                      <span className="text-blue-400 font-medium flex items-center gap-1">
+                        <i className="fab fa-google text-xs"></i> Google
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">Local</span>
+                    )}
+                  </td>
                   <td className="px-2 sm:px-4 py-2">{u.points ?? 0}</td>
                   <td className="px-2 sm:px-4 py-2">{u.hints ?? 0}</td>
                   <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{easy}</td>
@@ -770,6 +803,16 @@ function UserDetailModal({
         </div>
         <div className="p-4 space-y-4">
           <p className="text-slate-300"><strong>Email:</strong> {p.email}</p>
+          <p className="text-slate-300">
+            <strong>Auth Provider:</strong>{' '}
+            {p.authProvider === 'google' ? (
+              <span className="text-blue-400 font-medium flex items-center gap-1 inline-flex">
+                <i className="fab fa-google text-xs"></i> Google
+              </span>
+            ) : (
+              <span className="text-slate-400">Local</span>
+            )}
+          </p>
           <p className="text-slate-300"><strong>Points:</strong> <input type="number" min={0} value={editPoints} onChange={(e) => setEditPoints(e.target.value)} className="w-20 px-2 py-1 rounded bg-slate-700 text-white border border-slate-600" /></p>
           <p className="text-slate-300"><strong>Hints:</strong> <input type="number" min={0} value={editHints} onChange={(e) => setEditHints(e.target.value)} className="w-20 px-2 py-1 rounded bg-slate-700 text-white border border-slate-600" /></p>
           <p className="text-slate-300"><strong>Levels:</strong> E {(p.levelPassedEasy ?? 0)} / M {(p.levelPassedMedium ?? 0)} / H {(p.levelPassedHard ?? 0)}</p>
