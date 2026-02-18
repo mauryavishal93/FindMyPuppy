@@ -5,6 +5,7 @@ import { THEME_CONFIGS } from './constants/themeConfig';
 import { LevelSelector } from './components/LevelSelector';
 import { InfoModal } from './components/modals/InfoModal';
 import { ExplorerGuide } from './components/ExplorerGuide';
+import { ExplorerGuideView } from './views/ExplorerGuideView';
 import { LeaderboardModal } from './components/modals/LeaderboardModal';
 import { ThemeModal } from './components/modals/ThemeModal';
 import { PaymentModal } from './components/modals/PaymentModal';
@@ -28,7 +29,7 @@ import { db, PriceOffer, GameConfig } from './services/db';
 import { triggerHaptic, HAPTIC_PATTERNS } from './utils/haptics';
 
 export default function App() {
-  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST'>('HOME');
+  const [view, setView] = useState<'LOGIN' | 'HOME' | 'LEVEL_SELECT' | 'GAME' | 'WIN' | 'GAME_OVER' | 'GAME_LOST' | 'EXPLORER_GUIDE'>('HOME');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(Difficulty.EASY);
   const [currentLevelId, setCurrentLevelId] = useState<number>(1);
   const [loginName, setLoginName] = useState('');
@@ -361,6 +362,41 @@ export default function App() {
     }
   }, [view]);
 
+  // Check URL pathname on mount to set initial view
+  useEffect(() => {
+    const pathname = window.location.pathname;
+    if (pathname === '/explorer-guide') {
+      setView('EXPLORER_GUIDE');
+    }
+  }, []);
+
+  // Update URL when view changes to Explorer Guide
+  useEffect(() => {
+    if (view === 'EXPLORER_GUIDE') {
+      if (window.location.pathname !== '/explorer-guide') {
+        window.history.pushState({ view: 'EXPLORER_GUIDE' }, '', '/explorer-guide');
+      }
+    } else if (window.location.pathname === '/explorer-guide') {
+      // We're on explorer-guide URL but view is not EXPLORER_GUIDE; sync URL back to /
+      window.history.replaceState({}, '', '/');
+    }
+  }, [view]);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      if (pathname === '/explorer-guide') {
+        setView('EXPLORER_GUIDE');
+      } else if (pathname === '/' || pathname === '') {
+        setView('HOME');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // Check for reset password token in URL on app load (e.g. user opened link from email)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -382,7 +418,7 @@ export default function App() {
       setShowResetPasswordModal(true);
       window.history.replaceState({}, '', window.location.pathname || '/');
     }
-  }, [view]);
+  }, [view, setResetPasswordToken, setShowResetPasswordModal]);
 
   // Restore session: if a playerName is present, sync data from server (HOME is already default)
   useEffect(() => {
@@ -773,6 +809,9 @@ export default function App() {
       case 'LOGIN':
         setView('HOME');
         break;
+      case 'EXPLORER_GUIDE':
+        setView('HOME');
+        break;
       default:
         break;
     }
@@ -789,7 +828,7 @@ export default function App() {
 
   // Sync history state to intercept hardware back button on Android/Mobile
   useEffect(() => {
-    // Base screen: HOME (Select Difficulty) only; LOGIN is a sub-screen that back navigates from
+    // Base screen: HOME (Select Difficulty) only; LOGIN and EXPLORER_GUIDE are sub-screens that back navigates from
     const isBaseScreen = view === 'HOME' && 
                          !showInfoModal && !showThemeModal && 
                          !showPurchaseHistoryModal && !showPaymentModal && 
@@ -824,8 +863,11 @@ export default function App() {
     );
   }
 
+  // Explorer Guide always uses desktop (web) view mode when shown in-app
+  const useWebViewMode = webViewEnabled || view === 'EXPLORER_GUIDE';
+
   return (
-    <div className={`mobile-app-container ${webViewEnabled ? 'web-view-container' : ''}`}>
+    <div className={`mobile-app-container ${useWebViewMode ? 'web-view-container' : ''}`}>
       
       {/* PC Background Decorations (Web Only) */}
       <div className="absolute inset-0 z-0 bg-slate-900 overflow-hidden hidden sm:block">
@@ -834,7 +876,7 @@ export default function App() {
       </div>
 
       {/* Physical Phone Frame Container */}
-      <div className={`mobile-phone-frame shadow-2xl ${activeTheme.background} transition-colors duration-500 ${webViewEnabled ? 'web-view-mode' : ''}`}>
+      <div className={`mobile-phone-frame shadow-2xl ${activeTheme.background} transition-colors duration-500 ${useWebViewMode ? 'web-view-mode' : ''}`}>
          
         {view === 'LOGIN' && (
           <LoginView 
@@ -1127,7 +1169,7 @@ export default function App() {
         {showInfoModal && (
           <InfoModal 
             onClose={() => setShowInfoModal(false)}
-            onOpenExplorerGuide={() => setShowExplorerGuide(true)}
+            onOpenExplorerGuide={() => setView('EXPLORER_GUIDE')}
             onOpenLeaderboard={() => {
               setShowInfoModal(false);
               setShowLeaderboard(true);
@@ -1155,6 +1197,17 @@ export default function App() {
             onClose={() => setShowLeaderboard(false)}
             activeTheme={THEME_CONFIGS[progress.selectedTheme || 'night']}
             currentUsername={progress.playerName}
+          />
+        )}
+
+        {view === 'EXPLORER_GUIDE' && (
+          <ExplorerGuideView
+            activeTheme={activeTheme}
+            onClose={() => setView('HOME')}
+            onOpenLeaderboard={() => {
+              setView('HOME');
+              setShowLeaderboard(true);
+            }}
           />
         )}
 
