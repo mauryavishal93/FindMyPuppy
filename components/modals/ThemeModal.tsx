@@ -32,13 +32,13 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
     ? unlockedThemes 
     : defaultUnlocked;
 
-  const handleUnlockTheme = async (theme: ThemeType, method: 'games' | 'points') => {
+  const handleUnlockTheme = async (theme: ThemeType) => {
     if (!username) {
       setError('Please login to unlock themes');
       return;
     }
 
-    if (method === 'points' && points < 25) {
+    if (points < 25) {
       setError('Not enough points. Need 25 points to unlock this theme.');
       return;
     }
@@ -47,7 +47,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
     setError(null);
 
     try {
-      const result = await db.unlockTheme(username, theme, method);
+      const result = await db.unlockTheme(username, theme, 'points');
       if (result.success && result.unlockedThemes) {
         if (onThemeUnlocked) {
           onThemeUnlocked(result.unlockedThemes as ThemeType[], result.points);
@@ -136,28 +136,23 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
                     {/* Unlock Options */}
                     <div className="w-full mt-2 space-y-2">
                       {username && (
-                        <>
-                          <button
-                            onClick={() => handleUnlockTheme(themeKey, 'points')}
-                            disabled={isUnlocking || points < 25}
-                            className={`
-                              w-full py-1.5 px-2 rounded-lg text-xs font-bold transition-all
-                              ${points >= 25 && !isUnlocking
-                                ? 'bg-brand text-white hover:bg-brand-dark'
-                                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                              }
-                            `}
-                          >
-                            {isUnlocking ? (
-                              <i className="fas fa-spinner fa-spin"></i>
-                            ) : (
-                              `Unlock (25 pts)`
-                            )}
-                          </button>
-                          <div className="text-[10px] text-slate-500 text-center">
-                            or complete 10 games
-                          </div>
-                        </>
+                        <button
+                          onClick={() => handleUnlockTheme(themeKey)}
+                          disabled={isUnlocking || points < 25}
+                          className={`
+                            w-full py-1.5 px-2 rounded-lg text-xs font-bold transition-all
+                            ${points >= 25 && !isUnlocking
+                              ? 'bg-brand text-white hover:bg-brand-dark'
+                              : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                            }
+                          `}
+                        >
+                          {isUnlocking ? (
+                            <i className="fas fa-spinner fa-spin"></i>
+                          ) : (
+                            `Unlock (25 pts)`
+                          )}
+                        </button>
                       )}
                       {!username && (
                         <div className="text-[10px] text-slate-500 text-center">
@@ -176,7 +171,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
             <p className="text-xs text-slate-600 text-center">
               <i className="fas fa-info-circle text-brand mr-1"></i>
-              Complete 10 games or spend 25 points to unlock each theme
+              Spend 25 points to unlock each theme
             </p>
           </div>
         )}

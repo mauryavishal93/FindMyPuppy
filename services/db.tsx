@@ -32,6 +32,7 @@ export interface User {
   achievements?: string[];
   puppyRunHighScore?: number;
   unlockedThemes?: string[];
+  selectedTheme?: string;
 }
 
 export interface PurchaseHistory {
@@ -575,6 +576,20 @@ export const db = {
       });
       const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; unlockedThemes?: string[]; points?: number; message?: string }>(response);
       if (!ok) return { success: false, message: userMessage || 'Failed to unlock theme' };
+      return data;
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  updateTheme: async (username: string, theme: string): Promise<{ success: boolean; selectedTheme?: string; message?: string }> => {
+    try {
+      const response = await secureFetch(getApiBase(), `/api/user/${username}/update-theme`, {
+        method: 'POST',
+        body: JSON.stringify({ theme }),
+      });
+      const { ok, data, userMessage } = await parseJsonResponse<{ success: boolean; selectedTheme?: string; message?: string }>(response);
+      if (!ok) return { success: false, message: userMessage || 'Failed to update theme' };
       return data;
     } catch {
       return { success: false, message: NETWORK_ERROR_MESSAGE };

@@ -120,6 +120,10 @@ export default function App() {
     if (!parsed.unlockedThemes || parsed.unlockedThemes.length < 2) {
       parsed.unlockedThemes = ['sunny', 'night'];
     }
+    // Ensure selectedTheme exists and is valid, default to 'night' (Starry Night)
+    if (!parsed.selectedTheme || !Object.keys(THEME_CONFIGS).includes(parsed.selectedTheme)) {
+      parsed.selectedTheme = 'night';
+    }
     return { ...defaultProgress, ...parsed };
   });
 
@@ -251,8 +255,10 @@ export default function App() {
             puppyRunHighScore: user.puppyRunHighScore || 0,
             unlockedThemes: (user.unlockedThemes ? user.unlockedThemes.filter((t): t is ThemeType => 
               Object.keys(THEME_CONFIGS).includes(t)
-            ) : ['sunny', 'night']) as ThemeType[]
-            // Preserve theme as it might be local pref or we could sync it if DB supported it
+            ) : ['sunny', 'night']) as ThemeType[],
+            selectedTheme: (user.selectedTheme && Object.keys(THEME_CONFIGS).includes(user.selectedTheme))
+              ? user.selectedTheme as ThemeType
+              : 'night' // Default to Starry Night if not set or invalid
           };
         });
       }
@@ -505,9 +511,19 @@ export default function App() {
     }
   };
 
-  const handleThemeChange = (theme: ThemeType) => {
+  const handleThemeChange = async (theme: ThemeType) => {
     setProgress(prev => ({ ...prev, selectedTheme: theme }));
     setShowThemeModal(false);
+    
+    // Save theme to database if user is logged in
+    if (progress.playerName) {
+      try {
+        await db.updateTheme(progress.playerName, theme);
+      } catch (err) {
+        console.error('Failed to save theme to database:', err);
+        // Continue anyway - theme is saved in localStorage
+      }
+    }
   };
 
   const handleInitLevel = useCallback(async (level: number, diff: Difficulty) => {
@@ -574,33 +590,6 @@ export default function App() {
       const levelPassedMedium = countLevelsPassed(Difficulty.MEDIUM);
       const levelPassedHard = countLevelsPassed(Difficulty.HARD);
       
-      // Calculate total completed games (all difficulties combined)
-      const totalCompletedGames = levelPassedEasy + levelPassedMedium + levelPassedHard;
-      
-      // Check for theme unlock (every 10 games, starting from game 10)
-      let newlyUnlockedTheme: ThemeType | null = null;
-      if (isFirstClear && prev.playerName && totalCompletedGames > 0 && totalCompletedGames % 10 === 0) {
-        // Get all themes and find the next locked one
-        const allThemes = Object.keys(THEME_CONFIGS) as ThemeType[];
-        const currentUnlocked = prev.unlockedThemes || ['sunny', 'night'];
-        const nextLockedTheme = allThemes.find(theme => !currentUnlocked.includes(theme));
-        
-        if (nextLockedTheme) {
-          newlyUnlockedTheme = nextLockedTheme;
-          // Unlock via games method
-          db.unlockTheme(prev.playerName, nextLockedTheme, 'games').then((result) => {
-            if (result.success && result.unlockedThemes) {
-              setProgress(p => ({
-                ...p,
-                unlockedThemes: result.unlockedThemes as ThemeType[]
-              }));
-            }
-          }).catch(err => {
-            console.error('Failed to unlock theme:', err);
-          });
-        }
-      }
-      
       if (prev.playerName) {
         if (pointsAwarded > 0) {
           db.updatePoints(prev.playerName, newTotalScore).catch(err => {
@@ -627,10 +616,7 @@ export default function App() {
       return {
         ...prev,
         clearedLevels: updatedClearedLevels,
-        totalScore: newTotalScore,
-        unlockedThemes: newlyUnlockedTheme 
-          ? [...(prev.unlockedThemes || ['sunny', 'night']), newlyUnlockedTheme]
-          : prev.unlockedThemes
+        totalScore: newTotalScore
       };
     });
 
@@ -1169,11 +1155,6 @@ export default function App() {
         {showInfoModal && (
           <InfoModal 
             onClose={() => setShowInfoModal(false)}
-            onOpenExplorerGuide={() => setView('EXPLORER_GUIDE')}
-            onOpenLeaderboard={() => {
-              setShowInfoModal(false);
-              setShowLeaderboard(true);
-            }}
           />
         )}
 
@@ -1204,10 +1185,6 @@ export default function App() {
           <ExplorerGuideView
             activeTheme={activeTheme}
             onClose={() => setView('HOME')}
-            onOpenLeaderboard={() => {
-              setView('HOME');
-              setShowLeaderboard(true);
-            }}
           />
         )}
 

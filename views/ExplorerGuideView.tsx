@@ -5,10 +5,9 @@ import { PuppyDesignsModal } from '../components/modals/PuppyDesignsModal';
 interface ExplorerGuideViewProps {
   activeTheme: ThemeConfig;
   onClose: () => void;
-  onOpenLeaderboard?: () => void;
 }
 
-export const ExplorerGuideView: React.FC<ExplorerGuideViewProps> = ({ activeTheme: _theme, onClose, onOpenLeaderboard }) => {
+export const ExplorerGuideView: React.FC<ExplorerGuideViewProps> = ({ activeTheme: _theme, onClose }) => {
   const [showPuppyDesigns, setShowPuppyDesigns] = useState(false);
 
   return (
@@ -144,29 +143,6 @@ export const ExplorerGuideView: React.FC<ExplorerGuideViewProps> = ({ activeThem
               </div>
             </div>
           </section>
-
-          {/* Leaderboard (when available) */}
-          {onOpenLeaderboard && (
-            <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="bg-slate-800 px-4 py-2.5">
-                <h2 className="text-white font-bold text-sm flex items-center gap-2">
-                  <i className="fas fa-trophy" />
-                  Leaderboard
-                </h2>
-              </div>
-              <div className="p-4 space-y-2 text-xs text-slate-700">
-                <p>Compete with players worldwide. The <strong>top 10 players</strong> are ranked by points. See your rank and challenge yourself to climb. Rankings update as players earn points.</p>
-                <button
-                  type="button"
-                  onClick={() => { onOpenLeaderboard(); onClose(); }}
-                  className="w-full mt-2 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm flex items-center justify-center gap-2"
-                >
-                  <i className="fas fa-trophy" />
-                  View leaderboard
-                </button>
-              </div>
-            </section>
-          )}
 
           {/* Difficulty */}
           <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

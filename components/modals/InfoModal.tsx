@@ -3,10 +3,9 @@ import { ModalBase, ModalHeader, ModalContent } from './ModalBase';
 
 interface InfoModalProps {
   onClose: () => void;
-  onOpenLeaderboard?: () => void;
 }
 
-export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenLeaderboard }) => {
+export const InfoModal: React.FC<InfoModalProps> = ({ onClose }) => {
   return (
     <>
       <ModalBase isOpen={true} onClose={onClose} maxWidth="md">
@@ -42,15 +41,6 @@ export const InfoModal: React.FC<InfoModalProps> = ({ onClose, onOpenLeaderboard
                 <i className="fas fa-compass"></i>
                 <span>Full Guide</span>
               </a>
-              {onOpenLeaderboard && (
-                <button
-                  onClick={() => { onOpenLeaderboard(); onClose(); }}
-                  className="inline-flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow transition active:scale-95"
-                >
-                  <i className="fas fa-trophy"></i>
-                  <span>Leaderboard</span>
-                </button>
-              )}
               <a
                 href="https://www.youtube.com/watch?v=_aBm0CZDCPo"
                 target="_blank"
