@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { adminJson, adminFetch, setAdminToken, clearAdminToken, hasAdminToken } from './api/client';
 
 type AdminUser = { _id: string; email: string; name: string; role: string; permissions: string[] };
-type AdminPage = 'dashboard' | 'users' | 'gameplay' | 'security' | 'shop' | 'maintenance';
+type AdminPage = 'dashboard' | 'users' | 'gameplay' | 'security' | 'shop' | 'maintenance' | 'referrals';
 
 export function AdminApp() {
   const [token, setTokenState] = useState<string | null>(() => localStorage.getItem('findMyPuppy_adminToken'));
@@ -15,7 +15,7 @@ export function AdminApp() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState<AdminPage>(() => {
     const hash = typeof window !== 'undefined' ? (window.location.hash?.slice(1) || '') : '';
-    const allowed: AdminPage[] = ['dashboard', 'users', 'gameplay', 'security', 'shop', 'maintenance'];
+    const allowed: AdminPage[] = ['dashboard', 'users', 'gameplay', 'security', 'shop', 'maintenance', 'referrals'];
     return (allowed.includes(hash as AdminPage) ? hash : 'dashboard') as AdminPage;
   });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -51,7 +51,7 @@ export function AdminApp() {
   useEffect(() => {
     const h = () => {
       const hash = window.location.hash?.slice(1) || '';
-      const allowed: AdminPage[] = ['dashboard', 'users', 'gameplay', 'security', 'shop', 'maintenance'];
+      const allowed: AdminPage[] = ['dashboard', 'users', 'gameplay', 'security', 'shop', 'maintenance', 'referrals'];
       setPage((allowed.includes(hash as AdminPage) ? hash : 'dashboard') as AdminPage);
     };
     window.addEventListener('hashchange', h);
@@ -105,6 +105,7 @@ export function AdminApp() {
   const navItems: { id: AdminPage; label: string; icon: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-line' },
     { id: 'users', label: 'Users', icon: 'fa-users' },
+    { id: 'referrals', label: 'Referrals', icon: 'fa-share-alt' },
     { id: 'gameplay', label: 'Gameplay', icon: 'fa-gamepad' },
     { id: 'shop', label: 'Shop', icon: 'fa-shopping-cart' },
     { id: 'security', label: 'Security', icon: 'fa-shield-alt' },
@@ -227,6 +228,7 @@ export function AdminApp() {
           <div className="min-h-0">
           {page === 'dashboard' && <AdminDashboard />}
           {page === 'users' && <AdminUsers showToast={showToast} />}
+          {page === 'referrals' && <AdminReferrals />}
           {page === 'gameplay' && <AdminGameplay showToast={showToast} />}
           {page === 'security' && <AdminSecurity showToast={showToast} />}
           {page === 'shop' && <AdminShop showToast={showToast} />}
@@ -310,7 +312,10 @@ function AdminDashboard() {
     revenueMonth?: number;
     revenueLastMonth?: number;
     revenueTotal?: number;
-    hintsSold?: number;
+    hintsSoldMoney?: number;
+    hintsSoldMoneyTxns?: number;
+    hintsSoldFree?: number;
+    hintsSoldFreeTxns?: number;
     sparkline?: { date: string; dau: number; revenue: number }[];
   } | null>(null);
   const [err, setErr] = useState('');
@@ -377,7 +382,16 @@ function AdminDashboard() {
           clickable
         />
         <StatCard label="Total users" value={stats.totalUsers ?? 0} />
-        <StatCard label="Hints sold" value={stats.hintsSold ?? 0} />
+        <StatCard
+          label="Hints sold (Razorpay)"
+          value={stats.hintsSoldMoney ?? 0}
+          sublabel={`${stats.hintsSoldMoneyTxns ?? 0} transaction${(stats.hintsSoldMoneyTxns ?? 0) !== 1 ? 's' : ''}`}
+        />
+        <StatCard
+          label="Hints given (Free)"
+          value={stats.hintsSoldFree ?? 0}
+          sublabel={`${stats.hintsSoldFreeTxns ?? 0} via Points / Referral`}
+        />
         <StatCard label="Revenue today (₹)" value={stats.revenueToday ?? 0} />
         <StatCard label="Revenue yesterday (₹)" value={stats.revenueYesterday ?? 0} />
         <StatCard label="Revenue month (₹)" value={stats.revenueMonth ?? 0} />
@@ -430,21 +444,24 @@ function StatCard({
   value, 
   onClick, 
   loading, 
-  clickable 
+  clickable,
+  sublabel,
 }: { 
   label: string; 
   value: number;
   onClick?: () => void;
   loading?: boolean;
   clickable?: boolean;
+  sublabel?: string;
 }) {
   return (
     <div 
       className={`bg-slate-800 border border-slate-700 rounded-lg p-4 ${clickable ? 'cursor-pointer hover:bg-slate-750 hover:border-orange-500/50 transition-all' : ''}`}
       onClick={clickable && !loading ? onClick : undefined}
     >
-      <p className="text-slate-400 text-sm">{label}</p>
-      <p className="text-xl font-bold text-white">
+      <p className="text-slate-400 text-sm leading-tight">{label}</p>
+      {sublabel && <p className="text-slate-500 text-xs mt-0.5">{sublabel}</p>}
+      <p className="text-xl font-bold text-white mt-1">
         {loading ? 'Loading...' : value}
       </p>
       {clickable && (
@@ -706,6 +723,9 @@ function UserDetailModal({
   const [editPoints, setEditPoints] = useState<string>('');
   const [editHints, setEditHints] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     adminJson<{ user: AdminUserRow }>(`/users/${user.username}`)
@@ -793,6 +813,25 @@ function UserDetailModal({
     }
   };
 
+  const handleDelete = async () => {
+    if (deleteInput !== user.username) return;
+    setDeleting(true);
+    try {
+      await adminJson(`/users/${user.username}/delete`, {
+        method: 'POST',
+        body: JSON.stringify({ confirm: user.username }),
+      });
+      showToast(`User "${user.username}" permanently deleted`, 'success');
+      onUpdated();
+      onClose();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Delete failed', 'error');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const p = profile || user;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
@@ -827,6 +866,57 @@ function UserDetailModal({
               <button type="button" onClick={handleBan} disabled={saving} className="px-3 py-1.5 rounded bg-red-600 text-white text-sm disabled:opacity-50">Ban</button>
             )}
           </div>
+
+          {/* Delete User — danger zone */}
+          <div className="border border-red-800/50 rounded-lg p-3 bg-red-950/20">
+            <p className="text-red-400 text-xs font-semibold uppercase tracking-wide mb-2">⚠ Danger Zone</p>
+            {!showDeleteConfirm ? (
+              <button
+                type="button"
+                onClick={() => { setShowDeleteConfirm(true); setDeleteInput(''); }}
+                disabled={saving || deleting}
+                className="px-3 py-1.5 rounded bg-red-700 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+              >
+                🗑 Delete User Permanently
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-red-300 text-sm">
+                  This will permanently delete <strong className="text-white">{user.username}</strong> and all their purchase history. This cannot be undone.
+                </p>
+                <p className="text-slate-400 text-xs">
+                  Type <strong className="text-white font-mono">{user.username}</strong> to confirm:
+                </p>
+                <input
+                  type="text"
+                  value={deleteInput}
+                  onChange={(e) => setDeleteInput(e.target.value)}
+                  placeholder={user.username}
+                  className="w-full px-3 py-1.5 rounded bg-slate-700 text-white border border-red-700 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-red-500"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleteInput !== user.username || deleting}
+                    className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {deleting ? 'Deleting…' : 'Confirm Delete'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); }}
+                    disabled={deleting}
+                    className="px-3 py-1.5 rounded bg-slate-600 text-white text-sm disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div>
             <h4 className="text-white font-medium mb-1">Referrals ({referrals.length})</h4>
             <ul className="text-slate-400 text-sm list-disc pl-4">{referrals.slice(0, 10).map((r) => <li key={r.username}>{r.username}</li>)}{referrals.length > 10 && <li>…and {referrals.length - 10} more</li>}</ul>
@@ -1394,6 +1484,263 @@ function AdminMaintenance({ showToast }: { showToast: (m: string, t?: 'success' 
           {saving ? 'Saving…' : 'Save'}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── Referrals ──────────────────────────────────────────────────────────────
+
+interface ReferralStats {
+  totalReferred: number;
+  totalHintsPaid: number;
+  totalReferEvents: number;
+}
+
+interface TopReferrer {
+  referrer: string;
+  referralCount: number;
+  hintsEarned: number;
+  lastReferral: string | null;
+}
+
+interface ReferralRow {
+  referredUser: string;
+  referredEmail: string;
+  referredAt: string | null;
+  referralCode: string;
+  referrer: string;
+  referrerHintsEarned: number;
+  rewardDate: string | null;
+}
+
+function AdminReferrals() {
+  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [topReferrers, setTopReferrers] = useState<TopReferrer[]>([]);
+  const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [q, setQ] = useState('');
+  const [debouncedQ, setDebouncedQ] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'list' | 'top'>('list');
+  const LIMIT = 50;
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 350);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // Load stats once
+  useEffect(() => {
+    adminJson<{ stats: ReferralStats; topReferrers: TopReferrer[] }>('/referrals/stats')
+      .then((d) => {
+        setStats(d.stats);
+        setTopReferrers(d.topReferrers || []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Load list on page / search change
+  useEffect(() => {
+    setListLoading(true);
+    adminJson<{ referrals: ReferralRow[]; total: number }>(
+      `/referrals?page=${page}&limit=${LIMIT}&q=${encodeURIComponent(debouncedQ)}`,
+    )
+      .then((d) => {
+        setReferrals(d.referrals || []);
+        setTotal(d.total || 0);
+      })
+      .catch(() => {})
+      .finally(() => setListLoading(false));
+  }, [page, debouncedQ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / LIMIT));
+
+  const fmt = (d: string | null) => {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold text-white mb-1">Referrals</h2>
+      <p className="text-slate-400 text-sm mb-5">Track who referred whom, when they joined, and how many hints were earned.</p>
+
+      {/* Summary cards */}
+      {loading ? (
+        <div className="flex gap-3 mb-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex-1 bg-slate-800 rounded-xl h-20 animate-pulse" />
+          ))}
+        </div>
+      ) : stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Total Referred Users</p>
+            <p className="text-3xl font-bold text-white">{stats.totalReferred.toLocaleString()}</p>
+          </div>
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Hints Given to Referrers</p>
+            <p className="text-3xl font-bold text-emerald-400">{stats.totalHintsPaid.toLocaleString()}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{stats.totalReferEvents} reward events</p>
+          </div>
+          <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <p className="text-xs text-slate-400 uppercase tracking-wide mb-1">Avg Hints / Referral</p>
+            <p className="text-3xl font-bold text-indigo-400">
+              {stats.totalReferEvents > 0 ? Math.round(stats.totalHintsPaid / stats.totalReferEvents) : 0}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab('list')}
+          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'list' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+        >
+          All Referrals
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('top')}
+          className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'top' ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+        >
+          Top Referrers
+        </button>
+      </div>
+
+      {activeTab === 'list' && (
+        <>
+          {/* Search */}
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="Search by username or referrer…"
+              value={q}
+              onChange={(e) => { setQ(e.target.value); setPage(1); }}
+              className="flex-1 max-w-xs px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            />
+            {q && (
+              <button type="button" onClick={() => { setQ(''); setPage(1); }} className="px-3 py-1.5 rounded-lg bg-slate-700 text-slate-300 text-sm hover:bg-slate-600">
+                Clear
+              </button>
+            )}
+            <span className="ml-auto text-slate-400 text-sm self-center">{total.toLocaleString()} total</span>
+          </div>
+
+          {/* Table */}
+          <div className="max-h-[70vh] overflow-auto overflow-x-auto rounded-xl border border-slate-700">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-800 text-slate-400 text-xs uppercase tracking-wide sticky top-0 z-10">
+                <tr>
+                  <th className="px-3 py-2.5 text-left">Referred User</th>
+                  <th className="px-3 py-2.5 text-left">Joined</th>
+                  <th className="px-3 py-2.5 text-left">Referred By</th>
+                  <th className="px-3 py-2.5 text-left">Referral Code</th>
+                  <th className="px-3 py-2.5 text-right">Hints Earned</th>
+                  <th className="px-3 py-2.5 text-left">Reward Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/50">
+                {listLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-8 text-center text-slate-400">Loading…</td>
+                  </tr>
+                ) : referrals.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-8 text-center text-slate-500">No referrals found.</td>
+                  </tr>
+                ) : referrals.map((r, i) => (
+                  <tr key={i} className="hover:bg-slate-800/60 transition-colors">
+                    <td className="px-3 py-2.5">
+                      <p className="text-white font-medium">{r.referredUser}</p>
+                      <p className="text-slate-500 text-xs truncate max-w-[160px]">{r.referredEmail}</p>
+                    </td>
+                    <td className="px-3 py-2.5 text-slate-300 whitespace-nowrap">{fmt(r.referredAt)}</td>
+                    <td className="px-3 py-2.5">
+                      <span className="text-indigo-400 font-medium">{r.referrer || '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <code className="text-xs bg-slate-700 px-1.5 py-0.5 rounded text-slate-300">{r.referralCode}</code>
+                    </td>
+                    <td className="px-3 py-2.5 text-right">
+                      <span className={`font-semibold ${r.referrerHintsEarned > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        {r.referrerHintsEarned > 0 ? `+${r.referrerHintsEarned} 💡` : '—'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-slate-400 whitespace-nowrap">{fmt(r.rewardDate)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-3">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="px-3 py-1.5 rounded bg-slate-700 text-slate-300 text-sm disabled:opacity-40 hover:bg-slate-600"
+              >
+                ← Prev
+              </button>
+              <span className="text-slate-400 text-sm">Page {page} / {totalPages}</span>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1.5 rounded bg-slate-700 text-slate-300 text-sm disabled:opacity-40 hover:bg-slate-600"
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'top' && (
+        <div className="max-h-[70vh] overflow-auto overflow-x-auto rounded-xl border border-slate-700">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-800 text-slate-400 text-xs uppercase tracking-wide sticky top-0 z-10">
+              <tr>
+                <th className="px-3 py-2.5 text-left">#</th>
+                <th className="px-3 py-2.5 text-left">Referrer</th>
+                <th className="px-3 py-2.5 text-right">Friends Referred</th>
+                <th className="px-3 py-2.5 text-right">Hints Earned</th>
+                <th className="px-3 py-2.5 text-left">Last Referral</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-700/50">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-slate-400">Loading…</td>
+                </tr>
+              ) : topReferrers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-8 text-center text-slate-500">No referral data yet.</td>
+                </tr>
+              ) : topReferrers.map((r, i) => (
+                <tr key={r.referrer} className="hover:bg-slate-800/60 transition-colors">
+                  <td className="px-3 py-2.5 text-slate-500 font-mono">
+                    {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                  </td>
+                  <td className="px-3 py-2.5 text-white font-medium">{r.referrer}</td>
+                  <td className="px-3 py-2.5 text-right text-slate-200 font-semibold">{r.referralCount}</td>
+                  <td className="px-3 py-2.5 text-right text-emerald-400 font-semibold">+{r.hintsEarned} 💡</td>
+                  <td className="px-3 py-2.5 text-slate-400 whitespace-nowrap">{fmt(r.lastReferral)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

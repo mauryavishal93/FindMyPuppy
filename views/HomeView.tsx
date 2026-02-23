@@ -389,7 +389,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     activeTheme={activeTheme}
                   />
                   {!checkInData?.hasCheckedInToday && (
-                    <div className="absolute -top-1 -right-1 z-20 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-yellow-200 animate-bounce">
+                    <div className="absolute -top-1 -right-1 z-20 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-yellow-200 animate-bounce pointer-events-none select-none">
                        <span className="text-xs">💡</span>
                     </div>
                   )}
@@ -406,7 +406,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <span className="text-xs font-bold leading-none block mb-0.5">{dailyGameLabel}</span>
                   <span className="text-[9px] opacity-90 leading-none">{dailyPuzzleCompletedToday ? 'Done' : 'Play & Earn'}</span>
                   {!dailyPuzzleCompletedToday && (
-                    <div className="absolute -top-1 -right-1 z-20 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-yellow-200 animate-bounce">
+                    <div className="absolute -top-1 -right-1 z-20 bg-white rounded-full w-5 h-5 flex items-center justify-center shadow-md border border-yellow-200 animate-bounce pointer-events-none select-none">
                        <span className="text-xs">💡</span>
                     </div>
                   )}

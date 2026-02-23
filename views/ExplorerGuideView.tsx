@@ -233,11 +233,11 @@ export const ExplorerGuideView: React.FC<ExplorerGuideViewProps> = ({ activeThem
             <div className="p-4 space-y-4 text-xs text-slate-700">
               <div>
                 <h3 className="font-semibold text-slate-800 mb-1">Daily check-in</h3>
-                <p className="mb-1">Feed your virtual puppy every day. Watch it grow from Day 1 to Day 7. Earn 5 points per day; 7-day streak = 10 bonus hints; 30-day streak = 50 bonus points; 1-year streak = 1000 hints.</p>
+                <p className="mb-1">Feed your virtual puppy every day. Watch it grow from Day 1 to Day 7. Earn 5 points per day; 7-day streak = 10 bonus hints; 30-day streak = 50 bonus hints; 1-year streak = 1000 hints.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800 mb-1">Puppy Jump</h3>
-                <p className="mb-1">Daily endless runner. Tap or press Space to jump; Down arrow or swipe down to duck. Score 1000+ = 5 hints; 500+ = 2 hints. Your best run is saved on the leaderboard.</p>
+                <p className="mb-1">Daily endless runner. Tap to jump; swipe down to duck. Score 1000+ = 5 hints; 500+ = 2 hints. Your best run is saved on the leaderboard.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-slate-800 mb-1">Themes</h3>

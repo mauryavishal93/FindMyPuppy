@@ -501,7 +501,7 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
 
         {/* Instructions */}
         <p className={`text-xs px-4 py-2 ${activeTheme.subText}`}>
-          <strong>Space / Up</strong> = Jump · <strong>Down</strong> = Duck
+          <strong>Tap</strong> = Jump · <strong>Swipe</strong> = Duck
         </p>
 
         {/* Game Canvas Container */}
@@ -522,7 +522,7 @@ export const PuppyEndlessGame: React.FC<PuppyEndlessGameProps> = ({
           {gameState === 'ready' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
               <p className="text-white font-bold text-lg mb-2">Tap to Start!</p>
-              <p className="text-white/90 text-sm">Jump 🪨 Duck ⬇️</p>
+              <p className="text-white/90 text-sm">Tap = Jump · Swipe = Duck</p>
               {highScore > 0 && (
                 <p className="text-yellow-300 text-xs font-bold mt-2">Best: {highScore}</p>
               )}
