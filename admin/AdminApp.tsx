@@ -370,6 +370,7 @@ function AdminDashboard() {
         <StatCard 
           label="DAU" 
           value={stats.dau ?? 0} 
+          sublabel="Loaded or played today"
           onClick={loadDAUUsers}
           loading={loadingDAU}
           clickable
@@ -377,6 +378,7 @@ function AdminDashboard() {
         <StatCard 
           label="MAU" 
           value={stats.mau ?? 0} 
+          sublabel="Loaded or played this month"
           onClick={loadMAUUsers}
           loading={loadingMAU}
           clickable
@@ -495,7 +497,7 @@ function UserListModal({
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Username</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Email</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Auth Provider</th>
-                  <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Last Login</th>
+                  <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Last active</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Points</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300">Hints</th>
                   <th className="px-2 sm:px-4 py-2 text-slate-300 hidden md:table-cell">Levels (E/M/H)</th>
@@ -603,7 +605,7 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
           onChange={(e) => setSort(e.target.value)}
           className="px-3 py-2 rounded bg-slate-800 border border-slate-600 text-white"
         >
-          <option value="lastLogin">Sort: Last login</option>
+          <option value="lastLogin">Sort: Last active</option>
           <option value="totalCleared">Sort: Total cleared</option>
           <option value="points">Sort: Points</option>
           <option value="hints">Sort: Hints</option>
@@ -636,6 +638,7 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
               <th className="px-2 sm:px-4 py-2 text-slate-300">Username</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Email</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Auth Provider</th>
+              <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Last active</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Points</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300">Hints</th>
               <th className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell">Easy</th>
@@ -667,6 +670,9 @@ function AdminUsers({ showToast }: { showToast: (m: string, t?: 'success' | 'err
                     ) : (
                       <span className="text-slate-400">Local</span>
                     )}
+                  </td>
+                  <td className="px-2 sm:px-4 py-2 text-slate-300 hidden sm:table-cell whitespace-nowrap">
+                    {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}
                   </td>
                   <td className="px-2 sm:px-4 py-2">{u.points ?? 0}</td>
                   <td className="px-2 sm:px-4 py-2">{u.hints ?? 0}</td>
